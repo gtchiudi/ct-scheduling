@@ -1,9 +1,21 @@
 # Each class here is a db table. How to make them link with keys?
 from django.db import models
+import uuid
 
 
-class Request(models.Model):
-    request_id = models.IntegerField(primary_key=True, default=0)
+class BaseModel(models.Model):
+    active = models.BooleanField(default=True)
+
+    def delete(self, using=None, keep_parents=False):
+        self.active = False
+        self.save()
+
+    class Meta:
+        abstract = True
+
+
+class Request(BaseModel):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     approved = models.BooleanField(default=False)
     company_name = models.CharField(
         max_length=255)  # changeable only via admin
@@ -28,39 +40,42 @@ class Request(models.Model):
     active = models.BooleanField(default=True)
 
 
-class Employee(models.Model):
-    emp_id = models.IntegerField(primary_key=True, default=0)
+class Employee(BaseModel):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     email = models.CharField(max_length=255)
     phone_number = models.CharField(max_length=12)
     password = models.CharField(max_length=32)
     active = models.BooleanField(default=True)
 
 
-class Role(models.Model):
-    emp_id = models.ForeignKey(Employee, on_delete=models.CASCADE)
+class Role(BaseModel):
+    employee = models.ForeignKey(
+        Employee, on_delete=models.CASCADE)
     role = models.CharField(max_length=32)
     active = models.BooleanField(default=True)
 
 
-class Warehouse(models.Model):
-    warehouse_id = models.IntegerField(primary_key=True, default=0)
+class Warehouse(BaseModel):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=64)
     address = models.CharField(max_length=256)
     phone_number = models.CharField(max_length=12)
     active = models.BooleanField(default=True)
 
 
-class Actions_Log(models.Model):
-    emp_id = models.ForeignKey(Employee, on_delete=models.CASCADE)
+class ActionsLog(BaseModel):
+    employee = models.ForeignKey(
+        Employee, on_delete=models.SET_NULL, null=True)
     action = models.CharField(max_length=256)
     date_time = models.DateTimeField("Action Date/Time")
     active = models.BooleanField(default=True)
 
 
-class Schedule(models.Model):
-    approver = models.ForeignKey(Employee, on_delete=models.CASCADE)
-    request_id = models.ForeignKey(
+class Schedule(BaseModel):
+    approver = models.ForeignKey(
+        Employee, null=True, on_delete=models.SET_NULL)
+    request = models.ForeignKey(
         Request, on_delete=models.CASCADE)
-    warehouse_id = models.ForeignKey(
+    warehouse = models.ForeignKey(
         Warehouse, on_delete=models.CASCADE)
     active = models.BooleanField(default=True)
