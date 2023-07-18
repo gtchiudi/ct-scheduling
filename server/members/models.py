@@ -29,7 +29,8 @@ class Request(BaseModel):
         max_length=512, null=True)  # changable via emp
     date_time = models.DateTimeField("Request Date")  # changable via emp
     delivery = models.BooleanField(default=False)  # changable via emp
-    trailer_number = models.IntegerField(default=0)  # employee use only
+    trailer_number = models.CharField(
+        max_length=32, null=True)  # employee use only
     driver_phone_number = models.CharField(
         max_length=12, null=True)  # emp use only
     dock_number = models.IntegerField(default=0)  # emp use only

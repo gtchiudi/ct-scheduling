@@ -9,7 +9,7 @@ class RequestSerializer(serializers.ModelSerializer):
                   'email', 'po_number', 'load_type', 'container_number',
                   'note_section', 'date_time', 'delivery', 'trailer_number',
                   'driver_phone_number', 'dock_number', 'check_in_time', 'docked_time',
-                  'complete_time', 'active')
+                  'completed_time', 'active')
 
 
 class EmployeeSerializer(serializers.ModelSerializer):
