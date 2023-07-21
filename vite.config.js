@@ -7,5 +7,12 @@ export default defineConfig({
   optimizeDeps: {
     exclude: ['react', 'react-dom'],
   },
+  build: {
+    manifest: true,
+    rollupOptions: {
+      input: './src/main.jsx',
+    },
+  },
+  
 })
 

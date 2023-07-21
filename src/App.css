@@ -1,0 +1,6 @@
+.candorLogo {
+  height: 50px;
+  width: calc(50 / 165 * 640px);
+  background-size: contain;
+  background-repeat: no-repeat;
+}
