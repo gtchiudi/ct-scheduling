@@ -6,7 +6,7 @@ class RequestSerializer(serializers.ModelSerializer):
     class Meta:
         model = Request
         fields = ('id', 'approved', 'company_name', 'phone_number',
-                  'email', 'po_number', 'load_type', 'container_number',
+                  'email', 'warehouse', 'po_number', 'load_type', 'container_number',
                   'note_section', 'date_time', 'delivery', 'trailer_number',
                   'driver_phone_number', 'dock_number', 'check_in_time', 'docked_time',
                   'completed_time', 'active')
@@ -15,7 +15,7 @@ class RequestSerializer(serializers.ModelSerializer):
 class EmployeeSerializer(serializers.ModelSerializer):
     class Meta:
         model = Employee
-        fields = ('id', 'email', 'phone_number', 'password', 'active')
+        fields = ('id', 'name', 'email', 'phone_number', 'password', 'active')
 
 
 class RoleSerializer(serializers.ModelSerializer):
@@ -39,4 +39,4 @@ class ActionsLogSerializer(serializers.ModelSerializer):
 class ScheduleSerializer(serializers.ModelSerializer):
     class Meta:
         model = Schedule
-        fields = ('approver', 'request', 'warehouse', 'active')
+        fields = ('approver', 'request', 'active')

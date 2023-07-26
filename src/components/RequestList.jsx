@@ -11,7 +11,7 @@ import {
 } from "@mui/material";
 
 function RequestList() {
-  const result = getRequests();
+  const result = getPendingRequests();
 
   if (result.isLoading) return <div>Loading...</div>;
   if (result.isError) return <div>Error: {result.error.message}</div>;
