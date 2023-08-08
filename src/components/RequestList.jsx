@@ -1,5 +1,6 @@
 import React from "react";
-import { getRequests } from "../actions";
+import { getRequestsByDate } from "../actions";
+import dayjs from "dayjs";
 import {
   Table,
   TableBody,
@@ -11,7 +12,7 @@ import {
 } from "@mui/material";
 
 function RequestList() {
-  const result = getPendingRequests();
+  const result = getRequestsByDate(dayjs("2023-07-01"), dayjs("2023-08-09"));
 
   if (result.isLoading) return <div>Loading...</div>;
   if (result.isError) return <div>Error: {result.error.message}</div>;

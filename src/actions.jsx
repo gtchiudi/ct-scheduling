@@ -9,10 +9,13 @@ export function getRequests() {
 }
 
 export function getPendingRequests() {
+  const filterParams = {
+    approved: "false",
+  };
   return useQuery({
     queryKey: ["requests", "pending"],
     queryFn: async () =>
-      fetch("/api/request?approved=false").then((res) => res.json()),
+      fetch("/api/request/?approved=False").then((res) => res.json()),
   });
 }
 
@@ -20,16 +23,18 @@ export function getApprovedRequests() {
   return useQuery({
     queryKey: ["requests", "approved"],
     queryFn: async () =>
-      fetch("/api/request?approved=true").then((res) => res.json()),
+      fetch("/api/request/?approved=True").then((res) => res.json()),
   });
 }
 
 export function getRequestsByDate(startDate, endDate) {
+  const formattedStartDate = startDate.format("YYYY-MM-DD HH:mm:ss.SSSSSS[Z]");
+  const formattedEndDate = endDate.format("YYYY-MM-DD HH:mm:ss.SSSSSS[Z]");
   return useQuery({
     queryKey: ["requests", "date", startDate, endDate],
     queryFn: async () =>
       fetch(
-        "/api/request?approved=true&date_time=" + startDate + "," + endDate
+        `/api/request/?approved=True&start_date=${formattedStartDate}&end_date=${formattedEndDate}`
       ).then((res) => res.json()),
   });
 }
