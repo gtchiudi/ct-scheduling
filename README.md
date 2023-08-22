@@ -1,4 +1,4 @@
-Candor Scheduling
+CT Scheduling
 
 Requirements
 For development, you will need node.js for the frontend and python for the backend.
