@@ -1,72 +1,35 @@
 import React from "react";
-import { getRequestsByDate } from "../actions";
+import DateSelector from "./DateSelector";
+import ResultDisplay from "./ResultDisplay";
+import Button from "@mui/material/Button";
 import dayjs from "dayjs";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Paper,
-} from "@mui/material";
+//import { useHistory } from "react-router-dom";
 
-function RequestList() {
-  const result = getRequestsByDate(dayjs("2023-07-01"), dayjs("2023-08-09"));
+/*const handleSubmit = () => {
+  history.push(`/result?start=${startDate.format()}&end=${endDate.format()}`);
+};
+const history = useHistory();
+*/
+const RequestList = () => {
+  const [startDate, setStartDate] = React.useState(dayjs());
+  const [endDate, setEndDate] = React.useState(dayjs());
+  const [submitted, setSubmitted] = React.useState(false);
 
-  if (result.isLoading) return <div>Loading...</div>;
-  if (result.isError) return <div>Error: {result.error.message}</div>;
+  const handleDateChange = (start, end) => {
+    setStartDate(start);
+    setEndDate(end);
+  };
 
   return (
-    <TableContainer component={Paper}>
-      <Table>
-        <TableHead>
-          <TableRow>
-            <TableCell>Approved</TableCell>
-            <TableCell>Company Name</TableCell>
-            <TableCell>Phone Number</TableCell>
-            <TableCell>Email</TableCell>
-            <TableCell>PO Number</TableCell>
-            <TableCell>Load Type</TableCell>
-            <TableCell>Container Number</TableCell>
-            <TableCell>Note Section</TableCell>
-            <TableCell>Date Time</TableCell>
-            <TableCell>Delivery</TableCell>
-            <TableCell>Trailer Number</TableCell>
-            <TableCell>Driver Phone Number</TableCell>
-            <TableCell>Dock Number</TableCell>
-            <TableCell>Check-in Time</TableCell>
-            <TableCell>Docked Time</TableCell>
-            <TableCell>Completed Time</TableCell>
-            <TableCell>Active</TableCell>
-          </TableRow>
-        </TableHead>
-        <TableBody>
-          {result.data.map((request) => (
-            <TableRow key={request.id}>
-              <TableCell>{request.approved ? "Yes" : "No"}</TableCell>
-              <TableCell>{request.company_name}</TableCell>
-              <TableCell>{request.phone_number}</TableCell>
-              <TableCell>{request.email}</TableCell>
-              <TableCell>{request.po_number}</TableCell>
-              <TableCell>{request.load_type}</TableCell>
-              <TableCell>{request.container_number}</TableCell>
-              <TableCell>{request.note_section}</TableCell>
-              <TableCell>{request.date_time}</TableCell>
-              <TableCell>{request.delivery ? "Yes" : "No"}</TableCell>
-              <TableCell>{request.trailer_number}</TableCell>
-              <TableCell>{request.driver_phone_number}</TableCell>
-              <TableCell>{request.dock_number}</TableCell>
-              <TableCell>{request.check_in_time}</TableCell>
-              <TableCell>{request.docked_time}</TableCell>
-              <TableCell>{request.completed_time}</TableCell>
-              <TableCell>{request.active ? "Yes" : "No"}</TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    </TableContainer>
+    <div>
+      <br />
+      <DateSelector onDateChange={handleDateChange} />
+      <Button variant="contained" color="primary" onClick={setSubmitted}>
+        Submit
+      </Button>
+      {submitted && <ResultDisplay startDate={startDate} endDate={endDate} />}
+    </div>
   );
-}
+};
 
 export default RequestList;

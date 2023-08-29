@@ -12,6 +12,7 @@ class BaseModel(models.Model):
 
     class Meta:
         abstract = True
+# The above base model allows us to soft delete objects by setting active to false
 
 
 class Employee(BaseModel):

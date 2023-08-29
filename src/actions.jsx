@@ -1,5 +1,6 @@
 import React from "react";
 import { useQuery } from "@tanstack/react-query";
+import dayjs from "dayjs";
 
 export function getRequests() {
   return useQuery({
@@ -28,6 +29,10 @@ export function getApprovedRequests() {
 }
 
 export function getRequestsByDate(startDate, endDate) {
+  if (!dayjs.isDayjs(startDate) || !dayjs.isDayjs(endDate)) {
+    throw new Error("Both startDate and endDate must be Day.js date objects.");
+  }
+
   const formattedStartDate = startDate.format("YYYY-MM-DD HH:mm:ss.SSSSSS[Z]");
   const formattedEndDate = endDate.format("YYYY-MM-DD HH:mm:ss.SSSSSS[Z]");
   return useQuery({
