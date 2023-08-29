@@ -30,7 +30,7 @@ Node installation on Windows
 Go to the official Node.js website, download the installer, and run it. Make sure you have git available in your PATH, npm may need it.
 
 Install
-$ lk
+$ git clone https://github.com/gtchiudi/ct-scheduling
 $ cd candor-scheduling
 $ npm install
 
