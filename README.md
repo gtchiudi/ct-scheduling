@@ -62,10 +62,14 @@ $ sudo apt-get install python 3.11
 Windows
 Download the installer from the official Python website and get the lastest installer for Python 3.x for Windows. Run the installer and verify the version.
 
-The server for this application requires Django. Consider installing in a python virtual environment.
+The server for this application requires Django.
+Consider installing in a python virtual environment.
 
-Once a venv is created and activated, run
+Once a virtual environment is created and activated, run
 $ python3 -m pip install Django
+
+To install python packages, run:
+$ pip install -r /ct-scheduling/server/requirements.txt
 
 To activate the server, run
 $ cd server
