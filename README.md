@@ -31,7 +31,7 @@ Go to the official Node.js website, download the installer, and run it. Make sur
 
 Install
 $ git clone https://github.com/gtchiudi/ct-scheduling
-$ cd candor-scheduling
+$ cd ct-scheduling
 $ npm install
 
 Start:
