@@ -10,19 +10,21 @@ const DateSelector = ({ onDateChange }) => {
 
   useEffect(() => {
     // Call onDateChange with initial today's date values
-    onDateChange(today, today);
-  }, [onDateChange, today]);
+    onDateChange(selectedStartDate, selectedEndDate);
+  }, [selectedEndDate, selectedStartDate]);
 
   const handleStartDateChange = (date) => {
     const dayjsDate = dayjs(date);
     setSelectedStartDate(dayjsDate);
-    onDateChange(dayjsDate, selectedEndDate);
+    onDateChange(selectedStartDate, selectedEndDate);
+    console.log("Selected Start Date:", selectedStartDate);
   };
 
   const handleEndDateChange = (date) => {
     const dayjsDate = dayjs(date);
     setSelectedEndDate(dayjsDate);
-    onDateChange(selectedStartDate, dayjsDate);
+    onDateChange(selectedStartDate, selectedEndDate);
+    console.log("Selected End Date:", selectedEndDate);
   };
 
   return (
@@ -33,6 +35,7 @@ const DateSelector = ({ onDateChange }) => {
         onChange={(newValue) => handleStartDateChange(newValue)}
         //defaultDate={selectedStartDate} // Set today's date as the default for the start date picker
       />
+
       <DatePicker
         label="End Date"
         value={selectedEndDate}
