@@ -31,13 +31,6 @@ function ResultDisplay({ startDate, endDate }) {
             <TableCell>Note Section</TableCell>
             <TableCell>Date Time</TableCell>
             <TableCell>Delivery</TableCell>
-            <TableCell>Trailer Number</TableCell>
-            <TableCell>Driver Phone Number</TableCell>
-            <TableCell>Dock Number</TableCell>
-            <TableCell>Check-in Time</TableCell>
-            <TableCell>Docked Time</TableCell>
-            <TableCell>Completed Time</TableCell>
-            <TableCell>Active</TableCell>
           </TableRow>
         </TableHead>
         <TableBody>
@@ -53,13 +46,6 @@ function ResultDisplay({ startDate, endDate }) {
               <TableCell>{request.note_section}</TableCell>
               <TableCell>{request.date_time}</TableCell>
               <TableCell>{request.delivery ? "Yes" : "No"}</TableCell>
-              <TableCell>{request.trailer_number}</TableCell>
-              <TableCell>{request.driver_phone_number}</TableCell>
-              <TableCell>{request.dock_number}</TableCell>
-              <TableCell>{request.check_in_time}</TableCell>
-              <TableCell>{request.docked_time}</TableCell>
-              <TableCell>{request.completed_time}</TableCell>
-              <TableCell>{request.active ? "Yes" : "No"}</TableCell>
             </TableRow>
           ))}
         </TableBody>
