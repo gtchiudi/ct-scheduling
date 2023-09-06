@@ -1,4 +1,5 @@
 import React from "react";
+import { Link } from "react-router-dom";
 import {
   AppBar,
   Box,
@@ -14,7 +15,14 @@ import {
 } from "@mui/material";
 import MenuIcon from "@mui/icons-material/Menu";
 
-const pages = [];
+// Add Links to header here using same format as Request List
+// This is the only part that needs modified to change the header links
+// text: <== This changes what actual text displays
+// href: <== This changes what the header button links to
+// All of this is the same for the 'Settings' menu
+const pages = [
+  {text: "Request List", href: "/RequestList"}  
+];
 const settings = ["Account", "Settings", "Logout"];
 
 function HeaderBar() {
@@ -28,6 +36,7 @@ function HeaderBar() {
     setAnchorElUser(event.currentTarget);
   };
   const handleCloseNavMenu = () => {
+
     setAnchorElNav(null);
   };
   const handleCloseUserMenu = () => {
@@ -73,9 +82,11 @@ function HeaderBar() {
                 display: { xs: "block", md: "none" },
               }}
             >
-              {pages.map((page) => (
+              {pages.map((page) => (                
                 <MenuItem key={page} onClick={handleCloseNavMenu}>
-                  <Typography textAlign="center">{page}</Typography>
+                  <Typography textAlign="center">
+                      {page.text}
+                  </Typography>
                 </MenuItem>
               ))}
             </Menu>
@@ -86,9 +97,10 @@ function HeaderBar() {
               <Button
                 key={page}
                 onClick={handleCloseNavMenu}
+                href = {page.href}
                 sx={{ my: 2, color: "white", display: "block" }}
               >
-                {page}
+                {page.text}
               </Button>
             ))}
           </Box>
