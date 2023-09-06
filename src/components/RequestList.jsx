@@ -18,6 +18,7 @@ const RequestList = () => {
   const handleDateChange = (start, end) => {
     setStartDate(start);
     setEndDate(end);
+    setSubmitted(false);
   };
 
   return (

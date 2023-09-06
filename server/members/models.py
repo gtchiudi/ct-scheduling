@@ -48,31 +48,41 @@ class ActionsLog(BaseModel):
 
 
 class Request(BaseModel):
+    LOAD_CHOICES = (
+        ('full', 'Full'),
+        ('ltl', 'LTL'),
+        ('container', 'Container'),
+    )
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     approved = models.BooleanField(default=False)
     company_name = models.CharField(
         max_length=255)  # changeable only via admin
     phone_number = models.CharField(
-        max_length=12, null=True)  # changeable only via admin
+        max_length=12, null=True, blank=True)  # changeable only via admin
     email = models.CharField(max_length=255)  # changeable only via admin
     warehouse = models.ForeignKey(
         Warehouse, default="56db5f46-f68a-475a-a76e-4c5f6da3e80d", on_delete=models.CASCADE)  # changeable via emp
     po_number = models.IntegerField(default=0)  # changable via emp
-    load_type = models.CharField(max_length=32)  # changable via emp
-    container_number = models.IntegerField(default=0)  # changeable via emp
+    load_type = models.CharField(
+        max_length=32, choices=LOAD_CHOICES, default='Full')  # changable via emp
+    container_number = models.IntegerField(
+        null=True, blank=True)  # changeable via emp
     note_section = models.CharField(
-        max_length=512, null=True)  # changable via emp
+        max_length=512, null=True, blank=True)  # changable via emp
     date_time = models.DateTimeField("Request Date")  # changable via emp
     delivery = models.BooleanField(default=False)  # changable via emp
     trailer_number = models.CharField(
-        max_length=32, null=True)  # employee use only
+        max_length=32, null=True, blank=True)  # employee use only
     driver_phone_number = models.CharField(
-        max_length=12, null=True)  # emp use only
-    dock_number = models.IntegerField(default=0)  # emp use only
-    check_in_time = models.TimeField("Checked In", null=True)  # emp use only
-    docked_time = models.TimeField("Docked Time", null=True)  # emp use only
+        max_length=12, null=True, blank=True)  # emp use only
+    dock_number = models.IntegerField(null=True, blank=True)  # emp use only
+    check_in_time = models.TimeField(
+        "Checked In", null=True, blank=True)  # emp use only
+    docked_time = models.TimeField(
+        "Docked Time", null=True, blank=True)  # emp use only
     completed_time = models.TimeField(
-        "Time Completed", null=True)  # emp use only
+        "Time Completed", null=True, blank=True)  # emp use only
     active = models.BooleanField(default=True)
 
 

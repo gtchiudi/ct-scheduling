@@ -8,6 +8,7 @@ import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import { LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import RequestList from "./components/RequestList";
+import HeaderBar from "./components/HeaderBar.jsx";
 
 const queryClient = new QueryClient();
 
@@ -16,15 +17,9 @@ const router = createBrowserRouter([
     path: "/",
     element: <Root />,
     errorElement: <ErrorPage />,
-    children: [
-      {
-        path: "RequestList",
-        element: <RequestList />,
-      },
-    ],
   },
   {
-    path: "requestList",
+    path: "RequestList",
     element: <RequestList />,
   },
 ]);
@@ -33,6 +28,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
     <QueryClientProvider client={queryClient}>
       <LocalizationProvider dateAdapter={AdapterDayjs}>
+        <HeaderBar />
         <RouterProvider router={router} />
       </LocalizationProvider>
     </QueryClientProvider>
