@@ -49,9 +49,9 @@ class ActionsLog(BaseModel):
 
 class Request(BaseModel):
     LOAD_CHOICES = (
-        ('full', 'Full'),
-        ('ltl', 'LTL'),
-        ('container', 'Container'),
+        ('Full', 'Full'),
+        ('LTL', 'LTL'),
+        ('Container', 'Container'),
     )
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)

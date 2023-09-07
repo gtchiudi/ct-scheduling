@@ -7,7 +7,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import { LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
-import RequestList from "./components/RequestList";
+import RequestList from "./routes/RequestList.jsx";
 import HeaderBar from "./components/HeaderBar.jsx";
 
 const queryClient = new QueryClient();
