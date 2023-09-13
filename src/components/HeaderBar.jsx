@@ -21,7 +21,7 @@ import MenuIcon from "@mui/icons-material/Menu";
 // href: <== This changes what the header button links to
 // All of this is the same for the 'Settings' menu
 const pages = [{ text: "Request List", href: "/RequestList" }];
-const settings = ["Account", "Settings", "Logout"];
+const settings = [{ text: "Login", href: "/Login" }];
 
 function HeaderBar() {
   const [anchorElNav, setAnchorElNav] = React.useState(null);
@@ -124,7 +124,15 @@ function HeaderBar() {
             >
               {settings.map((setting) => (
                 <MenuItem key={setting} onClick={handleCloseUserMenu}>
-                  <Typography textAlign="center">{setting}</Typography>
+                  <Typography textAlign="center">
+                    <Button
+                      key={setting}
+                      onClick={handleCloseNavMenu}
+                      href={setting.href}
+                    >
+                      {setting.text}
+                    </Button>
+                  </Typography>
                 </MenuItem>
               ))}
             </Menu>
