@@ -9,7 +9,7 @@ import { LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import RequestList from "./routes/RequestList.jsx";
 import HeaderBar from "./components/HeaderBar.jsx";
-import Login from "./components/Login.jsx";
+import Login from "./routes/Login.jsx";
 
 const queryClient = new QueryClient();
 
