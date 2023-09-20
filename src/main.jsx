@@ -9,8 +9,9 @@ import { LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import RequestList from "./routes/RequestList.jsx";
 import HeaderBar from "./components/HeaderBar.jsx";
-import Login from "./routes/Login.jsx";
+import Login from "./components/Login.jsx";
 import Home from "./routes/Home.jsx";
+import RequestForm from "./routes/RequestForm.jsx";
 
 const queryClient = new QueryClient();
 
@@ -23,6 +24,10 @@ const router = createBrowserRouter([
   {
     path: "RequestList",
     element: <RequestList />,
+  },
+  {
+    path: "RequestForm",
+    element: <RequestForm />,
   },
   {
     path: "login",
