@@ -27,6 +27,8 @@ router.register(r'role', views.RoleView, 'role')
 router.register(r'warehouse', views.WarehouseView, 'warehouse')
 router.register(r'actionslog', views.ActionsLogView, 'actionslog')
 router.register(r'schedule', views.ScheduleView, 'schedule')
+router.register(r'user', views.UserView, 'user')
+router.register(r'group', views.GroupView, 'group')
 
 urlpatterns = [
     path('admin/', admin.site.urls),

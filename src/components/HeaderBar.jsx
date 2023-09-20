@@ -14,6 +14,8 @@ import {
   MenuItem,
 } from "@mui/material";
 import MenuIcon from "@mui/icons-material/Menu";
+import { useAtom } from "jotai";
+import { access_token as accessTokenAtom } from "../components/atoms.jsx";
 
 // Add Links to header here using same format as Request List
 // This is the only part that needs modified to change the header links
@@ -27,6 +29,15 @@ function HeaderBar() {
   const [anchorElNav, setAnchorElNav] = React.useState(null);
   const [anchorElUser, setAnchorElUser] = React.useState(null);
   const [isAuth, setIsAuth] = React.useState(false);
+  const [access_token] = useAtom(accessTokenAtom);
+
+  React.useEffect(() => {
+    if (access_token === null) {
+      setIsAuth(false);
+    } else {
+      setIsAuth(true);
+    }
+  }, [isAuth, access_token]);
 
   const handleOpenNavMenu = (event) => {
     setAnchorElNav(event.currentTarget);
@@ -126,13 +137,19 @@ function HeaderBar() {
               {settings.map((setting) => (
                 <MenuItem key={setting} onClick={handleCloseUserMenu}>
                   <Typography textAlign="center">
-                    <Button
-                      key={setting}
-                      onClick={handleCloseNavMenu}
-                      href={setting.href}
-                    >
-                      {setting.text}
-                    </Button>
+                    {isAuth ? (
+                      <Button onClick={handleCloseNavMenu} href="/logout">
+                        Logout
+                      </Button>
+                    ) : (
+                      <Button
+                        key={setting}
+                        onClick={handleCloseNavMenu}
+                        href={setting.href}
+                      >
+                        {setting.text}
+                      </Button>
+                    )}
                   </Typography>
                 </MenuItem>
               ))}
