@@ -31,8 +31,8 @@ const RequestForm = () => {
     ]
 
     return (   
+        <Typography textAlign={"center"}>
         <FormControl>            
-            <FormLabel >Request A Delivery</FormLabel>
             <Box
                 component="form"
                 justifyContent="center"
@@ -40,24 +40,14 @@ const RequestForm = () => {
                 display="flex"
                 margin="normal"
                 sx={{
-                    '& .MuiTextField-root': { m: 1, width: '25ch' }
+                    '& .MuiTextField-root': { m: 1, width: '40ch' },
+                    "& > :not(style)": { m: 1, width: "40ch" }
                 }}
                 noValidate
                 autoComplete="off"
-            >
-                <div>         
-                    <label for="Cname">Company Name:</label>
-                    <br></br>
-                    <label>Phone Number:</label>
-                    <br></br>
-                    <label>E-mail Address:</label>
-                    <br></br>
-                    <label>PO Number:</label>
-                    <br></br>
-                    <label>Warehouse:</label>
-                    <br></br>
-                </div>
-                <div>    
+            >   
+                <div>
+                <FormLabel ><h1>Request A Delivery</h1></FormLabel>
                     <TextField
                         required
                         id="Cname"
@@ -84,6 +74,7 @@ const RequestForm = () => {
                     <br></br>
 
                     <TextField
+                        required
                         id="PONumber"
                         label="PO Number"
                         variant="filled"
@@ -92,6 +83,7 @@ const RequestForm = () => {
 
                     <TextField
                         select
+                        required
                         id="Warehouse"
                         label="Warehouse"
                         variant="filled"
@@ -103,12 +95,26 @@ const RequestForm = () => {
                         ))}
                     </TextField>
                     <br></br>
-                
-                    <Button>Submit</Button>                
-                </div> 
+
+                    <TextField
+                        select
+                        required
+                        id="Load"
+                        label="Load Type"
+                        variant="filled"
+                    >
+                        {loads.map((option) => (
+                        <MenuItem key={option.value} value={option.value}>
+                            {option.value}
+                        </MenuItem>
+                        ))}
+                    </TextField>               
+                    <Button>Submit</Button>
+                </div>     
 
             </ Box>
         </FormControl>
+        </Typography>
    );
 };
 
