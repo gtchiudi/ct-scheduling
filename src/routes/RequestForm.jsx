@@ -2,40 +2,113 @@ import React from "react";
 import dayjs from "dayjs";
 import TextField from '@mui/material/TextField';
 import Button from '@mui/material/Button';
-import { Box, FormControl, FormLabel, Typography } from '@mui/material';
+import { Box, FormControl, FormLabel, MenuItem, Typography } from '@mui/material';
 
 const RequestForm = () => {
 
-    return (
-        <Typography textAlign="center">
+    const warehouses = [
+        {
+            value: 'Aurora',
+        },
+        {
+            value: 'Euclid',
+        },
+        {
+            value: 'Cochran',
+        },
+    ]
+
+    const loads = [
+        {
+            value: 'Full',
+        },
+        {
+            value: 'LTL',
+        },
+        {
+            value: 'Container',
+        },
+    ]
+
+    return (   
+        <FormControl>            
+            <FormLabel >Request A Delivery</FormLabel>
             <Box
                 component="form"
+                justifyContent="center"
+                alignItems="center"
+                display="flex"
+                margin="normal"
                 sx={{
-                "& > :not(style)": { m: 1, width: "25ch" },
+                    '& .MuiTextField-root': { m: 1, width: '25ch' }
                 }}
                 noValidate
                 autoComplete="off"
             >
-                <div>
-                    <FormControl>
-                        <FormLabel>Request A Delivery</FormLabel>
-                        <TextField
-                            required
-                            id="outlined-required"
-                            label="Company Name"
-                        ></TextField>
-                        <br></br>
-                        <TextField
-                            required
-                            id="outlined-number"
-                            label="Phone Number"
-                        ></TextField>
-
-                        <Button>Submit</Button>
-                    </FormControl>
+                <div>         
+                    <label for="Cname">Company Name:</label>
+                    <br></br>
+                    <label>Phone Number:</label>
+                    <br></br>
+                    <label>E-mail Address:</label>
+                    <br></br>
+                    <label>PO Number:</label>
+                    <br></br>
+                    <label>Warehouse:</label>
+                    <br></br>
                 </div>
-            </Box>
-        </Typography>
+                <div>    
+                    <TextField
+                        required
+                        id="Cname"
+                        label="Company Name"
+                        variant="filled"
+                        textAlign="right"
+                    ></TextField>
+                    <br></br>
+                    
+                    <TextField
+                        id="PNumber"
+                        label="Phone Number"
+                        variant="standard"
+                        textAlign="right"
+                    ></TextField>
+                    <br></br>
+
+                    <TextField
+                        required
+                        id="EMail"
+                        label="E-mail"
+                        variant="filled"
+                    ></TextField>
+                    <br></br>
+
+                    <TextField
+                        id="PONumber"
+                        label="PO Number"
+                        variant="filled"
+                    ></TextField>
+                    <br></br>
+
+                    <TextField
+                        select
+                        id="Warehouse"
+                        label="Warehouse"
+                        variant="filled"
+                    >
+                        {warehouses.map((option) => (
+                        <MenuItem key={option.value} value={option.value}>
+                            {option.value}
+                        </MenuItem>
+                        ))}
+                    </TextField>
+                    <br></br>
+                
+                    <Button>Submit</Button>                
+                </div> 
+
+            </ Box>
+        </FormControl>
    );
 };
 
