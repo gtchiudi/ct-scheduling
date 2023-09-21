@@ -4,7 +4,7 @@ import ResultDisplay from "../components/ResultDisplay";
 import Button from "@mui/material/Button";
 import dayjs from "dayjs";
 import { useAtom } from "jotai";
-import { access_token as accessTokenAtom } from "../components/atoms.jsx";
+import { accessTokenAtom, refreshTokenAtom } from "../components/atoms.jsx";
 import { useNavigate } from "react-router-dom";
 
 const RequestList = () => {
@@ -12,16 +12,15 @@ const RequestList = () => {
   const [startDate, setStartDate] = React.useState(dayjs());
   const [endDate, setEndDate] = React.useState(dayjs());
   const [submitted, setSubmitted] = React.useState(false);
-  const [access_token] = useAtom(accessTokenAtom);
+  const [accessToken] = useAtom(accessTokenAtom);
 
   const handleDateChange = (start, end) => {
     setStartDate(start);
     setEndDate(end);
     setSubmitted(false);
   };
-  console.log(access_token);
   React.useEffect(() => {
-    if (access_token === null) {
+    if (accessToken === null) {
       navigate("/login");
     }
   });

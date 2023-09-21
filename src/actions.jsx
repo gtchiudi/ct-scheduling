@@ -12,7 +12,7 @@ export function getRequests() {
   return useQuery({
     queryKey: ["requests"],
     queryFn: async () => {
-      const response = axios.get("/api/request");
+      const response = await axios.get("/api/request");
       return response;
     },
   });
@@ -22,9 +22,9 @@ export function getPendingRequests() {
   return useQuery({
     queryKey: ["requests", "pending"],
     queryFn: async () => {
-      const response = axios.get("/api/request", {
+      const response = await axios.get("/api/request", {
         params: {
-          approved: "false",
+          approved: "False",
         },
       });
       return response;
@@ -36,7 +36,7 @@ export function getApprovedRequests() {
   return useQuery({
     queryKey: ["requests", "approved"],
     queryFn: async () => {
-      const response = axios.get("/api/request", {
+      const response = await axios.get("/api/request", {
         params: {
           approved: "true",
         },
@@ -57,9 +57,9 @@ export function getRequestsByDate(startDate, endDate) {
   return useQuery({
     queryKey: ["requests", "date", startDate, endDate],
     queryFn: async () => {
-      const response = axios.get("/api/request", {
+      const response = await axios.get("/api/request", {
         params: {
-          approved: "true",
+          approved: "True",
           start_date: formattedStartDate,
           end_date: formattedEndDate,
         },
@@ -73,15 +73,13 @@ export function getUserData() {
   return useQuery({
     queryKey: ["user"],
     queryFn: async () => {
-      const response = axios.get("/api/user");
+      const response = await axios.get("/api/user");
       return response;
     },
   });
 }
 
-export function submitUserData(username, password) {
-  const queryClient = useQueryClient();
-
+export function submitUserData(username, password, queryClient) {
   return useMutation({
     mutationFn: async () => {
       const user = {
@@ -91,11 +89,11 @@ export function submitUserData(username, password) {
 
       const response = await axios.post("/token/", user, {
         headers: {
-          "content-Type": "application/json",
+          "Content-Type": "application/json",
         },
         withCredentials: true,
       });
-      console.log(response);
+      console.log(response.data.access);
       if (!response.data.access) {
         throw new Error("Network response was not ok");
       }

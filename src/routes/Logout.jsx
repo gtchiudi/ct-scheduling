@@ -1,38 +1,43 @@
 import React from "react";
 import axios from "axios";
 import {
-  access_token as accessTokenAtom,
-  refresh_token as refreshTokenAtom,
+  accessTokenAtom,
+  refreshTokenAtom,
+  removeTokensAtom,
 } from "../components/atoms.jsx";
 import { useAtom } from "jotai";
 import { useNavigate } from "react-router-dom";
 
 export default function Logout() {
-  const [access_token, setAccessToken] = useAtom(accessTokenAtom);
-  const [refresh_token, setRefreshToken] = useAtom(refreshTokenAtom);
-
+  const [, removeTokens] = useAtom(removeTokensAtom);
+  const [accessToken] = useAtom(accessTokenAtom);
+  const [refreshToken] = useAtom(refreshTokenAtom);
+  console.log("refreshToken", refreshToken);
   const navigate = useNavigate();
-  useEffect(() => {
+
+  console.log("Logout accessToken", accessToken);
+  console.log("Logout refreshToken", refreshToken);
+  React.useEffect(() => {
     (async () => {
       try {
         const { data } = await axios.post(
           "/logout/",
           {
-            refresh_token: refresh_token,
+            refresh_token: refreshToken,
           },
           {
             headers: {
-              "content-Type": "application/json",
+              Authorization: `Bearer ${accessToken}`,
+              "Content-Type": "application/json",
             },
             withCredentials: true,
           }
         );
-        setAccessToken(null);
-        setRefreshToken(null);
         axios.defaults.headers.common["Authorization"] = null;
+        removeTokens();
         navigate("/");
       } catch (e) {
-        console.log("logout not workong", e);
+        console.log("logout not working", e);
       }
     })();
   }, []);

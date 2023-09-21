@@ -1,5 +1,5 @@
 import React from "react";
-import { Link } from "react-router-dom";
+import { Link as RouterLink } from "react-router-dom";
 import {
   AppBar,
   Box,
@@ -15,7 +15,7 @@ import {
 } from "@mui/material";
 import MenuIcon from "@mui/icons-material/Menu";
 import { useAtom } from "jotai";
-import { access_token as accessTokenAtom } from "../components/atoms.jsx";
+import { isAuthAtom } from "../components/atoms.jsx";
 
 // Add Links to header here using same format as Request List
 // This is the only part that needs modified to change the header links
@@ -28,16 +28,7 @@ const settings = [{ text: "Login", href: "/Login" }];
 function HeaderBar() {
   const [anchorElNav, setAnchorElNav] = React.useState(null);
   const [anchorElUser, setAnchorElUser] = React.useState(null);
-  const [isAuth, setIsAuth] = React.useState(false);
-  const [access_token] = useAtom(accessTokenAtom);
-
-  React.useEffect(() => {
-    if (access_token === null) {
-      setIsAuth(false);
-    } else {
-      setIsAuth(true);
-    }
-  }, [isAuth, access_token]);
+  const [isAuth] = useAtom(isAuthAtom);
 
   const handleOpenNavMenu = (event) => {
     setAnchorElNav(event.currentTarget);
@@ -104,7 +95,8 @@ function HeaderBar() {
               <Button
                 key={page}
                 onClick={handleCloseNavMenu}
-                href={page.href}
+                component={RouterLink}
+                to={page.href}
                 sx={{ my: 2, color: "white", display: "block" }}
               >
                 {page.text}
@@ -138,14 +130,19 @@ function HeaderBar() {
                 <MenuItem key={setting} onClick={handleCloseUserMenu}>
                   <Typography textAlign="center">
                     {isAuth ? (
-                      <Button onClick={handleCloseNavMenu} href="/logout">
+                      <Button
+                        onClick={handleCloseNavMenu}
+                        component={RouterLink}
+                        to="/logout"
+                      >
                         Logout
                       </Button>
                     ) : (
                       <Button
                         key={setting}
                         onClick={handleCloseNavMenu}
-                        href={setting.href}
+                        component={RouterLink}
+                        to={setting.href}
                       >
                         {setting.text}
                       </Button>

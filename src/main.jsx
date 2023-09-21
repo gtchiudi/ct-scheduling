@@ -6,6 +6,7 @@ import "./index.css";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import { LocalizationProvider } from "@mui/x-date-pickers";
+import { Provider as JotaiProvider } from "jotai";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import RequestList from "./routes/RequestList.jsx";
 import HeaderBar from "./components/HeaderBar.jsx";
@@ -17,32 +18,56 @@ const queryClient = new QueryClient();
 const router = createBrowserRouter([
   {
     path: "/",
-    element: <Root />,
+    element: (
+      <div>
+        <HeaderBar />
+        <Root />
+      </div>
+    ),
     errorElement: <ErrorPage />,
   },
   {
     path: "RequestList",
-    element: <RequestList />,
-    errorElement: <ErrorPage />,
+    element: (
+      <div>
+        <HeaderBar />
+        <RequestList />
+      </div>
+    ),
   },
   {
     path: "login",
-    element: <Login />,
+    element: (
+      <div>
+        <HeaderBar />
+        <Login />
+      </div>
+    ),
     errorElement: <ErrorPage />,
   },
   {
     path: "logout",
-    element: <Logout />,
+    element: (
+      <div>
+        <HeaderBar />
+        <Logout />
+      </div>
+    ),
   },
 ]);
 
+const LinkBehavior = React.forwardRef((props, ref) => (
+  <RouterLink ref={ref} to="/" {...props} role={undefined} />
+));
+
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
-    <QueryClientProvider client={queryClient}>
-      <LocalizationProvider dateAdapter={AdapterDayjs}>
-        <HeaderBar />
-        <RouterProvider router={router} />
-      </LocalizationProvider>
-    </QueryClientProvider>
+    <JotaiProvider>
+      <QueryClientProvider client={queryClient}>
+        <LocalizationProvider dateAdapter={AdapterDayjs}>
+          <RouterProvider router={router} />
+        </LocalizationProvider>
+      </QueryClientProvider>
+    </JotaiProvider>
   </React.StrictMode>
 );

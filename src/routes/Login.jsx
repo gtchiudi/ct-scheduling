@@ -7,37 +7,40 @@ import Checkbox from "@mui/material/Checkbox";
 import Button from "@mui/material/Button";
 import { submitUserData } from "../actions.jsx";
 import { useAtom } from "jotai";
-import {
-  access_token as accessTokenAtom,
-  refresh_token as refreshTokenAtom,
-} from "../components/atoms.jsx";
+import { accessTokenAtom, refreshTokenAtom } from "../components/atoms.jsx";
 import { useNavigate } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
 
 export default function Login() {
+  const queryClient = useQueryClient();
   const navigate = useNavigate();
 
   const [username, setUsername] = React.useState("");
   const [password, setPassword] = React.useState("");
 
-  const [access_token, setAccessToken] = useAtom(accessTokenAtom);
-  const [refresh_token, setRefreshToken] = useAtom(refreshTokenAtom);
+  const [accessToken, setAccessToken] = useAtom(accessTokenAtom);
+  const [refreshToken, setRefreshToken] = useAtom(refreshTokenAtom);
 
-  const submitUserDataMutation = submitUserData(username, password);
+  const submitUserDataMutation = submitUserData(
+    username,
+    password,
+    queryClient
+  );
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     try {
-      const response = await submitUserDataMutation.mutateAsync({
+      const data = await submitUserDataMutation.mutateAsync({
         username,
         password,
+        queryClient,
       });
 
-      if (response) {
+      if (data) {
         console.log("Login Successful");
-        setAccessToken(response.access_token);
-        setRefreshToken(response.refresh_token);
-
+        setAccessToken(data.access);
+        setRefreshToken(data.refresh);
         navigate("/RequestList");
       } else {
         console.log("Login Failed");
@@ -50,6 +53,7 @@ export default function Login() {
   return (
     <Typography textAlign="center">
       <Box
+        id="Login"
         component="form"
         display="flex"
         justifyContent="center"
