@@ -12,6 +12,8 @@ import RequestList from "./routes/RequestList.jsx";
 import HeaderBar from "./components/HeaderBar.jsx";
 import Login from "./routes/Login.jsx";
 import Logout from "./routes/Logout.jsx";
+import Home from "./routes/Home.jsx";
+
 
 const queryClient = new QueryClient();
 
@@ -53,6 +55,10 @@ const router = createBrowserRouter([
         <Logout />
       </div>
     ),
+  },
+  {
+    path: "home",
+    element: <Home />,
   },
 ]);
 

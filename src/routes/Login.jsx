@@ -1,15 +1,11 @@
 import * as React from "react";
-import Box from "@mui/material/Box";
-import TextField from "@mui/material/TextField";
-import Typography from "@mui/material/Typography";
-import FormControlLabel from "@mui/material/FormControlLabel";
-import Checkbox from "@mui/material/Checkbox";
-import Button from "@mui/material/Button";
+import { TextField, Box, Typography, FormControlLabel, Checkbox, Button } from "@mui/material/";
 import { submitUserData } from "../actions.jsx";
 import { useAtom } from "jotai";
 import { accessTokenAtom, refreshTokenAtom } from "../components/atoms.jsx";
 import { useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
+
 
 export default function Login() {
   const queryClient = useQueryClient();
