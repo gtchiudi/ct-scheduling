@@ -32,12 +32,12 @@ const RequestForm = () => {
         },
     ]
 
-    const [company_name, setcompany_name] = useState("")
-    const [phone_number, setphone_number] = useState("")
-    const [email, setemail]               = useState("")
-    const [po_number, setpo_number]       = useState("")
-    const [warehouse, setwarehouse]       = useState("")
-    const [load_type, setload_type]       = useState("")
+    const [company_name, setcompany_name] = useState('')
+    const [phone_number, setphone_number] = useState('')
+    const [email, setemail]               = useState('')
+    const [po_number, setpo_number]       = useState('')
+    const [warehouse, setwarehouse]       = useState('')
+    const [load_type, setload_type]       = useState('')
 
     //const history = useHistory();
 
@@ -54,7 +54,7 @@ const RequestForm = () => {
 
         await axios({
             method: 'post',
-            url: 'gtchiudi.pythonanywhere.com', // Terribly unsure what URL to put here so I'm just hoping this one is right. Will need Gino to confirm
+            url: 'http://localhost:5173/api/', // Terribly unsure what URL to put here so I'm just hoping this one is right. Will need Gino to confirm
             data: formField
         }).then((response) => {
             console.log(response.data);
@@ -80,7 +80,7 @@ const RequestForm = () => {
                 autoComplete="off"
             >   
                 <div>
-                <FormLabel ><h1>Request A Delivery</h1></FormLabel>
+                <FormLabel for="company_name">Request A Delivery</FormLabel>
                     <TextField
                         required
                         id="company_name"
@@ -130,6 +130,8 @@ const RequestForm = () => {
                         id="warehouse"
                         label="Warehouse"
                         variant="filled"
+                        value={warehouse}
+                        onChange={e => setwarehouse(e.target.value)}
                     >
                         {warehouses.map((option) => (
                         <MenuItem key={option.value} value={option.value}>
@@ -145,6 +147,8 @@ const RequestForm = () => {
                         id="load_type"
                         label="Load Type"
                         variant="filled"
+                        value={load_type}
+                        onChange={e=> setload_type(e.target.value)}
                     >
                         {load_types.map((option) => (
                         <MenuItem key={option.value} value={option.value}>
