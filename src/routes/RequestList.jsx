@@ -3,23 +3,27 @@ import DateSelector from "../components/DateSelector";
 import ResultDisplay from "../components/ResultDisplay";
 import Button from "@mui/material/Button";
 import dayjs from "dayjs";
-//import { useHistory } from "react-router-dom";
+import { useAtom } from "jotai";
+import { accessTokenAtom, refreshTokenAtom } from "../components/atoms.jsx";
+import { useNavigate } from "react-router-dom";
 
-/*const handleSubmit = () => {
-  history.push(`/result?start=${startDate.format()}&end=${endDate.format()}`);
-};
-const history = useHistory();
-*/
 const RequestList = () => {
+  const navigate = useNavigate();
   const [startDate, setStartDate] = React.useState(dayjs());
   const [endDate, setEndDate] = React.useState(dayjs());
   const [submitted, setSubmitted] = React.useState(false);
+  const [accessToken] = useAtom(accessTokenAtom);
 
   const handleDateChange = (start, end) => {
     setStartDate(start);
     setEndDate(end);
     setSubmitted(false);
   };
+  React.useEffect(() => {
+    if (accessToken === null) {
+      navigate("/login");
+    }
+  });
 
   return (
     <div>
