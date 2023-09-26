@@ -5,6 +5,7 @@ import TextField from '@mui/material/TextField';
 import Button from '@mui/material/Button';
 import { Box, FormControl, FormLabel, MenuItem, Typography } from '@mui/material';
 import axios from "axios";
+import { SingleDateSelector } from "../components/DateSelector";
 
 const RequestForm = () => {
 
@@ -38,9 +39,17 @@ const RequestForm = () => {
     const [po_number, setpo_number]       = useState('')
     const [warehouse, setwarehouse]       = useState('')
     const [load_type, setload_type]       = useState('')
+    const [date_time, setdate_time]       = useState('')
 
+    const [submitted, setSubmitted] = useState(false);
+
+    const handleDateChange = (date) => {        
+        const formattedDate = date.format("YYYY-MM-DD HH:mm:ss.SSSSSS[Z]");
+
+        setdate_time(formattedDate);
+        setSubmitted(false);
+    };
     //const history = useHistory();
-
 
     const AddDeliveryRequest = async () => {
         let formField = new FormData()
@@ -51,10 +60,11 @@ const RequestForm = () => {
         formField.append('po_number', po_number)
         formField.append('warehouse', warehouse)
         formField.append('load_type', load_type)
+        formField.append('date_time', date_time)
 
         await axios({
             method: 'post',
-            url: 'http://localhost:5173/api/', // Terribly unsure what URL to put here so I'm just hoping this one is right. Will need Gino to confirm
+            url: 'http://localhost:5173/api/request/', // Terribly unsure what URL to put here so I'm just hoping this one is right. Will need Gino to confirm
             data: formField
         }).then((response) => {
             console.log(response.data);
@@ -155,7 +165,10 @@ const RequestForm = () => {
                             {option.value}
                         </MenuItem>
                         ))}
-                    </TextField>               
+                    </TextField>     
+
+                    <SingleDateSelector onDateChange={handleDateChange} />          
+
                     <Button onClick={AddDeliveryRequest}>Submit</Button>
                 </div>     
 
