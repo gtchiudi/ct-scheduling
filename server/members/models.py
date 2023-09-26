@@ -1,6 +1,7 @@
 # Each class here is a db table. How to make them link with keys?
 from django.db import models
 import uuid
+from django.contrib.auth.models import User, Group
 
 
 class BaseModel(models.Model):
@@ -15,22 +16,6 @@ class BaseModel(models.Model):
 # The above base model allows us to soft delete objects by setting active to false
 
 
-class Employee(BaseModel):
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    name = models.CharField(max_length=64)
-    email = models.CharField(max_length=255)
-    phone_number = models.CharField(max_length=12)
-    password = models.CharField(max_length=32)
-    active = models.BooleanField(default=True)
-
-
-class Role(BaseModel):
-    employee = models.ForeignKey(
-        Employee, on_delete=models.CASCADE)
-    role = models.CharField(max_length=32)
-    active = models.BooleanField(default=True)
-
-
 class Warehouse(BaseModel):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=64)
@@ -38,13 +23,11 @@ class Warehouse(BaseModel):
     phone_number = models.CharField(max_length=12)
     active = models.BooleanField(default=True)
 
-
-class ActionsLog(BaseModel):
-    employee = models.ForeignKey(
-        Employee, on_delete=models.SET_NULL, null=True)
-    action = models.CharField(max_length=256)
-    date_time = models.DateTimeField("Action Date/Time")
-    active = models.BooleanField(default=True)
+    def __str__(self):
+        if (self.active):
+            return self.name
+        else:
+            return "inactive"
 
 
 class Request(BaseModel):
@@ -60,9 +43,9 @@ class Request(BaseModel):
         max_length=255)  # changeable only via admin
     phone_number = models.CharField(
         max_length=12, null=True, blank=True)  # changeable only via admin
-    email = models.CharField(max_length=255)  # changeable only via admin
+    email = models.EmailField(max_length=254)  # changeable only via admin
     warehouse = models.ForeignKey(
-        Warehouse, default="56db5f46-f68a-475a-a76e-4c5f6da3e80d", on_delete=models.CASCADE)  # changeable via emp
+        Warehouse, on_delete=models.CASCADE)  # changeable via emp
     po_number = models.IntegerField(default=0)  # changable via emp
     load_type = models.CharField(
         max_length=32, choices=LOAD_CHOICES, default='Full')  # changable via emp
@@ -88,7 +71,7 @@ class Request(BaseModel):
 
 class Schedule(BaseModel):
     approver = models.ForeignKey(
-        Employee, null=True, on_delete=models.SET_NULL)
+        User, null=True, on_delete=models.SET_NULL)
     request = models.ForeignKey(
         Request, on_delete=models.CASCADE)
     active = models.BooleanField(default=True)

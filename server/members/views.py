@@ -1,9 +1,26 @@
 from django.shortcuts import render
-from rest_framework import viewsets, filters
+from rest_framework import viewsets, filters, status
 from .serializers import *
 from .models import *
+from django.contrib.auth.models import User, Group
+
 
 from datetime import datetime
+
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated
+from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework import status
+
+
+class HomeView(APIView):
+    permission_classes = (IsAuthenticated, )
+
+    def get(self, request):
+
+        content = {'message': 'Welcome to CT-Scheduling!'}
+        return Response(content)
 
 
 class RequestView(viewsets.ModelViewSet):
@@ -24,14 +41,17 @@ class RequestView(viewsets.ModelViewSet):
         return queryset
 
 
-class EmployeeView(viewsets.ModelViewSet):
-    serializer_class = EmployeeSerializer
-    queryset = Employee.objects.all()
+class LogoutView(APIView):
+    permission_classes = (IsAuthenticated, )
 
-
-class RoleView(viewsets.ModelViewSet):
-    serializer_class = RoleSerializer
-    queryset = Role.objects.all()
+    def post(self, request):
+        try:
+            refresh_token = request.data["refresh_token"]
+            token = RefreshToken(refresh_token)
+            token.blacklist()
+            return Response(status=status.HTTP_205_RESET_CONTENT)
+        except Exception as e:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
 
 
 class WarehouseView(viewsets.ModelViewSet):
@@ -41,11 +61,16 @@ class WarehouseView(viewsets.ModelViewSet):
     search_fields = ['name']
 
 
-class ActionsLogView(viewsets.ModelViewSet):
-    serializer_class = ActionsLogSerializer
-    queryset = ActionsLog.objects.all()
-
-
 class ScheduleView(viewsets.ModelViewSet):
     serializer_class = ScheduleSerializer
     queryset = Schedule.objects.all()
+
+
+class UserView(viewsets.ModelViewSet):
+    serializer_class = UserSerializer
+    queryset = User.objects.all()
+
+
+class GroupView(viewsets.ModelViewSet):
+    serializer_class = GroupSerializer
+    queryset = Group.objects.all()
