@@ -13,6 +13,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework import status
 
+
 class HomeView(APIView):
     permission_classes = (IsAuthenticated, )
 
@@ -20,7 +21,6 @@ class HomeView(APIView):
 
         content = {'message': 'Welcome to CT-Scheduling!'}
         return Response(content)
-    
 
 
 class RequestView(viewsets.ModelViewSet):
@@ -40,8 +40,10 @@ class RequestView(viewsets.ModelViewSet):
                     date_time__gte=start_date, date_time__lte=end_date)
         return queryset
 
+
 class LogoutView(APIView):
     permission_classes = (IsAuthenticated, )
+
     def post(self, request):
         try:
             refresh_token = request.data["refresh_token"]
@@ -50,16 +52,6 @@ class LogoutView(APIView):
             return Response(status=status.HTTP_205_RESET_CONTENT)
         except Exception as e:
             return Response(status=status.HTTP_400_BAD_REQUEST)
-        
-
-class EmployeeView(viewsets.ModelViewSet):
-    serializer_class = EmployeeSerializer
-    queryset = Employee.objects.all()
-
-
-class RoleView(viewsets.ModelViewSet):
-    serializer_class = RoleSerializer
-    queryset = Role.objects.all()
 
 
 class WarehouseView(viewsets.ModelViewSet):
@@ -69,20 +61,16 @@ class WarehouseView(viewsets.ModelViewSet):
     search_fields = ['name']
 
 
-class ActionsLogView(viewsets.ModelViewSet):
-    serializer_class = ActionsLogSerializer
-    queryset = ActionsLog.objects.all()
-
-
 class ScheduleView(viewsets.ModelViewSet):
     serializer_class = ScheduleSerializer
     queryset = Schedule.objects.all()
+
 
 class UserView(viewsets.ModelViewSet):
     serializer_class = UserSerializer
     queryset = User.objects.all()
 
+
 class GroupView(viewsets.ModelViewSet):
     serializer_class = GroupSerializer
     queryset = Group.objects.all()
-
