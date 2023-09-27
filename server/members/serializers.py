@@ -16,7 +16,7 @@ class RequestSerializer(serializers.ModelSerializer):
 class WarehouseSerializer(serializers.ModelSerializer):
     class Meta:
         model = Warehouse
-        fields = ('name', 'address', 'phone_number', 'active')
+        fields = ('id', 'name', 'address', 'phone_number', 'active')
 
 
 class ScheduleSerializer(serializers.ModelSerializer):
