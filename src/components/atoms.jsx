@@ -1,4 +1,7 @@
 import { atom } from "jotai";
+import { getWarehouseInfo } from "../actions";
+
+const initialWarehouseData = [{}];
 import axios from "axios";
 
 const fetchWarehouseData = async () => {
@@ -22,15 +25,4 @@ export const isAuthAtom = atom(
 export const removeTokensAtom = atom(null, (get, set, updatedAccessToken) => {
   set(accessTokenAtom, null);
   set(refreshTokenAtom, null);
-});
-
-export const warehouseDataAtom = atom([]);
-
-export const updateWarehouseDataAtom = atom(null, async (get, set, updated) => {
-  try {
-    const data = await fetchWarehouseData();
-    set(warehouseDataAtom, data);
-  } catch (error) {
-    console.error(error);
-  }
 });
