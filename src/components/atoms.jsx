@@ -1,7 +1,14 @@
 import { atom } from "jotai";
-import { getWarehouseInfo } from "../actions";
+import axios from "axios";
 
-const initialWarehouseData = [{}];
+const fetchWarehouseData = async () => {
+  try {
+    const response = await axios.get("/api/warehouse");
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};
 
 export const accessTokenAtom = atom(null);
 export const refreshTokenAtom = atom(null);
@@ -17,16 +24,13 @@ export const removeTokensAtom = atom(null, (get, set, updatedAccessToken) => {
   set(refreshTokenAtom, null);
 });
 
-export const warehouseDataAtom = atom(initialWarehouseData);
+export const warehouseDataAtom = atom([]);
 
-export const updateWarehouseDataAtom = atom(
-  null,
-  (get, set, updatedWarehouseData) => {
-    const response = getWarehouseInfo();
-    if (response.isError) {
-      console.log("Error: ", response.error.message);
-    } else if (response.data) {
-      set(warehouseDataAtom, response.data.data);
-    }
+export const updateWarehouseDataAtom = atom(null, async (get, set, updated) => {
+  try {
+    const data = await fetchWarehouseData();
+    set(warehouseDataAtom, data);
+  } catch (error) {
+    console.error(error);
   }
-);
+});
