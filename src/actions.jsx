@@ -69,16 +69,6 @@ export function getRequestsByDate(startDate, endDate) {
   });
 }
 
-export function getWarehouseInfo() {
-  return useQuery({
-    queryKey: ["warehouse"],
-    queryFn: async () => {
-      const response = await axios.get("/api/warehouse");
-      return response;
-    },
-  });
-}
-
 export function getUserData() {
   return useQuery({
     queryKey: ["user"],

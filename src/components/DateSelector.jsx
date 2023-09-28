@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { DatePicker } from "@mui/x-date-pickers";
 import dayjs from "dayjs";
 
-export default function DateSelector({ onDateChange })  {
+export default function DateSelector({ onDateChange }) {
   const today = dayjs();
 
   const [selectedStartDate, setSelectedStartDate] = useState(today);
@@ -44,10 +44,9 @@ export default function DateSelector({ onDateChange })  {
       />
     </div>
   );
-};
+}
 
-export const SingleDateSelector = ({onDateChange}) => {
-
+export const SingleDateSelector = ({ onDateChange }) => {
   const today = dayjs();
 
   const [selectedDate, setSelectedDate] = useState(today);
@@ -74,7 +73,4 @@ export const SingleDateSelector = ({onDateChange}) => {
       />
     </div>
   );
-
 };
-
-//export { DateSelector, SingleDateSelector };
