@@ -13,7 +13,7 @@ import {
 import axios from "axios";
 import { useAtom } from "jotai";
 import { warehouseDataAtom, updateWarehouseDataAtom } from "./atoms.jsx";
-import DateSelector from "./DateSelector.jsx";
+import { SingleDateSelector } from "./DateSelector.jsx";
 
 export function Form({ editable }) {
   const [warehouseData] = useAtom(warehouseDataAtom);
@@ -170,7 +170,7 @@ export function Form({ editable }) {
               ))}
             </TextField>
 
-            <DateSelector onDateChange={handleDateChange} />
+            <SingleDateSelector onDateChange={handleDateChange} />
 
             <Button onClick={AddDeliveryRequest}>Submit</Button>
           </div>
