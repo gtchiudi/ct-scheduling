@@ -13,7 +13,7 @@ import HeaderBar from "./components/HeaderBar.jsx";
 import Login from "./routes/Login.jsx";
 import Logout from "./routes/Logout.jsx";
 import Home from "./routes/Home.jsx";
-
+import TestAlert from "./routes/testAlert.jsx";
 
 const queryClient = new QueryClient();
 
@@ -59,6 +59,10 @@ const router = createBrowserRouter([
   {
     path: "home",
     element: <Home />,
+  },
+  {
+    path: "testAlert",
+    element: <TestAlert />,
   },
 ]);
 
