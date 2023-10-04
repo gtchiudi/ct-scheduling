@@ -51,6 +51,7 @@ class Request(BaseModel):
         max_length=32, choices=LOAD_CHOICES, default='Full')  # changable via emp
     container_drop = models.BooleanField(
         default=False, blank=True)  # changable via emp
+
     container_number = models.IntegerField(
         null=True, blank=True)  # changeable via emp
     note_section = models.CharField(

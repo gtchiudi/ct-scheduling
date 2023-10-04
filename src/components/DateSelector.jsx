@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { DatePicker } from "@mui/x-date-pickers";
 import dayjs from "dayjs";
 
-const DateSelector = ({ onDateChange }) => {
+export default function DateSelector({ onDateChange }) {
   const today = dayjs();
 
   const [selectedStartDate, setSelectedStartDate] = useState(today);
@@ -44,6 +44,33 @@ const DateSelector = ({ onDateChange }) => {
       />
     </div>
   );
-};
+}
 
-export default DateSelector;
+export const SingleDateSelector = ({ onDateChange }) => {
+  const today = dayjs();
+
+  const [selectedDate, setSelectedDate] = useState(today);
+
+  useEffect(() => {
+    // Call onDateChange with initial today's date values
+    onDateChange(selectedDate);
+  }, [selectedDate]);
+
+  const handleDateChange = (date) => {
+    const dayjsDate = dayjs(date);
+    setSelectedDate(dayjsDate);
+    onDateChange(selectedDate);
+    console.log("Selected Date:", selectedDate);
+  };
+
+  return (
+    <div>
+      <DatePicker
+        label="Select Date"
+        value={selectedDate}
+        onChange={(newValue) => handleDateChange(newValue)}
+        //defaultDate={selectedStartDate} // Set today's date as the default for the start date picker
+      />
+    </div>
+  );
+};
