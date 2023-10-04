@@ -49,6 +49,9 @@ export function Form({  }) {
   const [warehouse, setwarehouse] = useState("");
   const [load_type, setload_type] = useState("");
   const [date_time, setdate_time] = useState("");
+  const [delivery, setdelivery] = useState(false);
+  //const [container, setcontainer] = useState(false);
+
   const [notes, setnotes] = useState("");
 
   const [submitted, setSubmitted] = useState(false);
@@ -73,6 +76,7 @@ export function Form({  }) {
     formField.append("load_type", load_type);
     formField.append("date_time", date_time);
     formField.append("active", true);
+    formField.append("delivery", delivery);
     formField.append("note_section", notes);
 
     await axios({
@@ -183,7 +187,12 @@ export function Form({  }) {
             <FormGroup>
                 
               {(load_type === "Container") ?
-                <FormControlLabel control={<Checkbox />} label="Select for container drop." load_type={"Container"} /> 
+                <FormControlLabel 
+                  control={<Checkbox />} 
+                  label="Select for container drop." 
+                  load_type={"Container"} 
+                  //onChange={(e) => setcontainer(e.target.checked)}
+                  /> 
                 :
                 null
               }
@@ -191,7 +200,7 @@ export function Form({  }) {
               <FormControlLabel 
                 control={<Checkbox />} 
                 label="Select for delivery"
-                //onChange={deliverySet}
+                onChange={(e) => setdelivery(e.target.checked)}
                 />
             </FormGroup>
 
