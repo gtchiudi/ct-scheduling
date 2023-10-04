@@ -14,6 +14,7 @@ export const accessTokenAtom = atom(null);
 export const refreshTokenAtom = atom(null);
 export const isAuthAtom = atom(
   (get) => {
+    console.log("isAuthAtom");
     const accessToken = get(accessTokenAtom);
     return accessToken !== null;
   },

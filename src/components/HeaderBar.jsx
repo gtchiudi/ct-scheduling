@@ -22,8 +22,9 @@ import { isAuthAtom } from "../components/atoms.jsx";
 // text: <== This changes what actual text displays
 // href: <== This changes what the header button links to
 // All of this is the same for the 'Settings' menu
-const pages = [{ text: "Request List", href: "/RequestList" },
-               { text: "Make A request", href: "/RequestForm"}              
+const pages = [
+  { text: "Pending Requests", href: "/PendingRequests" },
+  { text: "Make A request", href: "/RequestForm" },
 ];
 const settings = [{ text: "Login", href: "/Login" }];
 
