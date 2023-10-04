@@ -51,7 +51,7 @@ export default function Home(){
         
         <Box sx={{ textAlign: 'center' }}>
             <Button
-                variant="outlined"
+                variant="contained"
                 size="medium"
                 sx={{
                     textAlign: "center",
