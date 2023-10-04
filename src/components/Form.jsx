@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import TextField from "@mui/material/TextField";
 import Button from "@mui/material/Button";
 import {
+  Checkbox,
   Box,
   FormControl,
   FormLabel,
@@ -14,8 +15,14 @@ import axios from "axios";
 import { useAtom } from "jotai";
 import { warehouseDataAtom, updateWarehouseDataAtom } from "./atoms.jsx";
 import { SingleDateSelector } from "./DateSelector.jsx";
+import FormControlLabel from '@mui/material/FormControlLabel';
+import FormGroup from '@mui/material/FormGroup';
 
-export function Form({ editable }) {
+function ContainerCheck({load}) {
+  
+}
+
+export function Form({  }) {
   const [warehouseData] = useAtom(warehouseDataAtom);
   const [, updateWarehouseData] = useAtom(updateWarehouseDataAtom);
 
@@ -42,6 +49,7 @@ export function Form({ editable }) {
   const [warehouse, setwarehouse] = useState("");
   const [load_type, setload_type] = useState("");
   const [date_time, setdate_time] = useState("");
+  const [notes, setnotes] = useState("");
 
   const [submitted, setSubmitted] = useState(false);
 
@@ -65,6 +73,7 @@ export function Form({ editable }) {
     formField.append("load_type", load_type);
     formField.append("date_time", date_time);
     formField.append("active", true);
+    formField.append("note_section", notes);
 
     await axios({
       method: "post",
@@ -169,6 +178,31 @@ export function Form({ editable }) {
                 </MenuItem>
               ))}
             </TextField>
+            
+
+            <FormGroup>
+                
+              {(load_type === "Container") ?
+                <FormControlLabel control={<Checkbox />} label="Select for container drop." load_type={"Container"} /> 
+                :
+                null
+              }
+              
+              <FormControlLabel 
+                control={<Checkbox />} 
+                label="Select for delivery"
+                //onChange={deliverySet}
+                />
+            </FormGroup>
+
+            <TextField
+              id="notes"
+              label="Notes"
+              multiline
+              rows={4}
+              value={notes}
+              onChange={(e) => setnotes(e.target.value)}
+              />
 
             <SingleDateSelector onDateChange={handleDateChange} />
 
