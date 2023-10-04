@@ -7,7 +7,7 @@ class RequestSerializer(serializers.ModelSerializer):
     class Meta:
         model = Request
         fields = ('id', 'approved', 'company_name', 'phone_number',
-                  'email', 'warehouse', 'po_number', 'load_type', 'container_number',
+                  'email', 'warehouse', 'po_number', 'load_type', 'container_drop', 'container_number',
                   'note_section', 'date_time', 'delivery', 'trailer_number',
                   'driver_phone_number', 'dock_number', 'check_in_time', 'docked_time',
                   'completed_time', 'active')
