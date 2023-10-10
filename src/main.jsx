@@ -14,6 +14,7 @@ import Logout from "./routes/Logout.jsx";
 import Home from "./routes/Home.jsx";
 import RequestList from "./routes/RequestList.jsx";
 import RequestForm from "./routes/RequestForm.jsx";
+import PendingRequests from "./routes/PendingRequests.jsx";
 
 const queryClient = new QueryClient();
 
@@ -75,11 +76,11 @@ const router = createBrowserRouter([
     ),
   },
   {
-    path: "RequestForm",
+    path: "PendingRequests",
     element: (
       <div>
         <HeaderBar />
-        <RequestForm />
+        <PendingRequests />
       </div>
     ),
   },

@@ -18,18 +18,13 @@ export function getRequests() {
   });
 }
 
-export function getPendingRequests() {
-  return useQuery({
-    queryKey: ["requests", "pending"],
-    queryFn: async () => {
-      const response = await axios.get("/api/request", {
-        params: {
-          approved: "False",
-        },
-      });
-      return response;
+export async function getPendingRequests() {
+  const response = await axios.get("/api/request", {
+    params: {
+      approved: "False",
     },
   });
+  return response;
 }
 
 export function getApprovedRequests() {
