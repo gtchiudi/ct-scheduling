@@ -12,8 +12,11 @@ import {
 } from "@mui/material";
 import axios from "axios";
 import { useAtom } from "jotai";
-import { warehouseDataAtom, updateWarehouseDataAtom } from "./atoms.jsx";
-import { SingleDateSelector } from "./DateSelector.jsx";
+import {
+  warehouseDataAtom,
+  updateWarehouseDataAtom,
+} from "../components/atoms";
+import { SingleDateSelector } from "../components/DateSelector";
 
 export function Form({ editable }) {
   const [warehouseData] = useAtom(warehouseDataAtom);
