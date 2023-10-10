@@ -17,7 +17,7 @@ import dayjs from "dayjs";
 
 function FormEdit(request) {
   console.log("form edit request: ", request);
-  console.log("request id: ", request.request.id);
+  console.log("form edit request id: ", request.request.id);
   const [open, setOpen] = React.useState(true);
   const handleClose = () => setOpen(false);
   const [warehouseData] = useAtom(warehouseDataAtom);
@@ -40,17 +40,18 @@ function FormEdit(request) {
   ];
 
   const [requestData, setRequestData] = useState({
-    id: request.id,
-    phone_number: request.phone_number || "",
-    email: request.email || "",
-    po_number: request.po_number || "",
-    warehouse: request.warehouse || "",
-    load_type: request.load_type || "",
-    container_number: request.container_number || "",
-    notes: request.note_section || "",
-    date_time: dayjs(request.date_time) || new dayjs(),
-    isDelivery: request.delivery || false,
-    trailerNum: request.trailer_number || "",
+    id: request.request.id,
+    company_name: request.request.company_name || "",
+    phone_number: request.request.phone_number || "",
+    email: request.request.email || "",
+    po_number: request.request.po_number || "",
+    warehouse: request.request.warehouse || "",
+    load_type: request.request.load_type || "",
+    container_number: request.request.container_number || "",
+    notes: request.request.note_section || "",
+    date_time: dayjs(request.request.date_time) || new dayjs(),
+    isDelivery: request.request.delivery || false,
+    trailerNum: request.request.trailer_number || "",
   });
   const [submitted, setSubmitted] = useState(false);
 

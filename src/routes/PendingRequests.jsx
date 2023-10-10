@@ -96,10 +96,11 @@ function EnhancedTableHead(props) {
   return (
     <TableHead>
       <TableRow>
+        <TableCell></TableCell>
         {headCells.map((headCell) => (
           <TableCell
             key={headCell.id}
-            align={headCell.numeric ? "right" : "left"}
+            align={"left"}
             padding={headCell.disablePadding ? "none" : "normal"}
             sortDirection={orderBy === headCell.id ? order : false}
           >
@@ -158,8 +159,7 @@ export default function PendingRequests() {
   };
 
   const handleClick = (event, row) => {
-    console.log("Selected row:", row);
-    setSelected([row]);
+    setSelected(row);
     setIsModalOpen(true);
   };
 
@@ -176,7 +176,7 @@ export default function PendingRequests() {
     setDense(event.target.checked);
   };
 
-  const isSelected = (id) => selected.indexOf(id) !== -1;
+  const isSelected = (row) => selected.id === row.id;
 
   // Avoid a layout jump when reaching the last page with empty rows.
   const emptyRows =
@@ -192,7 +192,7 @@ export default function PendingRequests() {
 
   return (
     <div>
-      {isModalOpen && <FormEdit request={selected} />}
+      {isModalOpen && <FormEdit request={selected} onClose={closeModal} />}
       {result.isLoading && <h1>Loading...</h1>}
       {result.isError && <h1>Error: {result.error.message}</h1>}
       {result.isSuccess && (
@@ -213,7 +213,7 @@ export default function PendingRequests() {
                 />
                 <TableBody>
                   {visibleRows.map((row, index) => {
-                    const isItemSelected = isSelected(row.id);
+                    const isItemSelected = isSelected(row);
                     const labelId = `enhanced-table-checkbox-${index}`;
 
                     return (
@@ -227,6 +227,7 @@ export default function PendingRequests() {
                         selected={isItemSelected}
                         sx={{ cursor: "pointer" }}
                       >
+                        <TableCell></TableCell>
                         <TableCell
                           component="th"
                           id={labelId}
@@ -235,11 +236,11 @@ export default function PendingRequests() {
                         >
                           {row.company_name}
                         </TableCell>
-                        <TableCell align="right">{row.email}</TableCell>
-                        <TableCell align="right">{row.po_number}</TableCell>
-                        <TableCell align="right">{row.load_type}</TableCell>
-                        <TableCell align="right">{row.date_time}</TableCell>
-                        <TableCell align="right">
+                        <TableCell align="left">{row.email}</TableCell>
+                        <TableCell align="left">{row.po_number}</TableCell>
+                        <TableCell align="left">{row.load_type}</TableCell>
+                        <TableCell align="left">{row.date_time}</TableCell>
+                        <TableCell align="left">
                           {row.delivery ? "Yes" : "No"}
                         </TableCell>
                       </TableRow>
