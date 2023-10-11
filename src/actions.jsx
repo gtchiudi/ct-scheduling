@@ -108,3 +108,13 @@ export function submitUserData(username, password, queryClient) {
     },
   });
 }
+
+export function getSchedule() {
+  return useQuery({
+    queryKey: ["schedule"],
+    queryFn: async () => {
+      const response = await axios.get("/api/schedule");
+      return response;
+    },
+  });
+}
