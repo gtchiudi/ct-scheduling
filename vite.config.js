@@ -15,8 +15,19 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-          target: 'http://gtchiudi.pythonanywhere.com',
+          target: 'https://gtchiudi.pythonanywhere.com/',
           changeOrigin: true,
+          secure: false,
+      },
+      '/token/': {
+          target: 'https://gtchiudi.pythonanywhere.com/',
+          changeOrigin: true,
+          secure: false,
+      },
+      '/logout/': {
+          target: 'https://gtchiudi.pythonanywhere.com/',
+          changeOrigin: true,
+          secure: false,
       }
     }
   }

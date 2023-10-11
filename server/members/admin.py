@@ -1,9 +1,9 @@
 from django.contrib import admin
 from .models import *
 
-admin.site.register(Request)
-admin.site.register(Employee)
+class requestListView(admin.ModelAdmin):
+  list_display=("approved", "company_name", "email", "warehouse", "po_number")
+  
+admin.site.register(Request, requestListView)
 admin.site.register(Warehouse)
 admin.site.register(Schedule)
-admin.site.register(ActionsLog)
-admin.site.register(Role)
