@@ -16,8 +16,6 @@ import { warehouseDataAtom, updateWarehouseDataAtom } from "./atoms.jsx";
 import dayjs from "dayjs";
 
 function FormEdit(request) {
-  console.log("form edit request: ", request);
-  console.log("form edit request id: ", request.request.id);
   const [open, setOpen] = React.useState(true);
   const handleClose = () => setOpen(false);
   const [warehouseData] = useAtom(warehouseDataAtom);
@@ -40,7 +38,7 @@ function FormEdit(request) {
   ];
 
   const [requestData, setRequestData] = useState({
-    id: request.request.id,
+    id: request.request.id || null,
     company_name: request.request.company_name || "",
     phone_number: request.request.phone_number || "",
     email: request.request.email || "",
@@ -67,7 +65,7 @@ function FormEdit(request) {
     try {
       await axios({
         method: "post",
-        url: "http://localhost:5173/api/request/", // Terribly unsure what URL to put here so I'm just hoping this one is right. Will need Gino to confirm
+        url: "http://localhost:5173/api/request/",
         data: requestData,
       }).then((response) => {
         console.log(response.data);

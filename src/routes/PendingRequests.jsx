@@ -192,7 +192,14 @@ export default function PendingRequests() {
 
   return (
     <div>
-      {isModalOpen && <FormEdit request={selected} onClose={closeModal} />}
+      {isModalOpen && (
+        <FormEdit
+          request={selected}
+          onClose={() => {
+            closeModal(); // Close the modal
+          }}
+        />
+      )}
       {result.isLoading && <h1>Loading...</h1>}
       {result.isError && <h1>Error: {result.error.message}</h1>}
       {result.isSuccess && (

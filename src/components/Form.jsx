@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import TextField from "@mui/material/TextField";
 import Button from "@mui/material/Button";
 import {
+  Checkbox,
   Box,
   FormControl,
   FormLabel,
@@ -12,13 +13,24 @@ import {
 } from "@mui/material";
 import axios from "axios";
 import { useAtom } from "jotai";
-import {
-  warehouseDataAtom,
-  updateWarehouseDataAtom,
-} from "../components/atoms";
-import { SingleDateSelector } from "../components/DateSelector";
+import { warehouseDataAtom, updateWarehouseDataAtom } from "./atoms.jsx";
+import { SingleDateSelector, TimeSelector } from "./DateSelector.jsx";
+import FormControlLabel from "@mui/material/FormControlLabel";
+import FormGroup from "@mui/material/FormGroup";
 
-export function Form({ editable }) {
+function ContainerCheck({ load }) {}
+
+export function Form({
+  _forDisplay = false,
+  _company = "LOL.Co",
+  _phone = "1234567890",
+  _email = "Lol@lol.co",
+  _po_number = "123456",
+  _warehouse = "Aurora",
+  _load_type = "LTL",
+  //_date_time = "",
+  _delivery = true,
+}) {
   const [warehouseData] = useAtom(warehouseDataAtom);
   const [, updateWarehouseData] = useAtom(updateWarehouseDataAtom);
 
@@ -45,6 +57,9 @@ export function Form({ editable }) {
   const [warehouse, setwarehouse] = useState("");
   const [load_type, setload_type] = useState("");
   const [date_time, setdate_time] = useState("");
+  const [delivery, setdelivery] = useState(false);
+  //const [container, setcontainer] = useState(false);
+  const [notes, setnotes] = useState("");
 
   const [submitted, setSubmitted] = useState(false);
 
@@ -68,6 +83,8 @@ export function Form({ editable }) {
     formField.append("load_type", load_type);
     formField.append("date_time", date_time);
     formField.append("active", true);
+    formField.append("delivery", delivery);
+    formField.append("note_section", notes);
 
     await axios({
       method: "post",
@@ -97,85 +114,177 @@ export function Form({ editable }) {
         >
           <div>
             <FormLabel for="company_name">Request A Delivery</FormLabel>
-            <TextField
-              required
-              id="company_name"
-              name="company_name"
-              value={company_name}
-              label="Company Name"
-              variant="filled"
-              onChange={(e) => setcompany_name(e.target.value)}
-            ></TextField>
+
+            {!_forDisplay ? (
+              <TextField
+                required
+                id="company_name"
+                name="company_name"
+                value={company_name}
+                label="Company Name"
+                variant="filled"
+                onChange={(e) => setcompany_name(e.target.value)}
+              ></TextField>
+            ) : (
+              <TextField
+                readOnly
+                label="Company Name"
+                value={_company}
+              ></TextField>
+            )}
             <br></br>
 
-            <TextField
-              id="phone_number"
-              name="phone_number"
-              value={phone_number}
-              label="Phone Number"
-              variant="standard"
-              onChange={(e) => setphone_number(e.target.value)}
-            ></TextField>
+            {!_forDisplay ? (
+              <TextField
+                id="phone_number"
+                name="phone_number"
+                value={phone_number}
+                label="Phone Number"
+                variant="standard"
+                onChange={(e) => setphone_number(e.target.value)}
+              ></TextField>
+            ) : (
+              <TextField
+                readOnly
+                label="Phone Number"
+                value={_phone}
+              ></TextField>
+            )}
             <br></br>
 
-            <TextField
-              required
-              id="email"
-              name="email"
-              value={email}
-              label="E-mail"
-              variant="filled"
-              onChange={(e) => setemail(e.target.value)}
-            ></TextField>
+            {!_forDisplay ? (
+              <TextField
+                required
+                id="email"
+                name="email"
+                value={email}
+                label="E-mail"
+                variant="filled"
+                onChange={(e) => setemail(e.target.value)}
+              ></TextField>
+            ) : (
+              <TextField readOnly label="Email" value={_email}></TextField>
+            )}
             <br></br>
 
-            <TextField
-              required
-              id="po_number"
-              name="po_number"
-              value={po_number}
-              label="PO Number"
-              variant="filled"
-              onChange={(e) => setpo_number(e.target.value)}
-            ></TextField>
+            {!_forDisplay ? (
+              <TextField
+                required
+                id="po_number"
+                name="po_number"
+                value={po_number}
+                label="PO Number"
+                variant="filled"
+                onChange={(e) => setpo_number(e.target.value)}
+              ></TextField>
+            ) : (
+              <TextField
+                readOnly
+                label="PO Number"
+                value={_po_number}
+              ></TextField>
+            )}
             <br></br>
 
-            <TextField
-              select
-              required
-              id="warehouse"
-              label="Warehouse"
-              variant="filled"
-              value={warehouse}
-              onChange={(e) => setwarehouse(e.target.value)}
+            {!_forDisplay ? (
+              <TextField
+                select
+                required
+                id="warehouse"
+                label="Warehouse"
+                variant="filled"
+                value={warehouse}
+                onChange={(e) => setwarehouse(e.target.value)}
+              >
+                {warehouseData.map((option) => (
+                  <MenuItem key={option.id} value={option.id}>
+                    {option.name}
+                  </MenuItem>
+                ))}
+              </TextField>
+            ) : (
+              <TextField
+                readOnly
+                label="Warehouse"
+                value={_warehouse}
+              ></TextField>
+            )}
+            <br></br>
+
+            {!_forDisplay ? (
+              <TextField
+                select
+                required
+                id="load_type"
+                label="Load Type"
+                variant="filled"
+                value={load_type}
+                onChange={(e) => setload_type(e.target.value)}
+              >
+                {load_types.map((option) => (
+                  <MenuItem key={option.value} value={option.value}>
+                    {option.value}
+                  </MenuItem>
+                ))}
+              </TextField>
+            ) : (
+              <TextField
+                readOnly
+                label="Load Type"
+                value={_load_type}
+              ></TextField>
+            )}
+
+            <FormGroup>
+              {load_type === "Container" ? (
+                <FormControlLabel
+                  control={<Checkbox />}
+                  label="Select for container drop."
+                  load_type={"Container"}
+                  //onChange={(e) => setcontainer(e.target.checked)}
+                />
+              ) : null}
+
+              {!_forDisplay ? (
+                <FormControlLabel
+                  control={<Checkbox />}
+                  label="Select for delivery"
+                  onChange={(e) => setdelivery(e.target.checked)}
+                />
+              ) : (
+                <FormControlLabel
+                  control={<Checkbox />}
+                  label="Delivery"
+                  checked={_delivery}
+                />
+              )}
+            </FormGroup>
+
+            {!_forDisplay ? (
+              <TextField
+                id="notes"
+                label="Notes"
+                multiline
+                rows={4}
+                value={notes}
+                onChange={(e) => setnotes(e.target.value)}
+              />
+            ) : null}
+
+            <Box
+              sx={{
+                display: "flex",
+                flexDirection: { xs: "column", sm: "row" },
+                gap: 2,
+              }}
             >
-              {warehouseData.map((option) => (
-                <MenuItem key={option.id} value={option.id}>
-                  {option.name}
-                </MenuItem>
-              ))}
-            </TextField>
-            <br></br>
+              <SingleDateSelector required onDateChange={handleDateChange} />
+              {/*<TimeSelector required onTimeChange={handleDateChange}/>*/}
+            </Box>
 
-            <TextField
-              select
-              required
-              id="load_type"
-              label="Load Type"
-              variant="filled"
-              value={load_type}
-              onChange={(e) => setload_type(e.target.value)}
-            >
-              {load_types.map((option) => (
-                <MenuItem key={option.value} value={option.value}>
-                  {option.value}
-                </MenuItem>
-              ))}
-            </TextField>
-
-            <SingleDateSelector onDateChange={handleDateChange} />
-
-            <Button onClick={AddDeliveryRequest}>Submit</Button>
+            {!_forDisplay ? (
+              <Button onClick={AddDeliveryRequest}>Submit</Button>
+            ) : null}
           </div>
         </Box>
       </FormControl>
