@@ -18,20 +18,9 @@ import { SingleDateSelector, TimeSelector } from "./DateSelector.jsx";
 import FormControlLabel from '@mui/material/FormControlLabel';
 import FormGroup from '@mui/material/FormGroup';
 
-function ContainerCheck({load}) {
-  
-}
 
-export function Form({ _forDisplay = false,
-                       _company = "LOL.Co", 
-                       _phone = "1234567890",
-                       _email = "Lol@lol.co",
-                       _po_number = "123456", 
-                       _warehouse = "Aurora", 
-                       _load_type = "LTL", 
-                       //_date_time = "", 
-                       _delivery = true, 
-                       }) {
+
+export function Form({ _forDisplay = false, requestData}) {
   const [warehouseData] = useAtom(warehouseDataAtom);
   const [, updateWarehouseData] = useAtom(updateWarehouseDataAtom);
 
@@ -53,15 +42,14 @@ export function Form({ _forDisplay = false,
 
   const [company_name, setcompany_name] = useState("");
   const [phone_number, setphone_number] = useState("");
-  const [email, setemail] = useState("");
-  const [po_number, setpo_number] = useState("");
-  const [warehouse, setwarehouse] = useState("");
-  const [load_type, setload_type] = useState("");
-  const [date_time, setdate_time] = useState("");
-  const [delivery, setdelivery] = useState(false);
+  const [email, setemail]               = useState("");
+  const [po_number, setpo_number]       = useState("");
+  const [warehouse, setwarehouse]       = useState("");
+  const [load_type, setload_type]       = useState("");
+  const [date_time, setdate_time]       = useState("");
+  const [delivery, setdelivery]         = useState(false);
   //const [container, setcontainer] = useState(false);
-  const [notes, setnotes] = useState("");
-
+  const [notes, setnotes]               = useState("");
   const [submitted, setSubmitted] = useState(false);
 
   const handleDateChange = (date) => {
@@ -115,8 +103,6 @@ export function Form({ _forDisplay = false,
         >
           <div>
             <FormLabel for="company_name">Request A Delivery</FormLabel>
-            
-            {(!_forDisplay)?
               <TextField
                 required
                 id="company_name"
@@ -126,32 +112,18 @@ export function Form({ _forDisplay = false,
                 variant="filled"
                 onChange={(e) => setcompany_name(e.target.value)}
               ></TextField>
-            : <TextField
-                readOnly
-                label="Company Name"
-                value={_company}
-              ></TextField>
-            }
             <br></br>
             
-            {(!_forDisplay) ? 
-              <TextField
-                id="phone_number"
-                name="phone_number"
-                value={phone_number}
-                label="Phone Number"
-                variant="standard"
-                onChange={(e) => setphone_number(e.target.value)}
-              ></TextField>
-              : <TextField
-                  readOnly
-                  label="Phone Number"
-                  value={_phone}
-                ></TextField>
-            }
+            <TextField
+              id="phone_number"
+              name="phone_number"
+              value={phone_number}
+              label="Phone Number"
+              variant="standard"
+              onChange={(e) => setphone_number(e.target.value)}
+            ></TextField>
             <br></br>
             
-            {(!_forDisplay) ?
             <TextField
               required
               id="email"
@@ -161,15 +133,8 @@ export function Form({ _forDisplay = false,
               variant="filled"
               onChange={(e) => setemail(e.target.value)}
             ></TextField>
-            : <TextField
-                readOnly
-                label="Email"
-                value={_email}
-              ></TextField>              
-            }
             <br></br>
             
-            {(!_forDisplay) ?
             <TextField
               required
               id="po_number"
@@ -179,15 +144,8 @@ export function Form({ _forDisplay = false,
               variant="filled"
               onChange={(e) => setpo_number(e.target.value)}
             ></TextField>
-            : <TextField
-                readOnly
-                label="PO Number"
-                value={_po_number}
-              ></TextField>
-            }
             <br></br>
             
-            {(!_forDisplay) ?
             <TextField
               select
               required
@@ -203,15 +161,8 @@ export function Form({ _forDisplay = false,
                 </MenuItem>
               ))}
             </TextField>
-            : <TextField
-              readOnly
-              label="Warehouse"
-              value={_warehouse}
-            ></TextField>
-            }
             <br></br>
 
-            {(!_forDisplay) ?
             <TextField
               select
               required
@@ -226,14 +177,7 @@ export function Form({ _forDisplay = false,
                   {option.value}
                 </MenuItem>
               ))}
-            </TextField>
-            : <TextField
-                readOnly
-                label="Load Type"
-                value={_load_type}
-              ></TextField>
-            }
-            
+            </TextField>            
 
             <FormGroup>
               {(load_type === "Container") ?
@@ -247,20 +191,13 @@ export function Form({ _forDisplay = false,
                 null
               }
               
-              {(!_forDisplay) ?
               <FormControlLabel 
                 control={<Checkbox />} 
                 label="Select for delivery"
                 onChange={(e) => setdelivery(e.target.checked)}
                 />
-              : <FormControlLabel
-                control={<Checkbox />}
-                label="Delivery"
-                checked={_delivery} />
-              }
             </FormGroup>
 
-            {(!_forDisplay) ?
               <TextField
                 id="notes"
                 label="Notes"
@@ -268,9 +205,7 @@ export function Form({ _forDisplay = false,
                 rows={4}
                 value={notes}
                 onChange={(e) => setnotes(e.target.value)}
-                />
-              : null
-            }
+              />
 
             <Box
               sx={{
@@ -284,10 +219,7 @@ export function Form({ _forDisplay = false,
             {/*<TimeSelector required onTimeChange={handleDateChange}/>*/}
             </ Box>
             
-            {(!_forDisplay) ?
-              <Button onClick={AddDeliveryRequest}>Submit</Button>
-              : null
-            }
+            <Button onClick={AddDeliveryRequest}>Submit</Button>
           </div>
         </Box>
       </FormControl>
