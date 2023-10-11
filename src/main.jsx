@@ -23,7 +23,7 @@ const router = createBrowserRouter([
     element: (
       <div>
         <HeaderBar />
-        <Root />
+        <Home />
       </div>
     ),
     errorElement: <ErrorPage />,
@@ -62,15 +62,6 @@ const router = createBrowserRouter([
       <div>
         <HeaderBar />
         <Logout />
-      </div>
-    ),
-  },
-  {
-    path: "home",
-    element: (
-      <div>
-        <HeaderBar />
-        <Home />
       </div>
     ),
   },
