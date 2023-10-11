@@ -17,7 +17,7 @@ const queryClient = new QueryClient();
 const router = createBrowserRouter([
   {
     path: "/",
-    element: <Root />,
+    element: <Home />,
     errorElement: <ErrorPage />,
   },
   {
@@ -27,10 +27,6 @@ const router = createBrowserRouter([
   {
     path: "login",
     element: <Login />,
-  },
-  {
-    path: "home",
-    element: <Home />,
   },
 ]);
 
