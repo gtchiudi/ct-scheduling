@@ -75,32 +75,3 @@ export const SingleDateSelector = ({ onDateChange }) => {
     </div>
   );
 };
-
-export const TimeSelector = ({ onTimeChange }) => {
-  const now = dayjs().startOf("day");
-
-  const [selectedTime, setSelectedTime] = useState(now);
-
-  useEffect(() => {
-    // Call onDateChange with initial today's date values
-    onTimeChange(selectedTime);
-  }, [selectedTime]);
-
-  const handleTimeChange = (time) => {
-    const dayjsTime = dayjs(time);
-    setSelectedTime(dayjsTime);
-    onDateChange(selectedTime);
-    console.log("Selected Time:", selectedTime);
-  };
-
-  return (
-    <div>
-      <TimePicker
-        label="Select Time"
-        value={now}
-        onChange={(e) => handleTimeChange(e.target.value)}
-        disablePast
-      />
-    </div>
-  );
-};
