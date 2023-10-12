@@ -18,9 +18,14 @@ import { SingleDateSelector, TimeSelector } from "./DateSelector.jsx";
 import FormControlLabel from '@mui/material/FormControlLabel';
 import FormGroup from '@mui/material/FormGroup';
 
+// Use FilledForm for elements that will be autopopulated with request information
+// As it stands the filled form can only display data and will be updated with buttons
+// The buttons will handle accepting, notifications to drivers, docked, completed, etc.
+// To use the filled form just pass in request data from whatever page you are using the filled form on.
+// The form shuold be as simple to implement as possible, if any code (other than styling) is being done to implement a form then it needs added here.
 
 
-export function Form({ _forDisplay = false, requestData}) {
+export function Form() {
   const [warehouseData] = useAtom(warehouseDataAtom);
   const [, updateWarehouseData] = useAtom(updateWarehouseDataAtom);
 
@@ -50,13 +55,21 @@ export function Form({ _forDisplay = false, requestData}) {
   const [delivery, setdelivery]         = useState(false);
   //const [container, setcontainer] = useState(false);
   const [notes, setnotes]               = useState("");
-  const [submitted, setSubmitted] = useState(false);
+  //const [submitted, setSubmitted] = useState(false);
 
+  const _date = "";
   const handleDateChange = (date) => {
-    const formattedDate = date.format("YYYY-MM-DD HH:mm:ss.SSSSSS[Z]");
+    const formattedDate = date.format("YYYY-MM-DD");
 
     setdate_time(formattedDate);
-    setSubmitted(false);
+    //setSubmitted(false);
+  };
+
+  const handleTimeChange = (time) => {
+    const formattedTime = time.format("HH:mm:ss.SSSSSS[Z]");
+
+    setdate_time(formattedTime);
+    //setSubmitted(false);
   };
 
   const history = useNavigate();
@@ -85,6 +98,8 @@ export function Form({ _forDisplay = false, requestData}) {
     });
   };
 
+
+  
   return (
     <Typography textAlign={"center"}>
       <FormControl>
@@ -207,16 +222,14 @@ export function Form({ _forDisplay = false, requestData}) {
                 onChange={(e) => setnotes(e.target.value)}
               />
 
-            <Box
+            <Box 
+              display={"flex"}
               sx={{
-                display: 'flex',
-                flexDirection: { xs: 'column', sm: 'row' },
-                gap: 2,
+                "& .MuiTextField-root": { m: 1, width: "19.1ch" }
               }}
             >
-            
-            <SingleDateSelector required onDateChange={handleDateChange} />
-            {/*<TimeSelector required onTimeChange={handleDateChange}/>*/}
+                <SingleDateSelector required onDateChange={handleDateChange} />
+                <TimeSelector required onTimeChange={handleTimeChange}/>
             </ Box>
             
             <Button onClick={AddDeliveryRequest}>Submit</Button>
@@ -225,4 +238,81 @@ export function Form({ _forDisplay = false, requestData}) {
       </FormControl>
     </Typography>
   );
+}
+
+// Warehouse is showing as nonsense, not sure how to get that back to plain english
+// GIIIIIIIIIIIIIIIIIIINNNNNNNNNNNNNNOOOOOOOOOOOOOOOOOOOOOOOOOO
+export function FilledForm({requestData, change}){
+
+  return (
+    <Typography textAlign={"center"}>
+      <FormControl>
+        <Box
+          component="form"
+          justifyContent="center"
+          alignItems="center"
+          display="flex"
+          margin="normal"
+          sx={{
+            "& .MuiTextField-root": { m: 1, width: "40ch" },
+            "& > :not(style)": { m: 1, width: "40ch" },
+          }}
+          noValidate
+          autoComplete="off"
+        >
+          <div>
+            <FormLabel for="company_name">Information for request</FormLabel>
+            <TextField
+                readOnly
+                label="Company Name"
+                value={requestData.company_name}
+                onChange={change}
+              ></TextField>
+
+              <TextField
+                readOnly
+                label="Phone Number"
+                value={requestData.phone_number}
+                onChange={change}
+              ></TextField>
+                  
+              <TextField
+                readOnly
+                label="Email"
+                value={requestData.email}
+                onChange={change}
+              ></TextField> 
+
+              <TextField
+                readOnly
+                label="PO Number"
+                value={requestData.po_number}
+                onChange={change}
+              ></TextField>
+
+              <TextField
+                readOnly
+                label="Warehouse"
+                value={requestData.warehouse}
+                onChange={change}
+              ></TextField>
+
+              <TextField
+                readOnly
+                label="Load Type"
+                value={requestData.load_type}
+                onChange={change}
+              ></TextField>
+
+              <FormControlLabel
+                control={<Checkbox />}
+                label="Delivery"
+                checked={requestData.isDelivery} 
+                onChange={change}
+              />
+          </div>
+        </Box>
+      </FormControl>
+    </Typography>
+  )
 }

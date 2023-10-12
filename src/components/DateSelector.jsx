@@ -89,17 +89,20 @@ export const TimeSelector = ({ onTimeChange }) => {
   const handleTimeChange = (time) => {
     const dayjsTime = dayjs(time);
     setSelectedTime(dayjsTime);
-    onDateChange(selectedTime);
+    onTimeChange(selectedTime);
     console.log("Selected Time:", selectedTime);
   };
+
+  console.log(now);
 
   return (
     <div>
       <TimePicker 
-      label="Select Time"
-      value={now}
-      onChange={(e) => handleTimeChange(e.target.value)} 
-      disablePast 
+        label="Select Time"
+        //value={now.format('hh:mm aa')}
+        onChange={(e) => handleTimeChange(e)} 
+        // shouldDisableTime -- takes function
+        // will be used to only allow selection of available times
       />
     </div>  
   );
