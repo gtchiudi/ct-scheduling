@@ -86,9 +86,15 @@ function HeaderBar() {
               }}
             >
               {pages.map((page) => (
-                <MenuItem key={page} onClick={handleCloseNavMenu}>
-                  <Typography textAlign="center">{page.text}</Typography>
-                </MenuItem>
+                <Button
+                  key={page.text}
+                  onClick={handleCloseNavMenu}
+                  component={RouterLink}
+                  to={page.href}
+                  sx={{ my: 2, color: "white", display: "block" }}
+                >
+                  {page.text}
+                </Button>
               ))}
             </Menu>
           </Box>
@@ -96,7 +102,7 @@ function HeaderBar() {
           <Box sx={{ flexGrow: 1, display: { xs: "none", md: "flex" } }}>
             {pages.map((page) => (
               <Button
-                key={page}
+                key={page.text}
                 onClick={handleCloseNavMenu}
                 component={RouterLink}
                 to={page.href}
@@ -142,7 +148,7 @@ function HeaderBar() {
                       </Button>
                     ) : (
                       <Button
-                        key={setting}
+                        key={setting.text}
                         onClick={handleCloseNavMenu}
                         component={RouterLink}
                         to={setting.href}

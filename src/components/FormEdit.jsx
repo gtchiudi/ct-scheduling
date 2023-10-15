@@ -78,7 +78,7 @@ function FormEdit(request) {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData({ ...requestData, [name]: value });
+    setRequestData({ ...requestData, [name]: value });
   };
   return (
     <Modal open={open} onClose={handleClose} aria-describedby="modal-form">

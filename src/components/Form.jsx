@@ -13,24 +13,25 @@ import {
 } from "@mui/material";
 import axios from "axios";
 import { useAtom } from "jotai";
-import { warehouseDataAtom, updateWarehouseDataAtom } from "./atoms.jsx";
+import {
+  warehouseDataAtom,
+  updateWarehouseDataAtom,
+  accessTokenAtom,
+} from "./atoms.jsx";
 import { SingleDateSelector, TimeSelector } from "./DateSelector.jsx";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import FormGroup from "@mui/material/FormGroup";
+import { DatePicker, TimePicker, DateTimePicker } from "@mui/x-date-pickers";
+import dayjs from "dayjs";
+import { useQueryClient } from "@tanstack/react-query";
 
-function ContainerCheck({ load }) {}
+// Use FilledForm for elements that will be autopopulated with request information
+// As it stands the filled form can only display data and will be updated with buttons
+// The buttons will handle accepting, notifications to drivers, docked, completed, etc.
+// To use the filled form just pass in request data from whatever page you are using the filled form on.
+// The form shuold be as simple to implement as possible, if any code (other than styling) is being done to implement a form then it needs added here.
 
-export function Form({
-  _forDisplay = false,
-  _company = "LOL.Co",
-  _phone = "1234567890",
-  _email = "Lol@lol.co",
-  _po_number = "123456",
-  _warehouse = "Aurora",
-  _load_type = "LTL",
-  //_date_time = "",
-  _delivery = true,
-}) {
+export default function Form() {
   const [warehouseData] = useAtom(warehouseDataAtom);
   const [, updateWarehouseData] = useAtom(updateWarehouseDataAtom);
 
@@ -60,14 +61,23 @@ export function Form({
   const [delivery, setdelivery] = useState(false);
   //const [container, setcontainer] = useState(false);
   const [notes, setnotes] = useState("");
+  //const [submitted, setSubmitted] = useState(false);
 
-  const [submitted, setSubmitted] = useState(false);
-
+  const _date = "";
   const handleDateChange = (date) => {
     const formattedDate = date.format("YYYY-MM-DD HH:mm:ss.SSSSSS[Z]");
 
     setdate_time(formattedDate);
-    setSubmitted(false);
+    //setSubmitted(false);
+  };
+
+  const handleTimeChange = (time) => {
+    const formattedTime = time.format("HH:mm:ss.SSSSSS[Z]");
+    const newDateTime = `${date_time}T${formattedTime}`;
+
+    setdate_time(newDateTime);
+    console.log("Date Time: ", newDateTime);
+    //setSubmitted(false);
   };
 
   const history = useNavigate();
@@ -113,127 +123,82 @@ export function Form({
           autoComplete="off"
         >
           <div>
-            <FormLabel for="company_name">Request A Delivery</FormLabel>
-
-            {!_forDisplay ? (
-              <TextField
-                required
-                id="company_name"
-                name="company_name"
-                value={company_name}
-                label="Company Name"
-                variant="filled"
-                onChange={(e) => setcompany_name(e.target.value)}
-              ></TextField>
-            ) : (
-              <TextField
-                readOnly
-                label="Company Name"
-                value={_company}
-              ></TextField>
-            )}
+            <FormLabel htmlFor="company_name">Request A Delivery</FormLabel>
+            <TextField
+              required
+              id="company_name"
+              name="company_name"
+              value={company_name}
+              label="Company Name"
+              variant="filled"
+              onChange={(e) => setcompany_name(e.target.value)}
+            ></TextField>
             <br></br>
 
-            {!_forDisplay ? (
-              <TextField
-                id="phone_number"
-                name="phone_number"
-                value={phone_number}
-                label="Phone Number"
-                variant="standard"
-                onChange={(e) => setphone_number(e.target.value)}
-              ></TextField>
-            ) : (
-              <TextField
-                readOnly
-                label="Phone Number"
-                value={_phone}
-              ></TextField>
-            )}
+            <TextField
+              id="phone_number"
+              name="phone_number"
+              value={phone_number}
+              label="Phone Number"
+              variant="standard"
+              onChange={(e) => setphone_number(e.target.value)}
+            ></TextField>
             <br></br>
 
-            {!_forDisplay ? (
-              <TextField
-                required
-                id="email"
-                name="email"
-                value={email}
-                label="E-mail"
-                variant="filled"
-                onChange={(e) => setemail(e.target.value)}
-              ></TextField>
-            ) : (
-              <TextField readOnly label="Email" value={_email}></TextField>
-            )}
+            <TextField
+              required
+              id="email"
+              name="email"
+              value={email}
+              label="E-mail"
+              variant="filled"
+              onChange={(e) => setemail(e.target.value)}
+            ></TextField>
             <br></br>
 
-            {!_forDisplay ? (
-              <TextField
-                required
-                id="po_number"
-                name="po_number"
-                value={po_number}
-                label="PO Number"
-                variant="filled"
-                onChange={(e) => setpo_number(e.target.value)}
-              ></TextField>
-            ) : (
-              <TextField
-                readOnly
-                label="PO Number"
-                value={_po_number}
-              ></TextField>
-            )}
+            <TextField
+              required
+              id="po_number"
+              name="po_number"
+              value={po_number}
+              label="PO Number"
+              variant="filled"
+              onChange={(e) => setpo_number(e.target.value)}
+            ></TextField>
             <br></br>
 
-            {!_forDisplay ? (
-              <TextField
-                select
-                required
-                id="warehouse"
-                label="Warehouse"
-                variant="filled"
-                value={warehouse}
-                onChange={(e) => setwarehouse(e.target.value)}
-              >
-                {warehouseData.map((option) => (
-                  <MenuItem key={option.id} value={option.id}>
-                    {option.name}
-                  </MenuItem>
-                ))}
-              </TextField>
-            ) : (
-              <TextField
-                readOnly
-                label="Warehouse"
-                value={_warehouse}
-              ></TextField>
-            )}
+            <TextField
+              select
+              required
+              id="warehouse"
+              label="Warehouse"
+              variant="filled"
+              value={warehouse}
+              onChange={(e) => setwarehouse(e.target.value)}
+            >
+              {warehouseData.map((option) => (
+                <MenuItem key={option.id} value={option.id}>
+                  {option.name}
+                </MenuItem>
+              ))}
+            </TextField>
             <br></br>
 
-            {!_forDisplay ? (
-              <TextField
-                select
-                required
-                id="load_type"
-                label="Load Type"
-                variant="filled"
-                value={load_type}
-                onChange={(e) => setload_type(e.target.value)}
-              >
-                {load_types.map((option) => (
-                  <MenuItem key={option.value} value={option.value}>
-                    {option.value}
-                  </MenuItem>
-                ))}
-              </TextField>
-            ) : (
-              <TextField
-                readOnly
-                label="Load Type"
-                value={_load_type}
-              ></TextField>
-            )}
+            <TextField
+              select
+              required
+              id="load_type"
+              label="Load Type"
+              variant="filled"
+              value={load_type}
+              onChange={(e) => setload_type(e.target.value)}
+            >
+              {load_types.map((option) => (
+                <MenuItem key={option.value} value={option.value}>
+                  {option.value}
+                </MenuItem>
+              ))}
+            </TextField>
 
             <FormGroup>
               {load_type === "Container" ? (
@@ -245,46 +210,318 @@ export function Form({
                 />
               ) : null}
 
-              {!_forDisplay ? (
-                <FormControlLabel
-                  control={<Checkbox />}
-                  label="Select for delivery"
-                  onChange={(e) => setdelivery(e.target.checked)}
-                />
-              ) : (
-                <FormControlLabel
-                  control={<Checkbox />}
-                  label="Delivery"
-                  checked={_delivery}
-                />
-              )}
+              <FormControlLabel
+                control={<Checkbox />}
+                label="Select for delivery"
+                onChange={(e) => setdelivery(e.target.checked)}
+              />
             </FormGroup>
 
-            {!_forDisplay ? (
-              <TextField
-                id="notes"
-                label="Notes"
-                multiline
-                rows={4}
-                value={notes}
-                onChange={(e) => setnotes(e.target.value)}
-              />
-            ) : null}
+            <TextField
+              id="notes"
+              label="Notes"
+              multiline
+              rows={4}
+              value={notes}
+              onChange={(e) => setnotes(e.target.value)}
+            />
 
             <Box
+              display={"flex"}
               sx={{
-                display: "flex",
-                flexDirection: { xs: "column", sm: "row" },
-                gap: 2,
+                "& .MuiTextField-root": { m: 1, width: "19.1ch" },
               }}
             >
-              <SingleDateSelector required onDateChange={handleDateChange} />
-              {/*<TimeSelector required onTimeChange={handleDateChange}/>*/}
+              <DateTimePicker
+                onChange={(newValue) => handleDateChange(newValue)}
+              />
             </Box>
 
-            {!_forDisplay ? (
-              <Button onClick={AddDeliveryRequest}>Submit</Button>
-            ) : null}
+            <Button onClick={AddDeliveryRequest}>Submit</Button>
+          </div>
+        </Box>
+      </FormControl>
+    </Typography>
+  );
+}
+
+// Warehouse is showing as nonsense, not sure how to get that back to plain english
+// GIIIIIIIIIIIIIIIIIIINNNNNNNNNNNNNNOOOOOOOOOOOOOOOOOOOOOOOOOO
+export function FilledForm({ requestData, change }) {
+  return (
+    <Typography textAlign={"center"}>
+      <FormControl>
+        <Box
+          component="form"
+          justifyContent="center"
+          alignItems="center"
+          display="flex"
+          margin="normal"
+          sx={{
+            "& .MuiTextField-root": { m: 1, width: "40ch" },
+            "& > :not(style)": { m: 1, width: "40ch" },
+          }}
+          noValidate
+          autoComplete="off"
+        >
+          <div>
+            <FormLabel htmlFor="company_name">
+              Information for request
+            </FormLabel>
+            <TextField
+              readOnly
+              label="Company Name"
+              value={requestData.company_name}
+              onChange={change}
+            ></TextField>
+
+            <TextField
+              readOnly
+              label="Phone Number"
+              value={requestData.phone_number}
+              onChange={change}
+            ></TextField>
+
+            <TextField
+              readOnly
+              label="Email"
+              value={requestData.email}
+              onChange={change}
+            ></TextField>
+
+            <TextField
+              readOnly
+              label="PO Number"
+              value={requestData.po_number}
+              onChange={change}
+            ></TextField>
+
+            <TextField
+              readOnly
+              label="Warehouse"
+              value={requestData.warehouse}
+              onChange={change}
+            ></TextField>
+
+            <TextField
+              readOnly
+              label="Load Type"
+              value={requestData.load_type}
+              onChange={change}
+            ></TextField>
+
+            <FormControlLabel
+              control={<Checkbox />}
+              label="Delivery"
+              checked={requestData.isDelivery}
+              onChange={change}
+            />
+          </div>
+        </Box>
+      </FormControl>
+    </Typography>
+  );
+}
+
+export function EditForm({ request, closeModal }) {
+  const queryClient = useQueryClient();
+  const [warehouseData] = useAtom(warehouseDataAtom);
+  const [, updateWarehouseData] = useAtom(updateWarehouseDataAtom);
+  const [accessToken] = useAtom(accessTokenAtom);
+
+  React.useEffect(() => {
+    updateWarehouseData();
+  }, []);
+
+  let [requestData, setRequestData] = useState({
+    id: request.id || null,
+    approved: request.approved || false,
+    company_name: request.company_name || "",
+    phone_number: request.phone_number || "",
+    email: request.email || "",
+    warehouse: request.warehouse || "Aurora",
+    po_number: request.po_number || "",
+    load_type: request.load_type || "",
+    container_drop: request.container_drop || false,
+    container_number: request.container_number || "",
+    notes: request.note_section || "",
+    date_time: dayjs(request.date_time) || new dayjs(),
+    delivery: request.delivery || false,
+    trailerNum: request.trailer_number || "",
+  });
+  const load_types = [
+    {
+      value: "Full",
+    },
+    {
+      value: "LTL",
+    },
+    {
+      value: "Container",
+    },
+  ];
+
+  const handleChange = (e) => {
+    console.log("Event:", e.target.name, e.target.value);
+    const { name, value } = e.target;
+    if (name === "container_drop" || name === "delivery") {
+      setRequestData({ ...requestData, [name]: e.target.checked });
+      return;
+    }
+    setRequestData({ ...requestData, [name]: value });
+  };
+
+  const handleDateChange = (date) => {
+    setRequestData({
+      ...requestData,
+      date_time: date.format("YYYY-MM-DD HH:mm:ss.SSSSSS[Z]"),
+    });
+  };
+
+  const handleApprove = () => {
+    requestData.approved = true;
+    approveRequest();
+  };
+
+  const approveRequest = async () => {
+    const config = {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
+      },
+    };
+
+    console.log("Request Data:", requestData);
+    try {
+      const response = await axios.put(
+        `/api/request/${requestData.id}/`,
+        requestData
+      );
+      console.log("Resource Updated:", response.data);
+      queryClient.invalidateQueries("pendingRequests");
+      closeModal();
+    } catch (error) {
+      console.error("Error updating request:", error);
+      closeModal();
+    }
+  };
+
+  return (
+    <Typography textAlign={"center"}>
+      <FormControl>
+        <Box
+          component="form"
+          justifyContent="center"
+          alignItems="center"
+          display="flex"
+          margin="normal"
+          sx={{
+            "& .MuiTextField-root": { m: 1, width: "40ch" },
+            "& > :not(style)": { m: 1, width: "40ch" },
+            maxHeight: "90vh",
+            overflow: "auto",
+          }}
+          noValidate
+          autoComplete="off"
+        >
+          <div>
+            <FormLabel htmlFor="company_name">
+              Edit and Approve Request
+            </FormLabel>
+            <TextField
+              label="Company Name"
+              name="company_name"
+              value={requestData.company_name}
+              onChange={handleChange}
+            ></TextField>
+
+            <TextField
+              label="Phone Number"
+              name="phone_number"
+              value={requestData.phone_number}
+              onChange={handleChange}
+            ></TextField>
+
+            <TextField
+              label="Email"
+              name="email"
+              value={requestData.email}
+              onChange={handleChange}
+            ></TextField>
+
+            <TextField
+              label="PO Number"
+              name="po_number"
+              value={requestData.po_number}
+              onChange={handleChange}
+            ></TextField>
+
+            <TextField
+              select
+              id="warehouse"
+              label="Warehouse"
+              name="warehouse"
+              variant="filled"
+              value={requestData.warehouse}
+              onChange={handleChange}
+            >
+              {warehouseData.map((option) => (
+                <MenuItem key={option.id} value={option.id}>
+                  {option.name}
+                </MenuItem>
+              ))}
+            </TextField>
+
+            <TextField
+              select
+              id="load_type"
+              label="Load Type"
+              name="load_type"
+              variant="filled"
+              value={requestData.load_type}
+              onChange={handleChange}
+            >
+              {load_types.map((option) => (
+                <MenuItem key={option.value} value={option.value}>
+                  {option.value}
+                </MenuItem>
+              ))}
+            </TextField>
+
+            <FormGroup>
+              {requestData.load_type === "Container" ? (
+                <Box>
+                  <FormControlLabel
+                    control={<Checkbox />}
+                    label="Select for container drop."
+                    name="container_drop"
+                    checked={requestData.container_drop}
+                    onChange={handleChange}
+                  />
+                  <TextField
+                    label="Container Number"
+                    name="container_number"
+                    value={requestData.container_number}
+                    onChange={handleChange}
+                  ></TextField>
+                </Box>
+              ) : null}
+            </FormGroup>
+
+            <DateTimePicker
+              value={dayjs(requestData.date_time)}
+              onChange={(newValue) => handleDateChange(newValue)}
+            />
+
+            <FormControlLabel
+              control={<Checkbox />}
+              label="Delivery"
+              name="delivery"
+              checked={requestData.delivery}
+              onChange={handleChange}
+            />
+            <br />
+            <Button onClick={handleApprove}>Approve Request</Button>
           </div>
         </Box>
       </FormControl>

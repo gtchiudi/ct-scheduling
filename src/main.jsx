@@ -71,7 +71,7 @@ const router = createBrowserRouter([
     element: (
       <div>
         <HeaderBar />
-        <Home />
+        <PendingRequests />
       </div>
     ),
   },

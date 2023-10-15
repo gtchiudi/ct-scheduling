@@ -23,10 +23,15 @@ export async function getPendingRequests() {
     params: {
       approved: "False",
     },
+    /*headers: {
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json",
+    },
+    withCredentials: true,*/
   });
-  return response;
-}
 
+  return response; // Return the data property of the response
+}
 export function getApprovedRequests() {
   return useQuery({
     queryKey: ["requests", "approved"],
@@ -50,11 +55,12 @@ export function getRequestsByDate(startDate, endDate) {
   const formattedEndDate = endDate.format("YYYY-MM-DD HH:mm:ss.SSSSSS[Z]");
 
   return useQuery({
-    queryKey: ["requests", "date", startDate, endDate],
+    queryKey: ["requests", "date", startDate, endDate, "active"],
     queryFn: async () => {
       const response = await axios.get("/api/request", {
         params: {
           approved: "True",
+          active: "True",
           start_date: formattedStartDate,
           end_date: formattedEndDate,
         },
@@ -88,7 +94,6 @@ export function submitUserData(username, password, queryClient) {
         },
         withCredentials: true,
       });
-      console.log(response.data.access);
       if (!response.data.access) {
         throw new Error("Network response was not ok");
       }
@@ -104,12 +109,7 @@ export function submitUserData(username, password, queryClient) {
   });
 }
 
-export function getSchedule() {
-  return useQuery({
-    queryKey: ["schedule"],
-    queryFn: async () => {
-      const response = await axios.get("/api/schedule");
-      return response;
-    },
-  });
+export async function getSchedule() {
+  const response = await axios.get("/api/schedule", {});
+  return response;
 }

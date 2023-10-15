@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAtom } from "jotai";
-import { isAuthAtom } from "../components/atoms.jsx";
+import { isAuthAtom, accessTokenAtom } from "../components/atoms.jsx";
 import { getPendingRequests } from "../actions.jsx";
 import { useQuery } from "@tanstack/react-query";
 import { PropTypes } from "prop-types";
@@ -17,8 +17,10 @@ import TableSortLabel from "@mui/material/TableSortLabel";
 import Paper from "@mui/material/Paper";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import Switch from "@mui/material/Switch";
+import Modal from "@mui/material/Modal";
+import Typography from "@mui/material/Typography";
 import { visuallyHidden } from "@mui/utils";
-import FormEdit from "../components/FormEdit.jsx";
+import { EditForm } from "../components/Form.jsx";
 
 function descendingComparator(a, b, orderBy) {
   if (b[orderBy] < a[orderBy]) {
@@ -123,7 +125,6 @@ function EnhancedTableHead(props) {
   );
 }
 EnhancedTableHead.propTypes = {
-  numSelected: PropTypes.number.isRequired,
   onRequestSort: PropTypes.func.isRequired,
   order: PropTypes.oneOf(["asc", "desc"]).isRequired,
   orderBy: PropTypes.string.isRequired,
@@ -131,10 +132,20 @@ EnhancedTableHead.propTypes = {
 };
 
 export default function PendingRequests() {
+  const navigate = useNavigate();
+  const [accessToken] = useAtom(accessTokenAtom);
+  const [, isAuth] = useAtom(isAuthAtom);
+
+  React.useEffect(() => {
+    if (!isAuth) {
+      navigate("/login");
+    }
+  }, [accessToken]);
+
   let rows = [];
   const result = useQuery({
     queryKey: ["pendingRequests"],
-    queryFn: getPendingRequests,
+    queryFn: () => getPendingRequests(),
   });
   if (result.isSuccess) {
     rows = result.data.data;
@@ -193,12 +204,34 @@ export default function PendingRequests() {
   return (
     <div>
       {isModalOpen && (
-        <FormEdit
-          request={selected}
-          onClose={() => {
-            closeModal(); // Close the modal
-          }}
-        />
+        <Modal open={open} onClose={closeModal} aria-describedby="modal-form">
+          <Box
+            component="form"
+            justifyContent="center"
+            alignItems="center"
+            display="flex"
+            margin="normal"
+            noValidate
+            autoComplete="off"
+            sx={{
+              position: "fixed",
+              top: "50%",
+              left: "50%",
+              transform: "translate(-50%, -50%)",
+              width: "60%",
+              maxWidth: "600",
+              maxHeight: "80vh",
+              bgcolor: "background.paper",
+              boxShadow: 24,
+              p: 4,
+              overflow: "auto",
+            }}
+          >
+            <Typography textAlign={"center"} id="modal-form">
+              <EditForm request={selected} closeModal={closeModal} />
+            </Typography>
+          </Box>
+        </Modal>
       )}
       {result.isLoading && <h1>Loading...</h1>}
       {result.isError && <h1>Error: {result.error.message}</h1>}

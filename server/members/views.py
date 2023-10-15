@@ -13,17 +13,11 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework import status
 
-
-class HomeView(APIView):
-    permission_classes = (IsAuthenticated, )
-
-    def get(self, request):
-
-        content = {'message': 'Welcome to CT-Scheduling!'}
-        return Response(content)
+from rest_framework.parsers import JSONParser
 
 
 class RequestView(viewsets.ModelViewSet):
+
     serializer_class = RequestSerializer
     queryset = Request.objects.all()
 
@@ -39,6 +33,20 @@ class RequestView(viewsets.ModelViewSet):
                 queryset = queryset.filter(
                     date_time__gte=start_date, date_time__lte=end_date)
         return queryset
+
+    def put(self, request, pk, format=None):
+        try:
+            requestUpdate = self.get_object(pk)
+        except Request.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+
+        data = JSONParser().parse(request)
+
+        serializer = RequestSerializer(requestUpdate, data=data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class LogoutView(APIView):
