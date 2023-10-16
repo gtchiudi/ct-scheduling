@@ -134,21 +134,23 @@ EnhancedTableHead.propTypes = {
 export default function PendingRequests() {
   const navigate = useNavigate();
   const [accessToken] = useAtom(accessTokenAtom);
-  const [, isAuth] = useAtom(isAuthAtom);
+  const [isAuth] = useAtom(isAuthAtom);
 
-  React.useEffect(() => {
-    if (!isAuth) {
-      navigate("/login");
-    }
-  }, [accessToken]);
+  if (!isAuth) {
+    console.log("Not Authorized");
+    navigate("/login");
+  } else {
+    console.log("authorized");
+  }
 
-  let rows = [];
+  const [rows, setRows] = useState([]);
   const result = useQuery({
     queryKey: ["pendingRequests"],
     queryFn: () => getPendingRequests(),
+    refetchInterval: 15000,
   });
   if (result.isSuccess) {
-    rows = result.data.data;
+    setRows(result.data.data);
   }
 
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -166,6 +168,8 @@ export default function PendingRequests() {
   };
 
   const closeModal = () => {
+    const updatedRows = rows.filter((row) => row.id !== selected.id);
+    setRows(updatedRows);
     setIsModalOpen(false);
   };
 
@@ -233,9 +237,31 @@ export default function PendingRequests() {
           </Box>
         </Modal>
       )}
-      {result.isLoading && <h1>Loading...</h1>}
-      {result.isError && <h1>Error: {result.error.message}</h1>}
-      {result.isSuccess && (
+      {result.isLoading && (
+        <div>
+          <br />
+          <Typography textAlign="center" variant="h2">
+            Loading...
+          </Typography>
+        </div>
+      )}
+      {result.isError && (
+        <div>
+          <br />
+          <Typography textAlign="center" variant="h2">
+            Error: {result.error.message}
+          </Typography>
+        </div>
+      )}
+      {result.isSuccess && result.data.data.length === 0 && (
+        <div>
+          <br />
+          <Typography textAlign="center" variant="h2">
+            No Pending Requests
+          </Typography>
+        </div>
+      )}
+      {result.isSuccess && result.data.data.length > 0 && (
         <Box sx={{ width: "100%" }}>
           <Paper sx={{ width: "100%", mb: 2 }}>
             <TableContainer>
