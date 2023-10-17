@@ -333,13 +333,13 @@ export function EditForm({ request, closeModal }) {
     updateWarehouseData();
   }, []);
 
-  let [requestData, setRequestData] = useState({
+  const [requestData, setRequestData] = useState({
     id: request.id || null,
     approved: request.approved || false,
     company_name: request.company_name || "",
     phone_number: request.phone_number || "",
     email: request.email || "",
-    warehouse: request.warehouse || "Aurora",
+    warehouse: request.warehouse || "",
     po_number: request.po_number || "",
     load_type: request.load_type || "",
     container_drop: request.container_drop || false,
@@ -362,7 +362,6 @@ export function EditForm({ request, closeModal }) {
   ];
 
   const handleChange = (e) => {
-    console.log("Event:", e.target.name, e.target.value);
     const { name, value } = e.target;
     if (name === "container_drop" || name === "delivery") {
       setRequestData({ ...requestData, [name]: e.target.checked });
@@ -384,20 +383,11 @@ export function EditForm({ request, closeModal }) {
   };
 
   const approveRequest = async () => {
-    const config = {
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        "Content-Type": "application/json",
-      },
-    };
-
-    console.log("Request Data:", requestData);
     try {
       const response = await axios.put(
         `/api/request/${requestData.id}/`,
         requestData
       );
-      console.log("Resource Updated:", response.data);
       queryClient.invalidateQueries("pendingRequests");
       closeModal();
     } catch (error) {

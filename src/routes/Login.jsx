@@ -9,9 +9,15 @@ import {
 } from "@mui/material/";
 import { submitUserData } from "../actions.jsx";
 import { useAtom } from "jotai";
-import { accessTokenAtom, refreshTokenAtom } from "../components/atoms.jsx";
+import {
+  accessTokenAtom,
+  refreshTokenAtom,
+  logoutSentAtom,
+  lastLoginDatetimeAtom,
+} from "../components/atoms.jsx";
 import { useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
+import dayjs from "dayjs";
 
 export default function Login() {
   const queryClient = useQueryClient();
@@ -22,6 +28,10 @@ export default function Login() {
 
   const [accessToken, setAccessToken] = useAtom(accessTokenAtom);
   const [refreshToken, setRefreshToken] = useAtom(refreshTokenAtom);
+  const [logoutSent, setLogoutSent] = useAtom(logoutSentAtom);
+  const [lastLoginDatetime, setLastLoginDatetime] = useAtom(
+    lastLoginDatetimeAtom
+  );
 
   const submitUserDataMutation = submitUserData(
     username,
@@ -43,6 +53,8 @@ export default function Login() {
         console.log("Login Successful");
         setAccessToken(data.access);
         setRefreshToken(data.refresh);
+        setLogoutSent(false);
+        setLastLoginDatetime(new dayjs());
         navigate("/RequestList");
       } else {
         console.log("Login Failed");
@@ -67,7 +79,7 @@ export default function Login() {
       onSubmit={handleSubmit}
     >
       <div>
-        <Typography alignContent="center" textAlign="center" variant="h2">
+        <Typography alignContent="center" textAlign="center" variant="h3">
           Login
         </Typography>
         <label htmlFor="Username">Username:</label>

@@ -91,7 +91,7 @@ function HeaderBar() {
                   onClick={handleCloseNavMenu}
                   component={RouterLink}
                   to={page.href}
-                  sx={{ my: 2, color: "white", display: "block" }}
+                  sx={{ my: 2, display: "block" }}
                 >
                   {page.text}
                 </Button>

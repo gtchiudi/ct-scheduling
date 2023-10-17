@@ -17,6 +17,7 @@ from rest_framework.parsers import JSONParser
 
 
 class RequestView(viewsets.ModelViewSet):
+    permission_classes = (IsAuthenticated, )
 
     serializer_class = RequestSerializer
     queryset = Request.objects.all()

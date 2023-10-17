@@ -98,11 +98,9 @@ export function submitUserData(username, password, queryClient) {
         throw new Error("Network response was not ok");
       }
 
-      queryClient.setDefaultOptions({
-        headers: {
-          Authorization: `Bearer ${response.data.access}`,
-        },
-      });
+      axios.defaults.headers.common[
+        "Authorization"
+      ] = `Bearer ${response.data["access"]}`;
 
       return response.data;
     },

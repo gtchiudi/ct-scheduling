@@ -1,7 +1,11 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAtom } from "jotai";
-import { isAuthAtom, accessTokenAtom } from "../components/atoms.jsx";
+import {
+  isAuthAtom,
+  accessTokenAtom,
+  areTokensExpiredAtom,
+} from "../components/atoms.jsx";
 import { getPendingRequests } from "../actions.jsx";
 import { useQuery } from "@tanstack/react-query";
 import { PropTypes } from "prop-types";
@@ -135,22 +139,25 @@ export default function PendingRequests() {
   const navigate = useNavigate();
   const [accessToken] = useAtom(accessTokenAtom);
   const [isAuth] = useAtom(isAuthAtom);
+  const [, tokensExpired] = useAtom(areTokensExpiredAtom);
 
-  if (!isAuth) {
-    console.log("Not Authorized");
-    navigate("/login");
-  } else {
-    console.log("authorized");
-  }
+  React.useEffect(() => {
+    if (!isAuth || tokensExpired()) {
+      console.log("Not Authorized");
+      navigate("/login");
+    } else {
+      console.log("authorized");
+    }
+  }, []);
 
-  const [rows, setRows] = useState([]);
+  let [rows, setRows] = useState([]);
   const result = useQuery({
     queryKey: ["pendingRequests"],
     queryFn: () => getPendingRequests(),
     refetchInterval: 15000,
   });
   if (result.isSuccess) {
-    setRows(result.data.data);
+    rows = result.data.data;
   }
 
   const [isModalOpen, setIsModalOpen] = useState(false);

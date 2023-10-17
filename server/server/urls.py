@@ -38,5 +38,5 @@ urlpatterns = [
          name='token_refresh'),
     path('logout/', views.LogoutView.as_view(), name='logout'),
     path('', include('members.urls')),
-    path('api-auth/', include('rest_framework.urls')),
+    path('api-auth/', include('rest_framework.urls'))
 ]
