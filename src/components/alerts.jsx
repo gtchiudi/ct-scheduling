@@ -1,21 +1,29 @@
 import React from 'react';
-//import './Popup.css';
+import Dialog from '@mui/material/Dialog';
+import DialogTitle from '@mui/material/DialogTitle';
+import DialogContent from '@mui/material/DialogContent';
+import DialogActions from '@mui/material/DialogActions';
+import IconButton from '@mui/material/IconButton';
+import CloseIcon from '@mui/icons-material/Close';
+import Button from '@mui/material/Button';
 
 function Popup(props) {
   return (
-    <div className="popup">
-      <div className="popup-content">
-        <span className="close-button" onClick={props.onClose}>
-          &times;
-        </span>
-        <h2>{props.title}</h2>
+    <Dialog open={true} onClose={props.onClose}>
+      <DialogTitle>
+        <IconButton edge="end" color="inherit" onClick={props.onClose} aria-label="close">
+          <CloseIcon />
+        </IconButton>
+        {props.title}
+      </DialogTitle>
+      <DialogContent>
         <p>{props.message}</p>
-        <div className="popup-buttons">
-          <button onClick={() => props.onConfirm()}>Confirm</button>
-          <button onClick={() => props.onCancel()}>Cancel</button>
-        </div>
-      </div>
-    </div>
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={() => props.onConfirm()}>Confirm</Button>
+        <Button onClick={() => props.onCancel()}>Cancel</Button>
+      </DialogActions>
+    </Dialog>
   );
 }
 
