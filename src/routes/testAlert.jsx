@@ -19,7 +19,7 @@ export default function TestAlert() {
     return (
       <div>
         <h1>Test</h1>
-        <button onClick={() => openPopup("Test Title", "Test Message")}>
+        <button onClick={() => openPopup("ALERT!", "Test Message")}>
           Open Popup
         </button>
         {isOpen && (
