@@ -23,15 +23,19 @@ export async function getPendingRequests() {
     params: {
       approved: "False",
     },
-    /*headers: {
-      Authorization: `Bearer ${accessToken}`,
-      "Content-Type": "application/json",
-    },
-    withCredentials: true,*/
   });
-
-  return response; // Return the data property of the response
+  return response;
 }
+
+export async function fetchWarehouseData() {
+  try {
+    const response = await axios.get("/api/warehouse");
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+}
+
 export function getApprovedRequests() {
   return useQuery({
     queryKey: ["requests", "approved"],
@@ -80,31 +84,19 @@ export function getUserData() {
   });
 }
 
-export function submitUserData(username, password, queryClient) {
-  return useMutation({
-    mutationFn: async () => {
-      const user = {
-        username: username,
-        password: password,
-      };
-
-      const response = await axios.post("/token/", user, {
-        headers: {
-          "Content-Type": "application/json",
-        },
-        withCredentials: true,
-      });
-      if (!response.data.access) {
-        throw new Error("Network response was not ok");
-      }
-
-      axios.defaults.headers.common[
-        "Authorization"
-      ] = `Bearer ${response.data["access"]}`;
-
-      return response.data;
+export async function submitUserData(user) {
+  const response = await axios.post("/token/", user, {
+    headers: {
+      "Content-Type": "application/json",
     },
+    withCredentials: true,
   });
+  if (!response.data.access) {
+    throw new Error("Network response was not ok");
+  }
+  user.username = "";
+  user.password = "";
+  return response.data;
 }
 
 export async function getSchedule() {

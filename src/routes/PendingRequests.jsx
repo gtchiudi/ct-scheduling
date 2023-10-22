@@ -4,7 +4,7 @@ import { useAtom } from "jotai";
 import {
   isAuthAtom,
   accessTokenAtom,
-  areTokensExpiredAtom,
+  refreshAtom,
 } from "../components/atoms.jsx";
 import { getPendingRequests } from "../actions.jsx";
 import { useQuery } from "@tanstack/react-query";
@@ -25,6 +25,8 @@ import Modal from "@mui/material/Modal";
 import Typography from "@mui/material/Typography";
 import { visuallyHidden } from "@mui/utils";
 import { EditForm } from "../components/Form.jsx";
+import { useQueryClient } from "@tanstack/react-query";
+import axios from "axios";
 
 function descendingComparator(a, b, orderBy) {
   if (b[orderBy] < a[orderBy]) {
@@ -138,29 +140,67 @@ EnhancedTableHead.propTypes = {
 export default function PendingRequests() {
   const navigate = useNavigate();
   const [accessToken] = useAtom(accessTokenAtom);
-  const [isAuth] = useAtom(isAuthAtom);
-  const [, tokensExpired] = useAtom(areTokensExpiredAtom);
+  const [, isAuth] = useAtom(isAuthAtom);
+  let authorized = React.useState(false);
+  const queryClient = useQueryClient();
+  const [refresh, setRefresh] = useAtom(refreshAtom);
+  let pauseQuery = false;
 
   React.useEffect(() => {
-    if (!isAuth || tokensExpired()) {
-      console.log("Not Authorized");
-      navigate("/login");
-    } else {
-      console.log("authorized");
-    }
+    pauseQuery = true;
+
+    const intervalId = setInterval(() => {
+      pauseQuery = true;
+      authorized = isAuth();
+      if (!authorized) {
+        navigate("/login");
+      }
+      pauseQuery = false;
+    }, 300000);
+    pauseQuery = false;
+    // Clean up the interval when the component unmounts
+    return () => {
+      clearInterval(intervalId);
+    };
   }, []);
 
   let [rows, setRows] = useState([]);
+
   const result = useQuery({
     queryKey: ["pendingRequests"],
-    queryFn: () => getPendingRequests(),
+    queryFn: async () =>
+      await axios.get("/api/request", {
+        params: {
+          approved: "False",
+        },
+      }),
     refetchInterval: 15000,
+    retry: 1,
+    retryDelay: 1000,
+    enabled: !pauseQuery,
+    onError: (error) => {
+      if (error.response.status === 401) {
+        // Check if token refresh is already in progress
+        pauseQuery = true;
+        if (!refresh) {
+          authorized = isAuth();
+
+          if (!authorized) {
+            queryClient.cancelQueries(["pendingRequests"]);
+            navigate("/logout");
+          }
+        }
+        pauseQuery = false;
+        queryClient.invalidateQueries(["pendingRequests"]);
+      }
+    },
   });
+
   if (result.isSuccess) {
     rows = result.data.data;
   }
 
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [open, setOpen] = React.useState(false);
   const [order, setOrder] = React.useState("asc");
   const [orderBy, setOrderBy] = React.useState("date_time");
   const [selected, setSelected] = React.useState([]);
@@ -177,12 +217,12 @@ export default function PendingRequests() {
   const closeModal = () => {
     const updatedRows = rows.filter((row) => row.id !== selected.id);
     setRows(updatedRows);
-    setIsModalOpen(false);
+    setOpen(false);
   };
 
   const handleClick = (event, row) => {
     setSelected(row);
-    setIsModalOpen(true);
+    setOpen(true);
   };
 
   const handleChangePage = (event, newPage) => {
@@ -214,16 +254,18 @@ export default function PendingRequests() {
 
   return (
     <div>
-      {isModalOpen && (
+      {open && (
         <Modal open={open} onClose={closeModal} aria-describedby="modal-form">
           <Box
             component="form"
             justifyContent="center"
             alignItems="center"
+            textAlign={"center"}
             display="flex"
             margin="normal"
             noValidate
             autoComplete="off"
+            overflow={"auto"}
             sx={{
               position: "fixed",
               top: "50%",
@@ -235,12 +277,9 @@ export default function PendingRequests() {
               bgcolor: "background.paper",
               boxShadow: 24,
               p: 4,
-              overflow: "auto",
             }}
           >
-            <Typography textAlign={"center"} id="modal-form">
-              <EditForm request={selected} closeModal={closeModal} />
-            </Typography>
+            <EditForm request={selected} closeModal={closeModal} />
           </Box>
         </Modal>
       )}

@@ -31,7 +31,7 @@ const settings = [{ text: "Login", href: "/Login" }];
 function HeaderBar() {
   const [anchorElNav, setAnchorElNav] = React.useState(null);
   const [anchorElUser, setAnchorElUser] = React.useState(null);
-  const [isAuth] = useAtom(isAuthAtom);
+  const [, isAuth] = useAtom(isAuthAtom);
 
   const handleOpenNavMenu = (event) => {
     setAnchorElNav(event.currentTarget);
@@ -138,7 +138,7 @@ function HeaderBar() {
               {settings.map((setting) => (
                 <MenuItem key={setting} onClick={handleCloseUserMenu}>
                   <Typography textAlign="center">
-                    {isAuth ? (
+                    {isAuth() ? (
                       <Button
                         onClick={handleCloseNavMenu}
                         component={RouterLink}

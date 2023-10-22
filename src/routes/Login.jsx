@@ -12,12 +12,14 @@ import { useAtom } from "jotai";
 import {
   accessTokenAtom,
   refreshTokenAtom,
-  logoutSentAtom,
   lastLoginDatetimeAtom,
+  isAuthAtom,
 } from "../components/atoms.jsx";
 import { useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import dayjs from "dayjs";
+import { useMutation } from "@tanstack/react-query";
+import axios from "axios";
 
 export default function Login() {
   const queryClient = useQueryClient();
@@ -28,37 +30,37 @@ export default function Login() {
 
   const [accessToken, setAccessToken] = useAtom(accessTokenAtom);
   const [refreshToken, setRefreshToken] = useAtom(refreshTokenAtom);
-  const [logoutSent, setLogoutSent] = useAtom(logoutSentAtom);
-  const [lastLoginDatetime, setLastLoginDatetime] = useAtom(
-    lastLoginDatetimeAtom
-  );
+  const [, setLastLoginDatetime] = useAtom(lastLoginDatetimeAtom);
+  const [, isAuth] = useAtom(isAuthAtom);
 
-  const submitUserDataMutation = submitUserData(
-    username,
-    password,
-    queryClient
-  );
+  const submitUserDataMutation = useMutation(submitUserData, {
+    onSuccess: (data) => {
+      console.log("Login Successful");
+      axios.defaults.headers.common["Authorization"] = `Bearer ${data.access}`;
+      setAccessToken(data.access);
+      setRefreshToken(data.refresh);
+      setLastLoginDatetime(dayjs());
+      setUsername("");
+      setPassword("");
+      navigate("/RequestList");
+    },
+  });
+
+  React.useEffect(() => {
+    if (isAuth()) {
+      navigate("/RequestList");
+    }
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     try {
       const data = await submitUserDataMutation.mutateAsync({
-        username,
-        password,
-        queryClient,
+        username: username,
+        password: password,
       });
-
-      if (data) {
-        console.log("Login Successful");
-        setAccessToken(data.access);
-        setRefreshToken(data.refresh);
-        setLogoutSent(false);
-        setLastLoginDatetime(new dayjs());
-        navigate("/RequestList");
-      } else {
-        console.log("Login Failed");
-      }
+      // You can access data from the mutation here.
     } catch (error) {
       console.error("Error submitting user data:", error);
     }
@@ -67,7 +69,7 @@ export default function Login() {
   return (
     <Box
       id="Login"
-      component="form"
+      component="form" // Wrap the form in a <form> element
       display="flex"
       justifyContent="center"
       alignItems="center"
@@ -76,7 +78,7 @@ export default function Login() {
       }}
       noValidate
       autoComplete="off"
-      onSubmit={handleSubmit}
+      onSubmit={handleSubmit} // Add the onSubmit handler here
     >
       <div>
         <Typography alignContent="center" textAlign="center" variant="h3">

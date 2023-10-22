@@ -2,82 +2,76 @@ import { atom, useAtom } from "jotai";
 import axios from "axios";
 import { atomWithStorage } from "jotai/utils";
 import dayjs from "dayjs";
+import { fetchWarehouseData } from "../actions.jsx";
 
-const fetchWarehouseData = async () => {
-  try {
-    const response = await axios.get("/api/warehouse");
-    return response.data;
-  } catch (error) {
-    throw error;
-  }
-};
-const refreshTokens = async () => {
-  const [access_token, setAccessToken] = useAtom(accessTokenAtom);
-  const [refresh_token, setRefreshToken] = useAtom(refreshTokenAtom);
+const refreshTokens = async (get, set) => {
+  console.log("Refreshing Tokens");
 
   try {
     const response = await axios.post(
       "/token/refresh/",
       {
-        refresh: refresh_token,
+        refresh: get(refreshTokenAtom),
       },
       {
         headers: {
           "content-Type": "application/json",
         },
-        withCredentials: true,
       }
     );
     if (response.status === 200) {
+      console.log("New Tokens: ", response);
       axios.defaults.headers.common[
         "Authorization"
-      ] = `Bearer ${response.data["access"]}`;
-      setAccessToken(response.data.access);
-      setRefreshToken(response.data.refresh);
+      ] = `Bearer ${response.data.access}`;
+      set(accessTokenAtom, response.data.access);
+      set(refreshTokenAtom, response.data.refresh);
+      set(lastLoginDatetimeAtom, dayjs());
       return true;
     } else {
+      set(removeTokensAtom);
       return false;
     }
   } catch (error) {
-    throw error;
+    console.log("Error refreshing tokens: ", error);
+    set(removeTokensAtom);
+    return false;
   }
 };
 
-const expirationTime = 15 * 60 * 1000; // 15 minutes in milliseconds
-
 export const accessTokenAtom = atomWithStorage("accessToken", null);
 export const refreshTokenAtom = atomWithStorage("refreshToken", null);
-export const lastLoginDatetimeAtom = atomWithStorage("lastLoginDatetime", null);
-export const logoutSentAtom = atom(false);
-
-export const areTokensExpiredAtom = atom(null, (get, set, updated) => {
-  const lastLoginDatetime = get(lastLoginDatetimeAtom);
-  if (lastLoginDatetime === null) {
-    set(removeTokensAtom, null); // Remove tokens if lastLoginDatetime is null
-    return true;
-  }
-  const fifteenMinAgo = dayjs().subtract(15, "minutes");
-  if (lastLoginDatetime.isBefore(fifteenMinAgo)) {
-    let gotNewTokens = refreshTokens();
-    if (gotNewTokens === true) {
-      set(lastLoginDatetimeAtom, now);
-      return false;
-    } else {
-      set(removeTokensAtom);
-      return true;
-    }
-  } else {
-    return false;
-  }
-});
-
-export const isAuthAtom = atom(
-  (get) => {
-    const accessToken = get(accessTokenAtom);
-    return accessToken !== null;
-  },
-  (get, set, updatedAccessToken) => {}
+export const lastLoginDatetimeAtom = atomWithStorage(
+  "lastLoginDatetime",
+  dayjs()
 );
+export const refreshAtom = atom(false);
+
+export const isAuthAtom = atom(null, (get, set, updatedAccessToken) => {
+  const accessToken = get(accessTokenAtom);
+  const refreshToken = get(refreshTokenAtom);
+  const accessExp = dayjs().subtract(14, "minutes");
+  const lastLoginDatetime = dayjs(get(lastLoginDatetimeAtom));
+  if (get(refreshAtom) === true) {
+    set(refreshAtom, false);
+    if (refreshTokens(get, set)) {
+      return true;
+    } else return false;
+  } else if (accessToken === null || refreshToken === null) {
+    return false;
+  } else if (accessExp.isAfter(lastLoginDatetime)) {
+    console.log("access token is expired, try to refresh.");
+    set(refreshAtom, true);
+    if (refreshTokens(get, set)) {
+      set(refreshAtom, false);
+      return true;
+    } else {
+      set(refreshAtom, false);
+      return false;
+    }
+  }
+  return true;
+});
 
 export const removeTokensAtom = atom(null, (get, set) => {
   set(accessTokenAtom, null);
