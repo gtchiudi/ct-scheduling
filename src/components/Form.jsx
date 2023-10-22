@@ -47,14 +47,15 @@ export function Form() {
 
   const [company_name, setcompany_name] = useState("");
   const [phone_number, setphone_number] = useState("");
-  const [email, setemail]               = useState("");
-  const [po_number, setpo_number]       = useState("");
-  const [warehouse, setwarehouse]       = useState("");
-  const [load_type, setload_type]       = useState("");
-  const [date_time, setdate_time]       = useState("");
-  const [delivery, setdelivery]         = useState(false);
-  //const [container, setcontainer] = useState(false);
-  const [notes, setnotes]               = useState("");
+  const [email,        setemail]        = useState("");
+  const [po_number,    setpo_number]    = useState("");
+  const [warehouse,    setwarehouse]    = useState("");
+  const [load_type,    setload_type]    = useState("");
+  const [date_time,    setdate_time]    = useState("");
+  const [delivery,     setdelivery]     = useState(false);
+  const [container,    setcontainer]    = useState(false);
+  const [con_number,   setcon_number]   = useState("");
+  const [notes,        setnotes]        = useState("");
   //const [submitted, setSubmitted] = useState(false);
 
   const _date = "";
@@ -77,16 +78,18 @@ export function Form() {
   const AddDeliveryRequest = async () => {
     let formField = new FormData();
 
-    formField.append("company_name", company_name);
-    formField.append("phone_number", phone_number);
-    formField.append("email", email);
-    formField.append("po_number", po_number);
-    formField.append("warehouse", warehouse);
-    formField.append("load_type", load_type);
-    formField.append("date_time", date_time);
-    formField.append("active", true);
-    formField.append("delivery", delivery);
-    formField.append("note_section", notes);
+    formField.append("company_name",     company_name);
+    formField.append("phone_number",     phone_number);
+    formField.append("email",            email);
+    formField.append("po_number",        po_number);
+    formField.append("warehouse",        warehouse);
+    formField.append("load_type",        load_type);
+    formField.append("container_drop",   container);
+    formField.append("container_number", con_number);
+    formField.append("date_time",        date_time);
+    formField.append("active",           true);
+    formField.append("delivery",         delivery);
+    formField.append("note_section",     notes);
 
     await axios({
       method: "post",
@@ -134,7 +137,7 @@ export function Form() {
               name="phone_number"
               value={phone_number}
               label="Phone Number"
-              variant="standard"
+              variant="filled"
               onChange={(e) => setphone_number(e.target.value)}
             ></TextField>
             <br></br>
@@ -196,15 +199,25 @@ export function Form() {
 
             <FormGroup>
               {(load_type === "Container") ?
-                <FormControlLabel 
-                  control={<Checkbox />} 
-                  label="Select for container drop." 
-                  load_type={"Container"} 
-                  //onChange={(e) => setcontainer(e.target.checked)}
-                  /> 
+                <Box>
+                  <TextField 
+                    id="con_number"
+                    label="Container Number"
+                    variant="filled"
+                    value={con_number}
+                    onChange={(e) => setcon_number(e.target.value)}
+                  />
+                  <FormControlLabel 
+                    control={<Checkbox />} 
+                    label="Select for container drop." 
+                    load_type={"Container"} 
+                    onChange={(e) => setcontainer(e.target.checked)}
+                  />
+                </Box>
                 :
                 null
               }
+
               
               <FormControlLabel 
                 control={<Checkbox />} 
