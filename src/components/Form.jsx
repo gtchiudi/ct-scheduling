@@ -265,6 +265,28 @@ export function Form() {
 // Buttons are made available depending on the state of the request, that state is pulled from the request data.
 export function FilledForm({requestData, change}){
 
+
+  // This controls the dyanmic display of buttons based on the state of the request
+  // BUTTONS ARE MISSING onClick FUNCTIONALITY
+  let formButton;
+  if (requestData.checkedTime == null) {
+
+    formButton = <Button variant="contained"> Check-In </Button>
+
+  } else if (requestData.checkedTime != null && requestData.dockTime == null) {
+
+    formButton = <Button variant="contained"> Dock </Button>
+
+  } else if (requestData.checkedTime != null && requestData.dockTime != null && requestData.completeTime == null) {
+    
+    formButton = <Button variant="contained"> Complete </Button>
+
+  } else {
+
+    formButton = <Button disabled variant="contained" color="red"> Error - See Admin </Button>
+  
+  }
+
   return (
     <Typography textAlign={"center"}>
       <FormControl>
@@ -325,6 +347,15 @@ export function FilledForm({requestData, change}){
                 onChange={change}
               ></TextField>
 
+              {(requestData.load_type === "Container") ? 
+                <TextField
+                  readOnly
+                  label="Container Number"
+                  value={requestData.container_number}
+                  onChange={change}
+                />
+              : null}
+
               <FormControlLabel
                 control={<Checkbox />}
                 label="Delivery"
@@ -368,25 +399,8 @@ export function FilledForm({requestData, change}){
                 // On change will be handled by buttons below that update the request
               />
 
-              {// Active flag will be set using the "Finish" button 
-               // Below buttons will be displayed based on the state of the request.
-               // Expected: request.state
-               // As it stands, all buttons display at once. The implementaion of a switch
-               //    or multiple if-else statements is necessary.
-               // BUTTONS ARE MISSING ONCLICK FUNCTIONALITY
-              }
-
-              <Button
-                variant="contained"
-              > Check-In </Button>
-
-              <Button
-                variant="contained"
-              > Dock </Button>
-
-              <Button
-                variant="contained"
-              > Complete </Button>
+              {formButton}
+              
           </div>
         </Box>
       </FormControl>

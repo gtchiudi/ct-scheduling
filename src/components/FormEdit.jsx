@@ -90,19 +90,21 @@ function FormEdit(request) {
         component="form"
         justifyContent="center"
         alignItems="center"
-        display="flex"
+        display="block"
         margin="normal"
         noValidate
         autoComplete="off"
+        overflow="hidden"
         sx={{
           position: "absolute",
-          top: "50%",
-          left: "50%",
-          transform: "translate(-50%, -50%)",
+          top: "5%",
+          left: "35%",
           width: 500,
+          maxHeight: 800,
+          overflow: "scroll",
           bgcolor: "background.paper",
           boxShadow: 24,
-          p: 4,
+          p: 4,       
         }}
       >
         <Typography textAlign={"center"} id="modal-form">
