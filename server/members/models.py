@@ -44,6 +44,7 @@ class Request(BaseModel):
     phone_number = models.CharField(
         max_length=12, null=True, blank=True)  # changeable only via admin
     email = models.EmailField(max_length=254)  # changeable only via admin
+    ########################################## Cannot be changed unless loged in as admin
     warehouse = models.ForeignKey(
         Warehouse, on_delete=models.CASCADE)  # changeable via emp
     po_number = models.IntegerField(default=0)  # changable via emp
@@ -51,25 +52,30 @@ class Request(BaseModel):
         max_length=32, choices=LOAD_CHOICES, default='Full')  # changable via emp
     container_drop = models.BooleanField(
         default=False, blank=True)  # changable via emp
-
     container_number = models.IntegerField(
         null=True, blank=True)  # changeable via emp
     note_section = models.CharField(
         max_length=512, null=True, blank=True)  # changable via emp
     date_time = models.DateTimeField("Request Date")  # changable via emp
     delivery = models.BooleanField(default=False)  # changable via emp
+    ########################################### Initial Request
     trailer_number = models.CharField(
         max_length=32, null=True, blank=True)  # employee use only
+    ########################################### For aprroving Requests (Trailer is nor req.)
     driver_phone_number = models.CharField(
         max_length=12, null=True, blank=True)  # emp use only
+    ########################################### Once truck arrives
     dock_number = models.IntegerField(null=True, blank=True)  # emp use only
     check_in_time = models.TimeField(
         "Checked In", null=True, blank=True)  # emp use only
+    ########################################### Logged once driver number is assigned. Dock number is added manually. Notify driver via button
     docked_time = models.TimeField(
         "Docked Time", null=True, blank=True)  # emp use only
     completed_time = models.TimeField(
         "Time Completed", null=True, blank=True)  # emp use only
+    ########################################### Last two are done with buttons and auto added to DB
     active = models.BooleanField(default=True)
+    ########################################### BEcomes false after completed delivery
 
 
 class Schedule(BaseModel):

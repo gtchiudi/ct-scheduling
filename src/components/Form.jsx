@@ -17,6 +17,7 @@ import { warehouseDataAtom, updateWarehouseDataAtom } from "./atoms.jsx";
 import { SingleDateSelector, TimeSelector } from "./DateSelector.jsx";
 import FormControlLabel from '@mui/material/FormControlLabel';
 import FormGroup from '@mui/material/FormGroup';
+import { DateTimeField } from "@mui/x-date-pickers";
 
 // Use FilledForm for elements that will be autopopulated with request information
 // As it stands the filled form can only display data and will be updated with buttons
@@ -218,7 +219,6 @@ export function Form() {
                 null
               }
 
-              
               <FormControlLabel 
                 control={<Checkbox />} 
                 label="Select for delivery"
@@ -255,6 +255,14 @@ export function Form() {
 
 // Warehouse is showing as nonsense, not sure how to get that back to plain english
 // GIIIIIIIIIIIIIIIIIIINNNNNNNNNNNNNNOOOOOOOOOOOOOOOOOOOOOOOOOO
+
+// The FilledForm will be used to allow CT employees the ability to modify a request
+// This form also contains information that is restricted to employees only.
+// As well as accept, deny, progress a request through buttons.
+// For now the form is ReadOnly, the implementation of confirmation popups will be
+//     paramount to ensuring no data is accidentally modified.
+// ------
+// Buttons are made available depending on the state of the request, that state is pulled from the request data.
 export function FilledForm({requestData, change}){
 
   return (
@@ -323,6 +331,62 @@ export function FilledForm({requestData, change}){
                 checked={requestData.isDelivery} 
                 onChange={change}
               />
+
+              <TextField
+                readOnly
+                label="Trailer Number"
+                value={requestData.trailerNum}
+                onChange={change}
+              />
+
+              <TextField
+                readOnly
+                label="Driver Phone #"
+                value={""}
+                onChange={change}
+              />
+
+              <TextField
+                readOnly
+                label="Checked-In Time"
+                value={""}
+                onChange={change} // This data is not yet a part of the request (Expected: request.checkedTime)
+                // On change will be handled by buttons below that update the request
+              />
+
+              <DateTimeField
+                readOnly
+                label="Docked Time"
+                value={null} // This data is not yet a part of the request (Expected: request.dockTime)
+                // On change will be handled by buttons below that update the request
+              />
+
+              <DateTimeField
+                readOnly
+                label="Completed Time"
+                value={null} // This data is not yet a part of the request (Expected: request.compleTime)
+                // On change will be handled by buttons below that update the request
+              />
+
+              {// Active flag will be set using the "Finish" button 
+               // Below buttons will be displayed based on the state of the request.
+               // Expected: request.state
+               // As it stands, all buttons display at once. The implementaion of a switch
+               //    or multiple if-else statements is necessary.
+               // BUTTONS ARE MISSING ONCLICK FUNCTIONALITY
+              }
+
+              <Button
+                variant="contained"
+              > Check-In </Button>
+
+              <Button
+                variant="contained"
+              > Dock </Button>
+
+              <Button
+                variant="contained"
+              > Complete </Button>
           </div>
         </Box>
       </FormControl>
