@@ -47,6 +47,7 @@ class Request(BaseModel):
     ########################################## Cannot be changed unless loged in as admin
     warehouse = models.ForeignKey(
         Warehouse, on_delete=models.CASCADE)  # changeable via emp
+    ## warehouse = models.CharField(foreign_key=True, Warehouse, on_delete=models.Cascade)
     po_number = models.IntegerField(default=0)  # changable via emp
     load_type = models.CharField(
         max_length=32, choices=LOAD_CHOICES, default='Full')  # changable via emp

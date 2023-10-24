@@ -263,8 +263,29 @@ export function Form() {
 //     paramount to ensuring no data is accidentally modified.
 // ------
 // Buttons are made available depending on the state of the request, that state is pulled from the request data.
+
+
+
 export function FilledForm({requestData, change}){
 
+  const [id,           set_id]          = useState(requestData.id)
+  const [company_name, setcompany_name] = useState(requestData.company_name);
+  const [phone_number, setphone_number] = useState(requestData.phone_number);
+  const [email,        setemail]        = useState(requestData.email);
+  const [po_number,    setpo_number]    = useState(requestData.po_number);
+  const [warehouse,    setwarehouse]    = useState(requestData.warehouse);
+  const [load_type,    setload_type]    = useState(requestData.load_type);
+  const [date_time,    setdate_time]    = useState(requestData.date_time);
+  const [delivery,     setdelivery]     = useState(requestData.isDelivery);
+  const [container,    setcontainer]    = useState(requestData.con_drop);
+  const [con_number,   setcon_number]   = useState(requestData.container_number);
+  const [notes,        setnotes]        = useState(requestData.notes);
+  const [trailer_num,  settrailer_num]  = useState(requestData.trailerNum);
+  const [driver_phone, setdriver_phone] = useState("");
+  const [dock_num,     setdock_num]     = useState("");
+  const [check_time,   setcheck_time]   = useState(null);
+  const [dock_time,    setdock_time]    = useState(null);
+  const [com_time,     setcom_time]     = useState(null);
 
   // This controls the dyanmic display of buttons based on the state of the request
   // BUTTONS ARE MISSING onClick FUNCTIONALITY
@@ -308,50 +329,50 @@ export function FilledForm({requestData, change}){
             <TextField
                 readOnly
                 label="Company Name"
-                value={requestData.company_name}
+                value={company_name}
                 onChange={change}
               ></TextField>
 
               <TextField
                 readOnly
                 label="Phone Number"
-                value={requestData.phone_number}
+                value={phone_number}
                 onChange={change}
               ></TextField>
                   
               <TextField
                 readOnly
                 label="Email"
-                value={requestData.email}
+                value={email}
                 onChange={change}
               ></TextField> 
 
               <TextField
                 readOnly
                 label="PO Number"
-                value={requestData.po_number}
+                value={po_number}
                 onChange={change}
               ></TextField>
 
               <TextField
                 readOnly
                 label="Warehouse"
-                value={requestData.warehouse}
+                value={warehouse}
                 onChange={change}
               ></TextField>
 
               <TextField
                 readOnly
                 label="Load Type"
-                value={requestData.load_type}
+                value={load_type}
                 onChange={change}
               ></TextField>
 
-              {(requestData.load_type === "Container") ? 
+              {(container) ? 
                 <TextField
                   readOnly
                   label="Container Number"
-                  value={requestData.container_number}
+                  value={con_number}
                   onChange={change}
                 />
               : null}
@@ -359,28 +380,41 @@ export function FilledForm({requestData, change}){
               <FormControlLabel
                 control={<Checkbox />}
                 label="Delivery"
-                checked={requestData.isDelivery} 
+                checked={delivery} 
                 onChange={change}
+              />
+
+              <DateTimeField
+                readOnly
+                label="Request Time"
+                value={date_time}
               />
 
               <TextField
                 readOnly
                 label="Trailer Number"
-                value={requestData.trailerNum}
+                value={trailer_num}
                 onChange={change}
               />
 
               <TextField
                 readOnly
                 label="Driver Phone #"
-                value={""}
+                value={driver_phone}
+                onChange={change}
+              />
+
+              <TextField
+                readOnly
+                label="Dock Number"
+                value={dock_num}
                 onChange={change}
               />
 
               <TextField
                 readOnly
                 label="Checked-In Time"
-                value={""}
+                value={check_time}
                 onChange={change} // This data is not yet a part of the request (Expected: request.checkedTime)
                 // On change will be handled by buttons below that update the request
               />
@@ -388,14 +422,23 @@ export function FilledForm({requestData, change}){
               <DateTimeField
                 readOnly
                 label="Docked Time"
-                value={null} // This data is not yet a part of the request (Expected: request.dockTime)
+                value={dock_time} // This data is not yet a part of the request (Expected: request.dockTime)
                 // On change will be handled by buttons below that update the request
               />
 
               <DateTimeField
                 readOnly
                 label="Completed Time"
-                value={null} // This data is not yet a part of the request (Expected: request.compleTime)
+                value={com_time} // This data is not yet a part of the request (Expected: request.compleTime)
+                // On change will be handled by buttons below that update the request
+              />
+
+              <TextField
+                readOnly
+                multiline
+                rows={4}
+                label="Notes"
+                value={notes} // This data is not yet a part of the request (Expected: request.compleTime)
                 // On change will be handled by buttons below that update the request
               />
 
