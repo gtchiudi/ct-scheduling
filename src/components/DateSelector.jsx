@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { DatePicker } from "@mui/x-date-pickers";
+import { DatePicker, TimePicker } from "@mui/x-date-pickers";
 import dayjs from "dayjs";
 
 export default function DateSelector({ onDateChange }) {
@@ -69,8 +69,41 @@ export const SingleDateSelector = ({ onDateChange }) => {
         label="Select Date"
         value={selectedDate}
         onChange={(newValue) => handleDateChange(newValue)}
+        disablePast
         //defaultDate={selectedStartDate} // Set today's date as the default for the start date picker
       />
     </div>
   );
-};
+}
+
+export const TimeSelector = ({ onTimeChange }) => {
+  const now = dayjs().startOf('day');
+
+  const [selectedTime, setSelectedTime] = useState(now);
+
+  useEffect(() => {
+    // Call onDateChange with initial today's date values
+    onTimeChange(selectedTime);
+  }, [selectedTime]);
+
+  const handleTimeChange = (time) => {
+    const dayjsTime = dayjs(time);
+    setSelectedTime(dayjsTime);
+    onTimeChange(selectedTime);
+    console.log("Selected Time:", selectedTime);
+  };
+
+  console.log(now);
+
+  return (
+    <div>
+      <TimePicker 
+        label="Select Time"
+        //value={now.format('hh:mm aa')}
+        onChange={(e) => handleTimeChange(e)} 
+        // shouldDisableTime -- takes function
+        // will be used to only allow selection of available times
+      />
+    </div>  
+  );
+}
