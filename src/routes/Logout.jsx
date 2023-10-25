@@ -6,13 +6,11 @@ import { useNavigate } from "react-router-dom";
 export default function Logout() {
   const [, removeTokens] = useAtom(removeTokensAtom);
   const navigate = useNavigate();
-  const [, isAuth] = useAtom(isAuthAtom);
-  const authenticated = isAuth();
 
   React.useEffect(() => {
     removeTokens();
     navigate("/");
-  }, [authenticated, removeTokens, navigate]);
+  }, []);
 
   return <div></div>;
 }
