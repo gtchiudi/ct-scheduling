@@ -24,7 +24,7 @@ const router = createBrowserRouter([
     element: (
       <div>
         <HeaderBar />
-        <Root />
+        <Home />
       </div>
     ),
     errorElement: <ErrorPage />,
@@ -80,7 +80,16 @@ const router = createBrowserRouter([
     element: (
       <div>
         <HeaderBar />
-        <PendingRequests />
+        <PendingRequests /<
+      </div>
+    ),
+   },
+   {
+    path: "RequestForm",
+    element: (
+      <div>
+        <HeaderBar />
+        <RequestForm />
       </div>
     ),
   },
