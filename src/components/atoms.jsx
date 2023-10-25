@@ -9,6 +9,7 @@ const refreshTokens = async (get, set) => {
 
   try {
     const response = await axios.post(
+      //  try to refresh tokens, passing in refresh token
       "/token/refresh/",
       {
         refresh: get(refreshTokenAtom),
@@ -20,22 +21,24 @@ const refreshTokens = async (get, set) => {
       }
     );
     if (response.status === 200) {
-      console.log("New Tokens: ", response);
-      axios.defaults.headers.common[
+      // ok response
+      axios.defaults.headers.common[ // set authorization header
         "Authorization"
       ] = `Bearer ${response.data.access}`;
-      set(accessTokenAtom, response.data.access);
+      set(accessTokenAtom, response.data.access); // set tokens
       set(refreshTokenAtom, response.data.refresh);
-      set(lastLoginDatetimeAtom, dayjs());
-      return true;
+      set(lastLoginDatetimeAtom, dayjs()); // set last login datetime
+      return true; // successful refresh
     } else {
-      set(removeTokensAtom);
-      return false;
+      // not successful refresh
+      set(removeTokensAtom); // remove tokens
+      return false; // unsuccessful refresh
     }
   } catch (error) {
+    // refresh error
     console.log("Error refreshing tokens: ", error);
-    set(removeTokensAtom);
-    return false;
+    set(removeTokensAtom); // remove tokens after error
+    return false; // unsuccessful refresh
   }
 };
 
@@ -53,24 +56,39 @@ export const isAuthAtom = atom(null, (get, set, updatedAccessToken) => {
   const accessExp = dayjs().subtract(14, "minutes");
   const lastLoginDatetime = dayjs(get(lastLoginDatetimeAtom));
   if (get(refreshAtom) === true) {
+    // received error 401. refresh?
     set(refreshAtom, false);
-    if (refreshTokens(get, set)) {
+    if (accessExp.isAfter(lastLoginDatetime)) {
+      // access token expired
+      if (refreshTokens(get, set)) {
+        // try to refresh tokens
+        return true; // authenticated
+      } else return false; // refresh failed
+    } else if (get(accessTokenAtom) !== null) {
+      // possible page refreshed. access token is still valid.
+      axios.defaults.headers.common["Authorization"] = `Bearer ${get(
+        accessTokenAtom
+      )}`;
       return true;
     } else return false;
-  } else if (accessToken === null || refreshToken === null) {
+  }
+  if (accessToken === null || refreshToken === null) {
+    // no tokens: not authenticated
     return false;
-  } else if (accessExp.isAfter(lastLoginDatetime)) {
-    console.log("access token is expired, try to refresh.");
-    set(refreshAtom, true);
+  }
+  if (accessExp.isAfter(lastLoginDatetime)) {
+    // access token is expired
+    set(refreshAtom, true); // refreshing tokens
     if (refreshTokens(get, set)) {
-      set(refreshAtom, false);
-      return true;
+      // if refresh success
+      set(refreshAtom, false); // not refreshing tokens
+      return true; // authenticated
     } else {
-      set(refreshAtom, false);
-      return false;
+      set(refreshAtom, false); // not refreshing tokens
+      return false; // not authenticated
     }
   }
-  return true;
+  return true; // authenticated
 });
 
 export const removeTokensAtom = atom(null, (get, set) => {

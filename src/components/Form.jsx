@@ -417,8 +417,6 @@ export function EditForm({ request, closeModal }) {
         noValidate
         autoComplete="off"
       >
-        <br />
-        <FormLabel htmlFor="company_name">Edit and Approve Request</FormLabel>
         <TextField
           label="Company Name"
           name="company_name"
@@ -513,7 +511,6 @@ export function EditForm({ request, closeModal }) {
           />
         </Box>
         <Button onClick={handleApprove}>Approve Request</Button>
-        <br />
       </Stack>
     </FormControl>
   );

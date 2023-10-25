@@ -21,7 +21,13 @@ import TableSortLabel from "@mui/material/TableSortLabel";
 import Paper from "@mui/material/Paper";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import Switch from "@mui/material/Switch";
-import Modal from "@mui/material/Modal";
+import Button from "@mui/material/Button";
+import {
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+} from "@mui/material";
 import Typography from "@mui/material/Typography";
 import { visuallyHidden } from "@mui/utils";
 import { EditForm } from "../components/Form.jsx";
@@ -154,7 +160,7 @@ export default function PendingRequests() {
       authorized = isAuth();
       console.log("Authorized: ", authorized);
       if (!authorized) {
-        navigate("/login");
+        navigate("/Login");
       }
       pauseQuery = false;
     }, 300000);
@@ -184,6 +190,7 @@ export default function PendingRequests() {
         // Check if token refresh is already in progress
         pauseQuery = true;
         if (!refresh) {
+          setRefresh(true);
           authorized = isAuth();
 
           if (!authorized) {
@@ -215,7 +222,7 @@ export default function PendingRequests() {
     setOrderBy(property);
   };
 
-  const closeModal = () => {
+  const closeDialog = () => {
     const updatedRows = rows.filter((row) => row.id !== selected.id);
     setRows(updatedRows);
     setOpen(false);
@@ -256,33 +263,17 @@ export default function PendingRequests() {
   return (
     <div>
       {open && (
-        <Modal open={open} onClose={closeModal} aria-describedby="modal-form">
-          <Box
-            component="form"
-            justifyContent="center"
-            alignItems="center"
-            textAlign={"center"}
-            display="flex"
-            margin="normal"
-            noValidate
-            autoComplete="off"
-            overflow={"auto"}
-            sx={{
-              position: "fixed",
-              top: "50%",
-              left: "50%",
-              transform: "translate(-50%, -50%)",
-              width: "60%",
-              maxWidth: "600",
-              maxHeight: "80vh",
-              bgcolor: "background.paper",
-              boxShadow: 24,
-              p: 4,
-            }}
-          >
-            <EditForm request={selected} closeModal={closeModal} />
-          </Box>
-        </Modal>
+        <Dialog open={open} onClose={closeDialog}>
+          <DialogTitle textAlign={"center"}>
+            Edit and Approve Request
+          </DialogTitle>
+          <DialogContent>
+            <EditForm request={selected} closeModal={closeDialog} />
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={closeDialog}>Cancel</Button>
+          </DialogActions>
+        </Dialog>
       )}
       {result.isLoading && (
         <div>
