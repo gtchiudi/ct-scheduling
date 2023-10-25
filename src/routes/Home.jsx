@@ -44,22 +44,20 @@ export default function Home() {
             fontSize: 14,
           }}
         >
-          <h1>Welcome to Candor Logistics</h1>
+          <h1>Welcome to CT-Scheduling</h1>
         </Box>
         <div style={boxStyle}>
-          <h1>CandorTransportationCo.LLC</h1>
+          <h1 style={{textAlign: "center"}}>CandorTransportationCo.LLC</h1>
           <p style={{ margin: 0 }}>
-            Candor Transportation is a women-owned, full-service freight
-            logistics company. When it comes to freight movement and service, we
-            are number one in the industry. Honesty and integrity have been the
-            key to our success.
+          Experience seamless logistics management with CT-Scheduling. Our user-friendly platform connects Candor Logistics clients and
+              employees to streamline requests, manage warehouse operations, and
+              deliver top-notch service.
           </p>{" "}
           <br />
-          <p style={{ margin: 0 }}>
-            Every customer is our number one customer. Our goal is to keep your
-            best interests in mind. By keeping the lines of communication open,
-            we can customize our services to fit your needs. One call, we handle
-            it all.
+          <p style={{ margin: 0}}>
+          For more information about Candor Logistics 
+          and Candor Transportation, visit our website:
+          <a href="https://www.candortransport.com/home"> Here</a>
           </p>
         </div>
 
