@@ -34,6 +34,7 @@ export async function fetchWarehouseData() {
   } catch (error) {
     throw error;
   }
+
 }
 
 export function getApprovedRequests() {

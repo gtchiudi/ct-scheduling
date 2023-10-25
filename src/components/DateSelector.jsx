@@ -77,7 +77,8 @@ export const SingleDateSelector = ({ onDateChange }) => {
 };
 
 export const TimeSelector = ({ onTimeChange }) => {
-  const now = dayjs().startOf("day");
+  const now = dayjs().startOf('day');
+}
 
   const [selectedTime, setSelectedTime] = useState(now);
 
@@ -97,13 +98,13 @@ export const TimeSelector = ({ onTimeChange }) => {
 
   return (
     <div>
-      <TimePicker
+      <TimePicker 
         label="Select Time"
         //value={now.format('hh:mm aa')}
-        onChange={(e) => handleTimeChange(e)}
+        onChange={(e) => handleTimeChange(e)} 
         // shouldDisableTime -- takes function
         // will be used to only allow selection of available times
       />
-    </div>
+    </div>  
   );
-};
+}
