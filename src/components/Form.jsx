@@ -22,7 +22,12 @@ import {
 import { SingleDateSelector, TimeSelector } from "./DateSelector.jsx";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import FormGroup from "@mui/material/FormGroup";
-import { DatePicker, TimePicker, DateTimePicker, DateTimeField } from "@mui/x-date-pickers";
+import {
+  DatePicker,
+  TimePicker,
+  DateTimePicker,
+  DateTimeField,
+} from "@mui/x-date-pickers";
 import dayjs from "dayjs";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -54,15 +59,15 @@ export default function Form() {
 
   const [company_name, setcompany_name] = useState("");
   const [phone_number, setphone_number] = useState("");
-  const [email,        setemail]        = useState("");
-  const [po_number,    setpo_number]    = useState("");
-  const [warehouse,    setwarehouse]    = useState("");
-  const [load_type,    setload_type]    = useState("");
-  const [date_time,    setdate_time]    = useState("");
-  const [delivery,     setdelivery]     = useState(false);
-  const [container,    setcontainer]    = useState(false);
-  const [con_number,   setcon_number]   = useState("");
-  const [notes,        setnotes]        = useState("");
+  const [email, setemail] = useState("");
+  const [po_number, setpo_number] = useState("");
+  const [warehouse, setwarehouse] = useState("");
+  const [load_type, setload_type] = useState("");
+  const [date_time, setdate_time] = useState("");
+  const [delivery, setdelivery] = useState(false);
+  const [container, setcontainer] = useState(false);
+  const [con_number, setcon_number] = useState("");
+  const [notes, setnotes] = useState("");
   //const [submitted, setSubmitted] = useState(false);
 
   const _date = "";
@@ -84,18 +89,18 @@ export default function Form() {
   const AddDeliveryRequest = async () => {
     let formField = new FormData();
 
-    formField.append("company_name",     company_name);
-    formField.append("phone_number",     phone_number);
-    formField.append("email",            email);
-    formField.append("po_number",        po_number);
-    formField.append("warehouse",        warehouse);
-    formField.append("load_type",        load_type);
-    formField.append("container_drop",   container);
+    formField.append("company_name", company_name);
+    formField.append("phone_number", phone_number);
+    formField.append("email", email);
+    formField.append("po_number", po_number);
+    formField.append("warehouse", warehouse);
+    formField.append("load_type", load_type);
+    formField.append("container_drop", container);
     formField.append("container_number", con_number);
-    formField.append("date_time",        date_time);
-    formField.append("active",           true);
-    formField.append("delivery",         delivery);
-    formField.append("note_section",     notes);
+    formField.append("date_time", date_time);
+    formField.append("active", true);
+    formField.append("delivery", delivery);
+    formField.append("note_section", notes);
 
     await axios({
       method: "post",
@@ -107,8 +112,6 @@ export default function Form() {
     });
   };
 
-
-  
   return (
     <Typography textAlign={"center"}>
       <FormControl>
@@ -127,17 +130,17 @@ export default function Form() {
         >
           <div>
             <FormLabel for="company_name">Request A Delivery</FormLabel>
-              <TextField
-                required
-                id="company_name"
-                name="company_name"
-                value={company_name}
-                label="Company Name"
-                variant="filled"
-                onChange={(e) => setcompany_name(e.target.value)}
-              ></TextField>
+            <TextField
+              required
+              id="company_name"
+              name="company_name"
+              value={company_name}
+              label="Company Name"
+              variant="filled"
+              onChange={(e) => setcompany_name(e.target.value)}
+            ></TextField>
             <br></br>
-            
+
             <TextField
               id="phone_number"
               name="phone_number"
@@ -147,7 +150,7 @@ export default function Form() {
               onChange={(e) => setphone_number(e.target.value)}
             ></TextField>
             <br></br>
-            
+
             <TextField
               required
               id="email"
@@ -158,7 +161,7 @@ export default function Form() {
               onChange={(e) => setemail(e.target.value)}
             ></TextField>
             <br></br>
-            
+
             <TextField
               required
               id="po_number"
@@ -169,7 +172,7 @@ export default function Form() {
               onChange={(e) => setpo_number(e.target.value)}
             ></TextField>
             <br></br>
-            
+
             <TextField
               select
               required
@@ -201,54 +204,52 @@ export default function Form() {
                   {option.value}
                 </MenuItem>
               ))}
-            </TextField>            
+            </TextField>
 
             <FormGroup>
-              {(load_type === "Container") ?
+              {load_type === "Container" ? (
                 <Box>
-                  <TextField 
+                  <TextField
                     id="con_number"
                     label="Container Number"
                     variant="filled"
                     value={con_number}
                     onChange={(e) => setcon_number(e.target.value)}
                   />
-                  <FormControlLabel 
-                    control={<Checkbox />} 
-                    label="Select for container drop." 
-                    load_type={"Container"} 
+                  <FormControlLabel
+                    control={<Checkbox />}
+                    label="Select for container drop."
+                    load_type={"Container"}
                     onChange={(e) => setcontainer(e.target.checked)}
                   />
                 </Box>
-                :
-                null
-              }
-              <FormControlLabel 
-                control={<Checkbox />} 
+              ) : null}
+              <FormControlLabel
+                control={<Checkbox />}
                 label="Select for delivery"
                 onChange={(e) => setdelivery(e.target.checked)}
-                />
+              />
             </FormGroup>
 
-              <TextField
-                id="notes"
-                label="Notes"
-                multiline
-                rows={4}
-                value={notes}
-                onChange={(e) => setnotes(e.target.value)}
-              />
+            <TextField
+              id="notes"
+              label="Notes"
+              multiline
+              rows={4}
+              value={notes}
+              onChange={(e) => setnotes(e.target.value)}
+            />
 
-            <Box 
+            <Box
               display={"flex"}
               sx={{
-                "& .MuiTextField-root": { m: 1, width: "19.1ch" }
+                "& .MuiTextField-root": { m: 1, width: "19.1ch" },
               }}
             >
-                <SingleDateSelector required onDateChange={handleDateChange} />
-                <TimeSelector required onTimeChange={handleTimeChange}/>
-            </ Box>
-            
+              <SingleDateSelector required onDateChange={handleDateChange} />
+              <TimeSelector required onTimeChange={handleTimeChange} />
+            </Box>
+
             <Button onClick={AddDeliveryRequest}>Submit</Button>
           </div>
         </Box>
@@ -268,48 +269,46 @@ export default function Form() {
 // ------
 // Buttons are made available depending on the state of the request, that state is pulled from the request data.
 
-
-
-export function FilledForm({requestData, change}){
-
-  const [id,           set_id]          = useState(requestData.id)
+export function FilledForm({ requestData, change }) {
+  const [id, set_id] = useState(requestData.id);
   const [company_name, setcompany_name] = useState(requestData.company_name);
   const [phone_number, setphone_number] = useState(requestData.phone_number);
-  const [email,        setemail]        = useState(requestData.email);
-  const [po_number,    setpo_number]    = useState(requestData.po_number);
-  const [warehouse,    setwarehouse]    = useState(requestData.warehouse);
-  const [load_type,    setload_type]    = useState(requestData.load_type);
-  const [date_time,    setdate_time]    = useState(requestData.date_time);
-  const [delivery,     setdelivery]     = useState(requestData.isDelivery);
-  const [container,    setcontainer]    = useState(requestData.con_drop);
-  const [con_number,   setcon_number]   = useState(requestData.container_number);
-  const [notes,        setnotes]        = useState(requestData.notes);
-  const [trailer_num,  settrailer_num]  = useState(requestData.trailerNum);
+  const [email, setemail] = useState(requestData.email);
+  const [po_number, setpo_number] = useState(requestData.po_number);
+  const [warehouse, setwarehouse] = useState(requestData.warehouse);
+  const [load_type, setload_type] = useState(requestData.load_type);
+  const [date_time, setdate_time] = useState(requestData.date_time);
+  const [delivery, setdelivery] = useState(requestData.isDelivery);
+  const [container, setcontainer] = useState(requestData.con_drop);
+  const [con_number, setcon_number] = useState(requestData.container_number);
+  const [notes, setnotes] = useState(requestData.notes);
+  const [trailer_num, settrailer_num] = useState(requestData.trailerNum);
   const [driver_phone, setdriver_phone] = useState("");
-  const [dock_num,     setdock_num]     = useState("");
-  const [check_time,   setcheck_time]   = useState(null);
-  const [dock_time,    setdock_time]    = useState(null);
-  const [com_time,     setcom_time]     = useState(null);
+  const [dock_num, setdock_num] = useState("");
+  const [check_time, setcheck_time] = useState(null);
+  const [dock_time, setdock_time] = useState(null);
+  const [com_time, setcom_time] = useState(null);
 
   // This controls the dyanmic display of buttons based on the state of the request
   // BUTTONS ARE MISSING onClick FUNCTIONALITY
   let formButton;
   if (requestData.checkedTime == null) {
-
-    formButton = <Button variant="contained"> Check-In </Button>
-
+    formButton = <Button variant="contained"> Check-In </Button>;
   } else if (requestData.checkedTime != null && requestData.dockTime == null) {
-
-    formButton = <Button variant="contained"> Dock </Button>
-
-  } else if (requestData.checkedTime != null && requestData.dockTime != null && requestData.completeTime == null) {
-    
-    formButton = <Button variant="contained"> Complete </Button>
-
+    formButton = <Button variant="contained"> Dock </Button>;
+  } else if (
+    requestData.checkedTime != null &&
+    requestData.dockTime != null &&
+    requestData.completeTime == null
+  ) {
+    formButton = <Button variant="contained"> Complete </Button>;
   } else {
-
-    formButton = <Button disabled variant="contained" color="red"> Error - See Admin </Button>
-  
+    formButton = (
+      <Button disabled variant="contained" color="red">
+        {" "}
+        Error - See Admin{" "}
+      </Button>
+    );
   }
   return (
     <Typography textAlign={"center"}>
@@ -328,131 +327,125 @@ export function FilledForm({requestData, change}){
           autoComplete="off"
         >
           <div>
-
             <FormLabel for="company_name">Information for request</FormLabel>
             <TextField
-                readOnly
-                label="Company Name"
-                value={company_name}
-                onChange={change}
-              ></TextField>
+              readOnly
+              label="Company Name"
+              value={company_name}
+              onChange={change}
+            ></TextField>
 
+            <TextField
+              readOnly
+              label="Phone Number"
+              value={phone_number}
+              onChange={change}
+            ></TextField>
+
+            <TextField
+              readOnly
+              label="Email"
+              value={email}
+              onChange={change}
+            ></TextField>
+
+            <TextField
+              readOnly
+              label="PO Number"
+              value={po_number}
+              onChange={change}
+            ></TextField>
+
+            <TextField
+              readOnly
+              label="Warehouse"
+              value={warehouse}
+              onChange={change}
+            ></TextField>
+
+            <TextField
+              readOnly
+              label="Load Type"
+              value={load_type}
+              onChange={change}
+            ></TextField>
+
+            {container ? (
               <TextField
                 readOnly
-                label="Phone Number"
-                value={phone_number}
-                onChange={change}
-              ></TextField>
-                  
-              <TextField
-                readOnly
-                label="Email"
-                value={email}
-                onChange={change}
-              ></TextField> 
-
-              <TextField
-                readOnly
-                label="PO Number"
-                value={po_number}
-                onChange={change}
-              ></TextField>
-
-              <TextField
-                readOnly
-                label="Warehouse"
-                value={warehouse}
-                onChange={change}
-              ></TextField>
-
-              <TextField
-                readOnly
-                label="Load Type"
-                value={load_type}
-                onChange={change}
-              ></TextField>
-
-              {(container) ? 
-                <TextField
-                  readOnly
-                  label="Container Number"
-                  value={con_number}
-                  onChange={change}
-                />
-              : null}
-
-              <FormControlLabel
-                control={<Checkbox />}
-                label="Delivery"
-                checked={delivery} 
+                label="Container Number"
+                value={con_number}
                 onChange={change}
               />
+            ) : null}
 
-              <DateTimeField
-                readOnly
-                label="Request Time"
-                value={date_time}
-              />
+            <FormControlLabel
+              control={<Checkbox />}
+              label="Delivery"
+              checked={delivery}
+              onChange={change}
+            />
 
-              <TextField
-                readOnly
-                label="Trailer Number"
-                value={trailer_num}
-                onChange={change}
-              />
+            <DateTimeField readOnly label="Request Time" value={date_time} />
 
-              <TextField
-                readOnly
-                label="Driver Phone #"
-                value={driver_phone}
-                onChange={change}
-              />
+            <TextField
+              readOnly
+              label="Trailer Number"
+              value={trailer_num}
+              onChange={change}
+            />
 
-              <TextField
-                readOnly
-                label="Dock Number"
-                value={dock_num}
-                onChange={change}
-              />
+            <TextField
+              readOnly
+              label="Driver Phone #"
+              value={driver_phone}
+              onChange={change}
+            />
 
-              <TextField
-                readOnly
-                label="Checked-In Time"
-                value={check_time}
-                onChange={change} // This data is not yet a part of the request (Expected: request.checkedTime)
-                // On change will be handled by buttons below that update the request
-              />
+            <TextField
+              readOnly
+              label="Dock Number"
+              value={dock_num}
+              onChange={change}
+            />
 
-              <DateTimeField
-                readOnly
-                label="Docked Time"
-                value={dock_time} // This data is not yet a part of the request (Expected: request.dockTime)
-                // On change will be handled by buttons below that update the request
-              />
+            <TextField
+              readOnly
+              label="Checked-In Time"
+              value={check_time}
+              onChange={change} // This data is not yet a part of the request (Expected: request.checkedTime)
+              // On change will be handled by buttons below that update the request
+            />
 
-              <DateTimeField
-                readOnly
-                label="Completed Time"
-                value={com_time} // This data is not yet a part of the request (Expected: request.compleTime)
-                // On change will be handled by buttons below that update the request
-              />
+            <DateTimeField
+              readOnly
+              label="Docked Time"
+              value={dock_time} // This data is not yet a part of the request (Expected: request.dockTime)
+              // On change will be handled by buttons below that update the request
+            />
 
-              <TextField
-                readOnly
-                multiline
-                rows={4}
-                label="Notes"
-                value={notes} // This data is not yet a part of the request (Expected: request.compleTime)
-                // On change will be handled by buttons below that update the request
-              />
+            <DateTimeField
+              readOnly
+              label="Completed Time"
+              value={com_time} // This data is not yet a part of the request (Expected: request.compleTime)
+              // On change will be handled by buttons below that update the request
+            />
 
-              {formButton}
-              
+            <TextField
+              readOnly
+              multiline
+              rows={4}
+              label="Notes"
+              value={notes} // This data is not yet a part of the request (Expected: request.compleTime)
+              // On change will be handled by buttons below that update the request
+            />
+
+            {formButton}
           </div>
         </Box>
       </FormControl>
     </Typography>
-  )
+  );
 }
 
 export function EditForm({ request, closeModal }) {
@@ -644,4 +637,4 @@ export function EditForm({ request, closeModal }) {
       </Stack>
     </FormControl>
   );
-
+}
