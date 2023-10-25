@@ -74,10 +74,11 @@ export const SingleDateSelector = ({ onDateChange }) => {
       />
     </div>
   );
-}
+};
 
 export const TimeSelector = ({ onTimeChange }) => {
   const now = dayjs().startOf('day');
+}
 
   const [selectedTime, setSelectedTime] = useState(now);
 

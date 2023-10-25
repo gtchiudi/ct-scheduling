@@ -1,7 +1,11 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAtom } from "jotai";
-import { isAuthAtom } from "../components/atoms.jsx";
+import {
+  isAuthAtom,
+  accessTokenAtom,
+  refreshAtom,
+} from "../components/atoms.jsx";
 import { getPendingRequests } from "../actions.jsx";
 import { useQuery } from "@tanstack/react-query";
 import { PropTypes } from "prop-types";
@@ -17,8 +21,18 @@ import TableSortLabel from "@mui/material/TableSortLabel";
 import Paper from "@mui/material/Paper";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import Switch from "@mui/material/Switch";
+import Button from "@mui/material/Button";
+import {
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+} from "@mui/material";
+import Typography from "@mui/material/Typography";
 import { visuallyHidden } from "@mui/utils";
-import FormEdit from "../components/FormEdit.jsx";
+import { EditForm } from "../components/Form.jsx";
+import { useQueryClient } from "@tanstack/react-query";
+import axios from "axios";
 
 function descendingComparator(a, b, orderBy) {
   if (b[orderBy] < a[orderBy]) {
@@ -123,7 +137,6 @@ function EnhancedTableHead(props) {
   );
 }
 EnhancedTableHead.propTypes = {
-  numSelected: PropTypes.number.isRequired,
   onRequestSort: PropTypes.func.isRequired,
   order: PropTypes.oneOf(["asc", "desc"]).isRequired,
   orderBy: PropTypes.string.isRequired,
@@ -131,16 +144,71 @@ EnhancedTableHead.propTypes = {
 };
 
 export default function PendingRequests() {
-  let rows = [];
+  const navigate = useNavigate();
+  const [accessToken] = useAtom(accessTokenAtom);
+  const [, isAuth] = useAtom(isAuthAtom);
+  let authorized = React.useState(false);
+  const queryClient = useQueryClient();
+  const [refresh, setRefresh] = useAtom(refreshAtom);
+  let pauseQuery = false;
+
+  React.useEffect(() => {
+    pauseQuery = true;
+
+    const intervalId = setInterval(() => {
+      pauseQuery = true;
+      authorized = isAuth();
+      console.log("Authorized: ", authorized);
+      if (!authorized) {
+        navigate("/Login");
+      }
+      pauseQuery = false;
+    }, 300000);
+    pauseQuery = false;
+    // Clean up the interval when the component unmounts
+    return () => {
+      clearInterval(intervalId);
+    };
+  }, []);
+
+  let [rows, setRows] = useState([]);
+
   const result = useQuery({
     queryKey: ["pendingRequests"],
-    queryFn: getPendingRequests,
+    queryFn: async () =>
+      await axios.get("/api/request", {
+        params: {
+          approved: "False",
+        },
+      }),
+    refetchInterval: 15000,
+    retry: 1,
+    retryDelay: 1000,
+    enabled: !pauseQuery,
+    onError: (error) => {
+      if (error.response.status === 401) {
+        // Check if token refresh is already in progress
+        pauseQuery = true;
+        if (!refresh) {
+          setRefresh(true);
+          authorized = isAuth();
+
+          if (!authorized) {
+            queryClient.cancelQueries(["pendingRequests"]);
+            navigate("/logout");
+          }
+        }
+        pauseQuery = false;
+        queryClient.invalidateQueries(["pendingRequests"]);
+      }
+    },
   });
+
   if (result.isSuccess) {
     rows = result.data.data;
   }
 
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [open, setOpen] = React.useState(false);
   const [order, setOrder] = React.useState("asc");
   const [orderBy, setOrderBy] = React.useState("date_time");
   const [selected, setSelected] = React.useState([]);
@@ -154,13 +222,15 @@ export default function PendingRequests() {
     setOrderBy(property);
   };
 
-  const closeModal = () => {
-    setIsModalOpen(false);
+  const closeDialog = () => {
+    const updatedRows = rows.filter((row) => row.id !== selected.id);
+    setRows(updatedRows);
+    setOpen(false);
   };
 
   const handleClick = (event, row) => {
     setSelected(row);
-    setIsModalOpen(true);
+    setOpen(true);
   };
 
   const handleChangePage = (event, newPage) => {
@@ -192,10 +262,44 @@ export default function PendingRequests() {
 
   return (
     <div>
-      {isModalOpen && <FormEdit request={selected} onClose={closeModal} />}
-      {result.isLoading && <h1>Loading...</h1>}
-      {result.isError && <h1>Error: {result.error.message}</h1>}
-      {result.isSuccess && (
+      {open && (
+        <Dialog open={open} onClose={closeDialog}>
+          <DialogTitle textAlign={"center"}>
+            Edit and Approve Request
+          </DialogTitle>
+          <DialogContent>
+            <EditForm request={selected} closeModal={closeDialog} />
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={closeDialog}>Cancel</Button>
+          </DialogActions>
+        </Dialog>
+      )}
+      {result.isLoading && (
+        <div>
+          <br />
+          <Typography textAlign="center" variant="h2">
+            Loading...
+          </Typography>
+        </div>
+      )}
+      {result.isError && (
+        <div>
+          <br />
+          <Typography textAlign="center" variant="h2">
+            Error: {result.error.message}
+          </Typography>
+        </div>
+      )}
+      {result.isSuccess && result.data.data.length === 0 && (
+        <div>
+          <br />
+          <Typography textAlign="center" variant="h2">
+            No Pending Requests
+          </Typography>
+        </div>
+      )}
+      {result.isSuccess && result.data.data.length > 0 && (
         <Box sx={{ width: "100%" }}>
           <Paper sx={{ width: "100%", mb: 2 }}>
             <TableContainer>

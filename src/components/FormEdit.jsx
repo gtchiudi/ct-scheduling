@@ -41,6 +41,7 @@ function FormEdit(request) {
   ];
 
   const [requestData, setRequestData] = useState({
+    id: request.request.id || null,
     id: request.request.id,
     company_name: request.request.company_name || "",
     phone_number: request.request.phone_number || "",
@@ -69,7 +70,7 @@ function FormEdit(request) {
     try {
       await axios({
         method: "post",
-        url: "http://localhost:5173/api/request/", // Terribly unsure what URL to put here so I'm just hoping this one is right. Will need Gino to confirm
+        url: "http://localhost:5173/api/request/",
         data: requestData,
       }).then((response) => {
         console.log(response.data);
@@ -82,7 +83,6 @@ function FormEdit(request) {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    //setFormData({ ...requestData, [name]: value });
     setRequestData({ ...requestData, [name]: value });
   };
   return (
@@ -117,6 +117,7 @@ function FormEdit(request) {
 }
 
 export default FormEdit;
+
 
 
   // <Form
