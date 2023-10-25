@@ -10,10 +10,8 @@ export default function Logout() {
   const authenticated = isAuth();
 
   React.useEffect(() => {
-    if (authenticated) {
-      removeTokens();
-      navigate("/");
-    }
+    removeTokens();
+    navigate("/");
   }, [authenticated, removeTokens, navigate]);
 
   return <div></div>;

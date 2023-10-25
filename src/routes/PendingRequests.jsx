@@ -152,6 +152,7 @@ export default function PendingRequests() {
     const intervalId = setInterval(() => {
       pauseQuery = true;
       authorized = isAuth();
+      console.log("Authorized: ", authorized);
       if (!authorized) {
         navigate("/login");
       }
