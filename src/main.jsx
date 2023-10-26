@@ -61,8 +61,6 @@ const router = createBrowserRouter([
         <Logout />
       </Layout>
     ), // Wrap Logout with Layout
-      </div>
-    ),
   },
   {
     path: "home",
