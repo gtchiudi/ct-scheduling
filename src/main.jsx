@@ -13,6 +13,7 @@ import Logout from "./routes/Logout.jsx";
 import Home from "./routes/Home.jsx";
 import RequestList from "./routes/RequestList.jsx";
 import RequestForm from "./routes/RequestForm.jsx";
+import HeaderBar from "./components/HeaderBar.jsx";
 import PendingRequests from "./routes/PendingRequests.jsx";
 import Layout from "./components/layout.jsx";
 

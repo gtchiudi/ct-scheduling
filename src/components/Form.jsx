@@ -20,7 +20,8 @@ import FormControlLabel from '@mui/material/FormControlLabel';
 import FormGroup from '@mui/material/FormGroup';
 import { DateTimeField } from "@mui/x-date-pickers";
 import dayjs from "dayjs";
-import { error } from "console";
+import { useQueryClient } from "@tanstack/react-query";
+//import { error } from "console";
 
 // Use FilledForm for elements that will be autopopulated with request information
 // As it stands the filled form can only display data and will be updated with buttons
@@ -66,13 +67,13 @@ export function Form() {
   const handleDateChange = (date) => {
     const formattedDate = date.format("YYYY-MM-DD");
 
-    setdate_time(formattedDate);
+    setdate_time(_date + formattedDate);
     //setSubmitted(false);
   };
 
   const handleTimeChange = (time) => {
     const formattedTime = time.format("HH:mm:ss.SSSSSS[Z]");
-    setdate_time(formattedTime);
+    setdate_time(_date + " " + formattedTime);
     //setSubmitted(false);
   };
 
@@ -251,25 +252,6 @@ export function Form() {
                 onChange={(e) => setdelivery(e.target.checked)}
                 />
             </FormGroup>
-
-              <TextField
-                id="notes"
-                label="Notes"
-                multiline
-                rows={4}
-                value={notes}
-                onChange={(e) => setnotes(e.target.value)}
-              />
-
-            <Box 
-              display={"flex"}
-              sx={{
-                "& .MuiTextField-root": { m: 1, width: "19.1ch" }
-              }}
-            >
-                <SingleDateSelector required onDateChange={handleDateChange} />
-                <TimeSelector required onTimeChange={handleTimeChange}/>
-            </ Box>
             
             <Button onClick={AddDeliveryRequest}>Submit</Button>
           </div>
@@ -292,81 +274,93 @@ export function Form() {
 
 
 
-export function FilledForm({requestData}){
+export function FilledForm({request}){
+  const queryClient = useQueryClient();
 
-  const [id,           set_id]          = useState(requestData.id);
-  const [approved,     setapproved]     = useState(false);
-  const [company_name, setcompany_name] = useState(requestData.company_name);
-  const [phone_number, setphone_number] = useState(requestData.phone_number);
-  const [email,        setemail]        = useState(requestData.email);
-  const [po_number,    setpo_number]    = useState(requestData.po_number);
-  const [warehouse,    setwarehouse]    = useState(requestData.warehouse);
-  const [load_type,    setload_type]    = useState(requestData.load_type);
-  const [date_time,    setdate_time]    = useState(requestData.date_time);
-  const [delivery,     setdelivery]     = useState(requestData.isDelivery);
-  const [container,    setcontainer]    = useState(requestData.con_drop);
-  const [con_number,   setcon_number]   = useState(requestData.container_number);
-  const [notes,        setnotes]        = useState(requestData.notes);
-  const [trailer_num,  settrailer_num]  = useState(requestData.trailerNum);
-  const [driver_phone, setdriver_phone] = useState("");
-  const [dock_num,     setdock_num]     = useState("");
-  const [check_time,   setcheck_time]   = useState(null);
-  const [dock_time,    setdock_time]    = useState(null);
-  const [com_time,     setcom_time]     = useState(null);
-  const [active,       setactive]       = useState(true);
+  const [requestData, setRequestData] = useState({
+    id: request.id || null,
+    approved: request.approved || false,
+    company_name: request.company_name || "",
+    phone_number: request.phone_number || "",
+    email: request.email || "",
+    warehouse: request.warehouse || "",
+    po_number: request.po_number || "",
+    load_type: request.load_type || "",
+    container_drop: request.container_drop || false,
+    container_number: request.container_number || "",
+    note_section: request.note_section || "",
+    date_time: dayjs(request.date_time) || new dayjs(),
+    delivery: request.delivery || false,
+    trailer_number: request.trailer_number || "",
+    driver_phone_number: request.driver_phone || "",
+    dock_number: request.dock_number || "",
+    check_in_time: request.check_in_time || null,
+    docked_time: request.docked_time || null,
+    completed_time: request.completed_time || null,
+    active: request.active || true
+  });
 
   const UpdateRequest = async () => {
-    let formField = new FormData();
-
-    formField.append("id", id);
-    formField.append("approved", approved);
-    formField.append("company_name", company_name);
-    formField.append("phone_number", phone_number);
-    formField.append("email", email);
-    formField.append("po_number", po_number);
-    formField.append("warehouse", warehouse);
-    formField.append("load_type", load_type);
-    formField.append("container_drop", container);
-    formField.append("container_number", con_number);
-    formField.append("note_section", notes);
-    formField.append("date_time", date_time);
-    formField.append("delivery", delivery);
-    formField.append("trailer_number", trailer_num);
-    formField.append("driver_phone_number", driver_phone);
-    formField.append("dock_number", dock_num);
-    formField.append("check_in_time", check_time);
-    formField.append("docked_time", dock_time);
-    formField.append("completed_time", com_time);
-    formField.append("active", active);
     
-    await axios({
-      method: "put",
-      url: "http://localhost:5173/api/request/", // Terribly unsure what URL to put here so I'm just hoping this one is right. Will need Gino to confirm
-      data: formField,
-    }).then((response) => {
-      console.log(response.data);
-      history("/");
-    });
+    try { 
+      await axios.put(`http://localhost:5173/api/request/${requestData.id}`, requestData
+      ).then((response) => {
+        console.log(response.data);
+      });      
+      queryClient.invalidateQueries("PendingRequests");
+      (requestData.active) ? null : useNavigate('/RequestList')
+    } catch (error) {
+      console.error("Error updating request:", error);
+      useNavigate('/RequestList')
+    };
   };
 
+  // This handles the updating of the requests status.
+  // When a button is pressed, this function will be called and depending on the current state
+  //    of the request will be updated accordingly.
+const handleButton = (e) => {
+  const { name } = e.target;
+  switch (name){
+    case "approve":
+      setRequestData({...requestData, [name]: true});
+      break;
+    case "deny":
+      setRequestData({...requestData, [name]: false});
+      setactive(false);
+      // should probably trigger an event to tell the requestor to submit anew
+      break;
+    case "check_in_time":
+      setRequestData({...requestData, [name]: dayjs().format("YYYY-MM-DD HH:mm:ss.SSSSSS[Z]")});
+      break;
+    case "docked_time":
+      setRequestData({...requestData, [name]: dayjs().format("YYYY-MM-DD HH:mm:ss.SSSSSS[Z]")});
+      break;
+    case "completed_time":
+      setRequestData({...requestData, [name]: dayjs().format("YYYY-MM-DD HH:mm:ss.SSSSSS[Z]")});
+      break;
+    default:
+      break;
+  }
+  UpdateRequest();
+}
   // This controls the dyanmic display of buttons based on the state of the request
   // BUTTONS ARE MISSING onClick FUNCTIONALITY
   let formButton;
-  if (!approved) {
+  if (!requestData.approved) {
 
-    formButton = <div><Button id="Approve" variant="contained" onClick={handleButton}> Approve </Button> <Button id="Deny" variant="contained" onClick={handleButton}> Deny </Button></div> 
+    formButton = <div><Button name="approve" variant="contained" onClick={handleButton}> Approve </Button> <Button id="deny" variant="contained" onClick={handleButton}> Deny </Button></div> 
 
   } else if (requestData.checkedTime == null) {
 
-    formButton = <Button id="Check-In" variant="contained" onClick={handleButton}> Check-In </Button>
+    formButton = <Button name="check_in_time" variant="contained" onClick={handleButton}> Check-In </Button>
 
   } else if (requestData.checkedTime != null && requestData.dockTime == null) {
 
-    formButton = <Button id="Dock" variant="contained" onClick={handleButton}> Dock </Button>
+    formButton = <Button name="docked_time" variant="contained" onClick={handleButton}> Dock </Button>
 
   } else if (requestData.checkedTime != null && requestData.dockTime != null && requestData.completeTime == null) {
     
-    formButton = <Button id="Complete" variant="contained" onClick={handleButton}> Complete </Button>
+    formButton = <Button name="completed_time" variant="contained" onClick={handleButton}> Complete </Button>
 
   } else {
 
@@ -374,34 +368,14 @@ export function FilledForm({requestData}){
   
   }
 
-// This handles the updating of the requests status.
-// When a button is pressed, this function will be called and depending on the current state
-//    of the request will be updated accordingly.
-const handleButton = (e) => {
-  switch (e.target.id){
-    case "Approve":
-      setapproved(true);
-      break;
-    case "Deny":
-      setapproved(false);
-      setactive(false);
-      // should probably trigger an event to tell the requestor to submit anew
-      break;
-    case "Check-In":
-      setcheck_time(dayjs());
-      break;
-    case "Dock":
-      setdock_time(dayjs());
-      break;
-    case "Complete":
-      setcom_time(dayjs());
-      break;
-    default:
-      break;
-  }
-  UpdateRequest();
-}
-
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    if (name === "container_drop" || name === "delivery") {
+      setRequestData({ ...requestData, [name]: e.target.checked });
+      return;
+    }
+    setRequestData({ ...requestData, [name]: value });
+  };
 
 
   return (
@@ -425,103 +399,113 @@ const handleButton = (e) => {
             <TextField
               readOnly
               label="Company Name"
-              value={company_name}
-              onChange={change}
+              name="company_name"
+              value={requestData.company_name}
+              onChange={handleChange}
             ></TextField>
 
             <TextField
               readOnly
               label="Phone Number"
-              value={phone_number}
-              onChange={change}
+              name="phone_number"
+              value={requestData.phone_number}
+              onChange={handleChange}
             ></TextField>
 
             <TextField
               readOnly
               label="Email"
-              value={email}
-              onChange={change}
+              name="email"
+              value={requestData.email}
+              onChange={handleChange}
             ></TextField>
 
             <TextField
               readOnly
               label="PO Number"
-              value={po_number}
-              onChange={change}
+              name="po_number"
+              value={requestData.po_number}
+              onChange={handleChange}
             ></TextField>
 
             <TextField
               readOnly
               label="Warehouse"
-              value={warehouse}
-              onChange={change}
+              name="warehouse"
+              value={requestData.warehouse}
+              onChange={handleChange}
             ></TextField>
 
             <TextField
               readOnly
               label="Load Type"
-              value={load_type}
-              onChange={change}
+              name="load_type"
+              value={requestData.load_type}
+              onChange={handleChange}
             ></TextField>
 
-            {container ? (
+            {requestData.container_drop ? (
               <TextField
                 readOnly
                 label="Container Number"
-                value={con_number}
-                onChange={change}
+                name="container_number"
+                value={requestData.container_number}
+                onChange={handleChange}
               />
             ) : null}
 
             <FormControlLabel
               control={<Checkbox />}
               label="Delivery"
-              checked={delivery}
-              onChange={change}
+              name="delivery"
+              checked={requestData.delivery}
+              onChange={handleChange}
             />
 
-            <DateTimeField readOnly label="Request Time" value={date_time} />
+            <DateTimeField readOnly label="Request Time" value={requestData.date_time} />
 
             <TextField
               readOnly
               label="Trailer Number"
-              value={trailer_num}
-              onChange={change}
+              name="trailer_number"
+              value={requestData.trailer_number}
+              onChange={handleChange}
             />
 
             <TextField
               readOnly
               label="Driver Phone #"
-              value={driver_phone}
-              onChange={change}
+              name="driver_phone_number"
+              value={requestData.driver_phone_number}
+              onChange={handleChange}
             />
 
             <TextField
               readOnly
               label="Dock Number"
-              value={dock_num}
-              onChange={change}
+              name="dock_number"
+              value={requestData.dock_number}
+              onChange={handleChange}
             />
 
             <TextField
               readOnly
               label="Checked-In Time"
-              value={check_time}
-              onChange={change} // This data is not yet a part of the request (Expected: request.checkedTime)
+              value={requestData.check_in_time} // This data is not yet a part of the request (Expected: request.checkedTime)
               // On change will be handled by buttons below that update the request
             />
 
             <DateTimeField
               readOnly
               label="Docked Time"
-              value={dock_time} // This data is not yet a part of the request (Expected: request.dockTime)
+              value={requestData.docked_time} // This data is not yet a part of the request (Expected: request.dockTime)
               // On change will be handled by buttons below that update the request
             />
 
             <DateTimeField
               readOnly
               label="Completed Time"
-              value={com_time} // This data is not yet a part of the request (Expected: request.compleTime)
+              value={requestData.completed_time} // This data is not yet a part of the request (Expected: request.compleTime)
               // On change will be handled by buttons below that update the request
             />
 
@@ -530,8 +514,9 @@ const handleButton = (e) => {
               multiline
               rows={4}
               label="Notes"
-              value={notes} // This data is not yet a part of the request (Expected: request.compleTime)
-              // On change will be handled by buttons below that update the request
+              name="note_section"
+              value={requestData.note_section}
+              onChange={handleChange}
             />
 
             {formButton}
@@ -542,193 +527,3 @@ const handleButton = (e) => {
   );
 }
 
-export function EditForm({ request, closeModal }) {
-  const queryClient = useQueryClient();
-  const [warehouseData] = useAtom(warehouseDataAtom);
-  const [, updateWarehouseData] = useAtom(updateWarehouseDataAtom);
-  const [accessToken] = useAtom(accessTokenAtom);
-
-  React.useEffect(() => {
-    updateWarehouseData();
-  }, [updateWarehouseData]);
-
-  const [requestData, setRequestData] = useState({
-    id: request.id || null,
-    approved: request.approved || false,
-    company_name: request.company_name || "",
-    phone_number: request.phone_number || "",
-    email: request.email || "",
-    warehouse: request.warehouse || "",
-    po_number: request.po_number || "",
-    load_type: request.load_type || "",
-    container_drop: request.container_drop || false,
-    container_number: request.container_number || "",
-    notes: request.note_section || "",
-    date_time: dayjs(request.date_time) || new dayjs(),
-    delivery: request.delivery || false,
-    trailerNum: request.trailer_number || "",
-  });
-  const load_types = [
-    {
-      value: "Full",
-    },
-    {
-      value: "LTL",
-    },
-    {
-      value: "Container",
-    },
-  ];
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    if (name === "container_drop" || name === "delivery") {
-      setRequestData({ ...requestData, [name]: e.target.checked });
-      return;
-    }
-    setRequestData({ ...requestData, [name]: value });
-  };
-
-  const handleDateChange = (date) => {
-    setRequestData({
-      ...requestData,
-      date_time: date,
-    });
-  };
-
-  const handleApprove = () => {
-    requestData.approved = true;
-    requestData.date_time = requestData.date_time.format(
-      "YYYY-MM-DD HH:mm:ss.SSSSSS[Z]"
-    );
-    approveRequest();
-  };
-
-  const approveRequest = async () => {
-    try {
-      const response = await axios.put(
-        `/api/request/${requestData.id}/`,
-        requestData
-      );
-      queryClient.invalidateQueries("pendingRequests");
-      closeModal();
-    } catch (error) {
-      console.error("Error updating request:", error);
-      closeModal();
-    }
-  };
-
-  return (
-    <FormControl>
-      <Stack
-        spacing={2}
-        alignContent={"center"}
-        textAlign={"center"}
-        display={"flex"}
-        sx={{
-          "& .MuiTextField-root": { m: 1, width: "40ch" },
-          "& > :not(style)": { m: 1, width: "40ch" },
-          maxHeight: "90vh",
-          maxWidth: "60vw",
-        }}
-        noValidate
-        autoComplete="off"
-      >
-        <TextField
-          label="Company Name"
-          name="company_name"
-          value={requestData.company_name}
-          onChange={handleChange}
-        ></TextField>
-
-        <TextField
-          label="Phone Number"
-          name="phone_number"
-          value={requestData.phone_number}
-          onChange={handleChange}
-        ></TextField>
-
-        <TextField
-          label="Email"
-          name="email"
-          value={requestData.email}
-          onChange={handleChange}
-        ></TextField>
-
-        <TextField
-          label="PO Number"
-          name="po_number"
-          value={requestData.po_number}
-          onChange={handleChange}
-        ></TextField>
-
-        <TextField
-          select
-          id="warehouse"
-          label="Warehouse"
-          name="warehouse"
-          variant="filled"
-          value={requestData.warehouse}
-          onChange={handleChange}
-        >
-          {warehouseData.map((option) => (
-            <MenuItem key={option.id} value={option.id}>
-              {option.name}
-            </MenuItem>
-          ))}
-        </TextField>
-
-        <TextField
-          select
-          id="load_type"
-          label="Load Type"
-          name="load_type"
-          variant="filled"
-          value={requestData.load_type}
-          onChange={handleChange}
-        >
-          {load_types.map((option) => (
-            <MenuItem key={option.value} value={option.value}>
-              {option.value}
-            </MenuItem>
-          ))}
-        </TextField>
-
-        <div>
-          {requestData.load_type === "Container" ? (
-            <Box>
-              <FormControlLabel
-                control={<Checkbox />}
-                label="Select for Container Drop"
-                name="container_drop"
-                checked={requestData.container_drop}
-                onChange={handleChange}
-              />
-              <TextField
-                label="Container Number"
-                name="container_number"
-                value={requestData.container_number}
-                onChange={handleChange}
-              ></TextField>
-            </Box>
-          ) : null}
-        </div>
-
-        <DateTimePicker
-          value={dayjs(requestData.date_time)}
-          onChange={(newValue) => handleDateChange(newValue)}
-        />
-        <Box>
-          <FormControlLabel
-            control={<Checkbox />}
-            label="Delivery"
-            name="delivery"
-            checked={requestData.delivery}
-            onChange={handleChange}
-          />
-        </Box>
-        <Button onClick={handleApprove}>Approve Request</Button>
-      </Stack>
-    </FormControl>
-  );
-}

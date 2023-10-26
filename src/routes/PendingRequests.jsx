@@ -30,7 +30,7 @@ import {
 } from "@mui/material";
 import Typography from "@mui/material/Typography";
 import { visuallyHidden } from "@mui/utils";
-import { EditForm } from "../components/Form.jsx";
+import { FilledForm } from "../components/Form.jsx";
 import { useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 
@@ -268,7 +268,7 @@ export default function PendingRequests() {
             Edit and Approve Request
           </DialogTitle>
           <DialogContent>
-            <EditForm request={selected} closeModal={closeDialog} />
+            <FilledForm request={selected} closeModal={closeDialog} />
           </DialogContent>
           <DialogActions>
             <Button onClick={closeDialog}>Cancel</Button>
