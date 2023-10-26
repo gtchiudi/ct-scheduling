@@ -80,7 +80,7 @@ const router = createBrowserRouter([
     element: (
       <div>
         <HeaderBar />
-        <PendingRequests /<
+        <PendingRequests />
       </div>
     ),
    },

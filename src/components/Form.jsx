@@ -18,6 +18,8 @@ import { SingleDateSelector, TimeSelector } from "./DateSelector.jsx";
 import FormControlLabel from '@mui/material/FormControlLabel';
 import FormGroup from '@mui/material/FormGroup';
 import { DateTimeField } from "@mui/x-date-pickers";
+import dayjs from "dayjs";
+import { error } from "console";
 
 // Use FilledForm for elements that will be autopopulated with request information
 // As it stands the filled form can only display data and will be updated with buttons
@@ -266,9 +268,10 @@ export function Form() {
 
 
 
-export function FilledForm({requestData, change}){
+export function FilledForm({requestData}){
 
-  const [id,           set_id]          = useState(requestData.id)
+  const [id,           set_id]          = useState(requestData.id);
+  const [approved,     setapproved]     = useState(false);
   const [company_name, setcompany_name] = useState(requestData.company_name);
   const [phone_number, setphone_number] = useState(requestData.phone_number);
   const [email,        setemail]        = useState(requestData.email);
@@ -286,27 +289,96 @@ export function FilledForm({requestData, change}){
   const [check_time,   setcheck_time]   = useState(null);
   const [dock_time,    setdock_time]    = useState(null);
   const [com_time,     setcom_time]     = useState(null);
+  const [active,       setactive]       = useState(true);
+
+  const UpdateRequest = async () => {
+    let formField = new FormData();
+
+    formField.append("id", id);
+    formField.append("approved", approved);
+    formField.append("company_name", company_name);
+    formField.append("phone_number", phone_number);
+    formField.append("email", email);
+    formField.append("po_number", po_number);
+    formField.append("warehouse", warehouse);
+    formField.append("load_type", load_type);
+    formField.append("container_drop", container);
+    formField.append("container_number", con_number);
+    formField.append("note_section", notes);
+    formField.append("date_time", date_time);
+    formField.append("delivery", delivery);
+    formField.append("trailer_number", trailer_num);
+    formField.append("driver_phone_number", driver_phone);
+    formField.append("dock_number", dock_num);
+    formField.append("check_in_time", check_time);
+    formField.append("docked_time", dock_time);
+    formField.append("completed_time", com_time);
+    formField.append("active", active);
+    
+    await axios({
+      method: "put",
+      url: "http://localhost:5173/api/request/", // Terribly unsure what URL to put here so I'm just hoping this one is right. Will need Gino to confirm
+      data: formField,
+    }).then((response) => {
+      console.log(response.data);
+      history("/");
+    });
+  };
 
   // This controls the dyanmic display of buttons based on the state of the request
   // BUTTONS ARE MISSING onClick FUNCTIONALITY
   let formButton;
-  if (requestData.checkedTime == null) {
+  if (!approved) {
 
-    formButton = <Button variant="contained"> Check-In </Button>
+    formButton = <div><Button id="Approve" variant="contained" onClick={handleButton}> Approve </Button> <Button id="Deny" variant="contained" onClick={handleButton}> Deny </Button></div> 
+
+  } else if (requestData.checkedTime == null) {
+
+    formButton = <Button id="Check-In" variant="contained" onClick={handleButton}> Check-In </Button>
 
   } else if (requestData.checkedTime != null && requestData.dockTime == null) {
 
-    formButton = <Button variant="contained"> Dock </Button>
+    formButton = <Button id="Dock" variant="contained" onClick={handleButton}> Dock </Button>
 
   } else if (requestData.checkedTime != null && requestData.dockTime != null && requestData.completeTime == null) {
     
-    formButton = <Button variant="contained"> Complete </Button>
+    formButton = <Button id="Complete" variant="contained" onClick={handleButton}> Complete </Button>
 
   } else {
 
     formButton = <Button disabled variant="contained" color="red"> Error - See Admin </Button>
   
   }
+
+// This handles the updating of the requests status.
+// When a button is pressed, this function will be called and depending on the current state
+//    of the request will be updated accordingly.
+const handleButton = (e) => {
+  switch (e.target.id){
+    case "Approve":
+      setapproved(true);
+      break;
+    case "Deny":
+      setapproved(false);
+      setactive(false);
+      // should probably trigger an event to tell the requestor to submit anew
+      break;
+    case "Check-In":
+      setcheck_time(dayjs());
+      break;
+    case "Dock":
+      setdock_time(dayjs());
+      break;
+    case "Complete":
+      setcom_time(dayjs());
+      break;
+    default:
+      break;
+  }
+  UpdateRequest();
+}
+
+
 
   return (
     <Typography textAlign={"center"}>
@@ -330,50 +402,58 @@ export function FilledForm({requestData, change}){
                 readOnly
                 label="Company Name"
                 value={company_name}
-                onChange={change}
+                onChange={setcompany_name(value)}
               ></TextField>
 
               <TextField
                 readOnly
                 label="Phone Number"
                 value={phone_number}
-                onChange={change}
+                onChange={setphone_number(value)}
               ></TextField>
                   
               <TextField
                 readOnly
                 label="Email"
                 value={email}
-                onChange={change}
+                onChange={setemail(value)}
               ></TextField> 
 
               <TextField
                 readOnly
                 label="PO Number"
                 value={po_number}
-                onChange={change}
+                onChange={setpo_number(value)}
               ></TextField>
 
               <TextField
                 readOnly
                 label="Warehouse"
                 value={warehouse}
-                onChange={change}
+                onChange={setwarehouse(value)}
               ></TextField>
 
               <TextField
                 readOnly
                 label="Load Type"
                 value={load_type}
-                onChange={change}
+                onChange={setload_type(value)}
               ></TextField>
+
+              <FormControlLabel
+                readOnly
+                control={<Checkbox />}
+                label="Container Drop"
+                checked={container}
+                onChange={setcontainer(value)}
+              />
 
               {(container) ? 
                 <TextField
                   readOnly
                   label="Container Number"
                   value={con_number}
-                  onChange={change}
+                  onChange={setcon_number(value)}
                 />
               : null}
 
@@ -381,7 +461,7 @@ export function FilledForm({requestData, change}){
                 control={<Checkbox />}
                 label="Delivery"
                 checked={delivery} 
-                onChange={change}
+                onChange={setdelivery(checked)}
               />
 
               <DateTimeField
@@ -394,28 +474,27 @@ export function FilledForm({requestData, change}){
                 readOnly
                 label="Trailer Number"
                 value={trailer_num}
-                onChange={change}
+                onChange={settrailer_num(value)}
               />
 
               <TextField
                 readOnly
                 label="Driver Phone #"
                 value={driver_phone}
-                onChange={change}
+                onChange={setdriver_phone(value)}
               />
 
               <TextField
                 readOnly
                 label="Dock Number"
                 value={dock_num}
-                onChange={change}
+                onChange={setdock_num(value)}
               />
 
               <TextField
                 readOnly
                 label="Checked-In Time"
                 value={check_time}
-                onChange={change} // This data is not yet a part of the request (Expected: request.checkedTime)
                 // On change will be handled by buttons below that update the request
               />
 
@@ -438,8 +517,8 @@ export function FilledForm({requestData, change}){
                 multiline
                 rows={4}
                 label="Notes"
-                value={notes} // This data is not yet a part of the request (Expected: request.compleTime)
-                // On change will be handled by buttons below that update the request
+                value={notes} 
+                onChange={setnotes(value)}
               />
 
               {formButton}

@@ -42,6 +42,7 @@ function FormEdit(request) {
 
   const [requestData, setRequestData] = useState({
     id: request.request.id,
+    approved: request.request.approved,
     company_name: request.request.company_name || "",
     phone_number: request.request.phone_number || "",
     email: request.request.email || "",
