@@ -1,6 +1,10 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
+const webURL = 'https://gtchiudi.pythonanywhere.com/';
+const localURL = 'http://localhost:8000/';
+const url = webURL;
+
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react()],
@@ -15,17 +19,17 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-          target: 'https://gtchiudi.pythonanywhere.com/',
+          target: url,
           changeOrigin: true,
           secure: false,
       },
       '/token/': {
-          target: 'https://gtchiudi.pythonanywhere.com/',
+          target: url,
           changeOrigin: true,
           secure: false,
       },
       '/logout/': {
-          target: 'https://gtchiudi.pythonanywhere.com/',
+          target: url,
           changeOrigin: true,
           secure: false,
       }

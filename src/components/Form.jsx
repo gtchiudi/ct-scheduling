@@ -10,6 +10,7 @@ import {
   FormLabel,
   MenuItem,
   Typography,
+  Stack,
 } from "@mui/material";
 import axios from "axios";
 import { useAtom } from "jotai";
@@ -34,7 +35,7 @@ export function Form() {
 
   React.useEffect(() => {
     updateWarehouseData();
-  }, []);
+  }, [updateWarehouseData]);
 
   const load_types = [
     {
@@ -50,15 +51,15 @@ export function Form() {
 
   const [company_name, setcompany_name] = useState("");
   const [phone_number, setphone_number] = useState("");
-  const [email,        setemail]        = useState("");
-  const [po_number,    setpo_number]    = useState("");
-  const [warehouse,    setwarehouse]    = useState("");
-  const [load_type,    setload_type]    = useState("");
-  const [date_time,    setdate_time]    = useState("");
-  const [delivery,     setdelivery]     = useState(false);
-  const [container,    setcontainer]    = useState(false);
-  const [con_number,   setcon_number]   = useState("");
-  const [notes,        setnotes]        = useState("");
+  const [email, setemail] = useState("");
+  const [po_number, setpo_number] = useState("");
+  const [warehouse, setwarehouse] = useState("");
+  const [load_type, setload_type] = useState("");
+  const [date_time, setdate_time] = useState("");
+  const [delivery, setdelivery] = useState(false);
+  const [container, setcontainer] = useState(false);
+  const [con_number, setcon_number] = useState("");
+  const [notes, setnotes] = useState("");
   //const [submitted, setSubmitted] = useState(false);
 
   const _date = "";
@@ -71,7 +72,6 @@ export function Form() {
 
   const handleTimeChange = (time) => {
     const formattedTime = time.format("HH:mm:ss.SSSSSS[Z]");
-
     setdate_time(formattedTime);
     //setSubmitted(false);
   };
@@ -210,16 +210,40 @@ export function Form() {
                     value={con_number}
                     onChange={(e) => setcon_number(e.target.value)}
                   />
-                  <FormControlLabel 
-                    control={<Checkbox />} 
-                    label="Select for container drop." 
-                    load_type={"Container"} 
+                  <FormControlLabel
+                    control={<Checkbox />}
+                    label="Select for container drop."
+                    load_type={"Container"}
                     onChange={(e) => setcontainer(e.target.checked)}
                   />
                 </Box>
-                :
-                null
-              }
+               : null}
+              <FormControlLabel
+                control={<Checkbox />}
+                label="Select for delivery"
+                onChange={(e) => setdelivery(e.target.checked)}
+              />
+            </FormGroup>
+
+            <TextField
+              id="notes"
+              label="Notes"
+              multiline
+              rows={4}
+              value={notes}
+              onChange={(e) => setnotes(e.target.value)}
+            />
+
+            <FormGroup>
+            <Box
+              display={"flex"}
+              sx={{
+                "& .MuiTextField-root": { m: 1, width: "19.1ch" },
+              }}
+            >
+              <SingleDateSelector required onDateChange={handleDateChange} />
+              <TimeSelector required onTimeChange={handleTimeChange} />
+            </Box>
 
               <FormControlLabel 
                 control={<Checkbox />} 
@@ -399,133 +423,312 @@ const handleButton = (e) => {
           <div>
             <FormLabel for="company_name">Information for request</FormLabel>
             <TextField
-                readOnly
-                label="Company Name"
-                value={company_name}
-                onChange={setcompany_name(value)}
-              ></TextField>
+              readOnly
+              label="Company Name"
+              value={company_name}
+              onChange={change}
+            ></TextField>
 
+            <TextField
+              readOnly
+              label="Phone Number"
+              value={phone_number}
+              onChange={change}
+            ></TextField>
+
+            <TextField
+              readOnly
+              label="Email"
+              value={email}
+              onChange={change}
+            ></TextField>
+
+            <TextField
+              readOnly
+              label="PO Number"
+              value={po_number}
+              onChange={change}
+            ></TextField>
+
+            <TextField
+              readOnly
+              label="Warehouse"
+              value={warehouse}
+              onChange={change}
+            ></TextField>
+
+            <TextField
+              readOnly
+              label="Load Type"
+              value={load_type}
+              onChange={change}
+            ></TextField>
+
+            {container ? (
               <TextField
                 readOnly
-                label="Phone Number"
-                value={phone_number}
-                onChange={setphone_number(value)}
-              ></TextField>
-                  
-              <TextField
-                readOnly
-                label="Email"
-                value={email}
-                onChange={setemail(value)}
-              ></TextField> 
-
-              <TextField
-                readOnly
-                label="PO Number"
-                value={po_number}
-                onChange={setpo_number(value)}
-              ></TextField>
-
-              <TextField
-                readOnly
-                label="Warehouse"
-                value={warehouse}
-                onChange={setwarehouse(value)}
-              ></TextField>
-
-              <TextField
-                readOnly
-                label="Load Type"
-                value={load_type}
-                onChange={setload_type(value)}
-              ></TextField>
-
-              <FormControlLabel
-                readOnly
-                control={<Checkbox />}
-                label="Container Drop"
-                checked={container}
-                onChange={setcontainer(value)}
+                label="Container Number"
+                value={con_number}
+                onChange={change}
               />
+            ) : null}
 
-              {(container) ? 
-                <TextField
-                  readOnly
-                  label="Container Number"
-                  value={con_number}
-                  onChange={setcon_number(value)}
-                />
-              : null}
+            <FormControlLabel
+              control={<Checkbox />}
+              label="Delivery"
+              checked={delivery}
+              onChange={change}
+            />
 
-              <FormControlLabel
-                control={<Checkbox />}
-                label="Delivery"
-                checked={delivery} 
-                onChange={setdelivery(checked)}
-              />
+            <DateTimeField readOnly label="Request Time" value={date_time} />
 
-              <DateTimeField
-                readOnly
-                label="Request Time"
-                value={date_time}
-              />
+            <TextField
+              readOnly
+              label="Trailer Number"
+              value={trailer_num}
+              onChange={change}
+            />
 
-              <TextField
-                readOnly
-                label="Trailer Number"
-                value={trailer_num}
-                onChange={settrailer_num(value)}
-              />
+            <TextField
+              readOnly
+              label="Driver Phone #"
+              value={driver_phone}
+              onChange={change}
+            />
 
-              <TextField
-                readOnly
-                label="Driver Phone #"
-                value={driver_phone}
-                onChange={setdriver_phone(value)}
-              />
+            <TextField
+              readOnly
+              label="Dock Number"
+              value={dock_num}
+              onChange={change}
+            />
 
-              <TextField
-                readOnly
-                label="Dock Number"
-                value={dock_num}
-                onChange={setdock_num(value)}
-              />
+            <TextField
+              readOnly
+              label="Checked-In Time"
+              value={check_time}
+              onChange={change} // This data is not yet a part of the request (Expected: request.checkedTime)
+              // On change will be handled by buttons below that update the request
+            />
 
-              <TextField
-                readOnly
-                label="Checked-In Time"
-                value={check_time}
-                // On change will be handled by buttons below that update the request
-              />
+            <DateTimeField
+              readOnly
+              label="Docked Time"
+              value={dock_time} // This data is not yet a part of the request (Expected: request.dockTime)
+              // On change will be handled by buttons below that update the request
+            />
 
-              <DateTimeField
-                readOnly
-                label="Docked Time"
-                value={dock_time} // This data is not yet a part of the request (Expected: request.dockTime)
-                // On change will be handled by buttons below that update the request
-              />
+            <DateTimeField
+              readOnly
+              label="Completed Time"
+              value={com_time} // This data is not yet a part of the request (Expected: request.compleTime)
+              // On change will be handled by buttons below that update the request
+            />
 
-              <DateTimeField
-                readOnly
-                label="Completed Time"
-                value={com_time} // This data is not yet a part of the request (Expected: request.compleTime)
-                // On change will be handled by buttons below that update the request
-              />
+            <TextField
+              readOnly
+              multiline
+              rows={4}
+              label="Notes"
+              value={notes} // This data is not yet a part of the request (Expected: request.compleTime)
+              // On change will be handled by buttons below that update the request
+            />
 
-              <TextField
-                readOnly
-                multiline
-                rows={4}
-                label="Notes"
-                value={notes} 
-                onChange={setnotes(value)}
-              />
-
-              {formButton}
-              
+            {formButton}
           </div>
         </Box>
       </FormControl>
     </Typography>
-  )
+  );
+}
+
+export function EditForm({ request, closeModal }) {
+  const queryClient = useQueryClient();
+  const [warehouseData] = useAtom(warehouseDataAtom);
+  const [, updateWarehouseData] = useAtom(updateWarehouseDataAtom);
+  const [accessToken] = useAtom(accessTokenAtom);
+
+  React.useEffect(() => {
+    updateWarehouseData();
+  }, [updateWarehouseData]);
+
+  const [requestData, setRequestData] = useState({
+    id: request.id || null,
+    approved: request.approved || false,
+    company_name: request.company_name || "",
+    phone_number: request.phone_number || "",
+    email: request.email || "",
+    warehouse: request.warehouse || "",
+    po_number: request.po_number || "",
+    load_type: request.load_type || "",
+    container_drop: request.container_drop || false,
+    container_number: request.container_number || "",
+    notes: request.note_section || "",
+    date_time: dayjs(request.date_time) || new dayjs(),
+    delivery: request.delivery || false,
+    trailerNum: request.trailer_number || "",
+  });
+  const load_types = [
+    {
+      value: "Full",
+    },
+    {
+      value: "LTL",
+    },
+    {
+      value: "Container",
+    },
+  ];
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    if (name === "container_drop" || name === "delivery") {
+      setRequestData({ ...requestData, [name]: e.target.checked });
+      return;
+    }
+    setRequestData({ ...requestData, [name]: value });
+  };
+
+  const handleDateChange = (date) => {
+    setRequestData({
+      ...requestData,
+      date_time: date,
+    });
+  };
+
+  const handleApprove = () => {
+    requestData.approved = true;
+    requestData.date_time = requestData.date_time.format(
+      "YYYY-MM-DD HH:mm:ss.SSSSSS[Z]"
+    );
+    approveRequest();
+  };
+
+  const approveRequest = async () => {
+    try {
+      const response = await axios.put(
+        `/api/request/${requestData.id}/`,
+        requestData
+      );
+      queryClient.invalidateQueries("pendingRequests");
+      closeModal();
+    } catch (error) {
+      console.error("Error updating request:", error);
+      closeModal();
+    }
+  };
+
+  return (
+    <FormControl>
+      <Stack
+        spacing={2}
+        alignContent={"center"}
+        textAlign={"center"}
+        display={"flex"}
+        sx={{
+          "& .MuiTextField-root": { m: 1, width: "40ch" },
+          "& > :not(style)": { m: 1, width: "40ch" },
+          maxHeight: "90vh",
+          maxWidth: "60vw",
+        }}
+        noValidate
+        autoComplete="off"
+      >
+        <TextField
+          label="Company Name"
+          name="company_name"
+          value={requestData.company_name}
+          onChange={handleChange}
+        ></TextField>
+
+        <TextField
+          label="Phone Number"
+          name="phone_number"
+          value={requestData.phone_number}
+          onChange={handleChange}
+        ></TextField>
+
+        <TextField
+          label="Email"
+          name="email"
+          value={requestData.email}
+          onChange={handleChange}
+        ></TextField>
+
+        <TextField
+          label="PO Number"
+          name="po_number"
+          value={requestData.po_number}
+          onChange={handleChange}
+        ></TextField>
+
+        <TextField
+          select
+          id="warehouse"
+          label="Warehouse"
+          name="warehouse"
+          variant="filled"
+          value={requestData.warehouse}
+          onChange={handleChange}
+        >
+          {warehouseData.map((option) => (
+            <MenuItem key={option.id} value={option.id}>
+              {option.name}
+            </MenuItem>
+          ))}
+        </TextField>
+
+        <TextField
+          select
+          id="load_type"
+          label="Load Type"
+          name="load_type"
+          variant="filled"
+          value={requestData.load_type}
+          onChange={handleChange}
+        >
+          {load_types.map((option) => (
+            <MenuItem key={option.value} value={option.value}>
+              {option.value}
+            </MenuItem>
+          ))}
+        </TextField>
+
+        <div>
+          {requestData.load_type === "Container" ? (
+            <Box>
+              <FormControlLabel
+                control={<Checkbox />}
+                label="Select for Container Drop"
+                name="container_drop"
+                checked={requestData.container_drop}
+                onChange={handleChange}
+              />
+              <TextField
+                label="Container Number"
+                name="container_number"
+                value={requestData.container_number}
+                onChange={handleChange}
+              ></TextField>
+            </Box>
+          ) : null}
+        </div>
+
+        <DateTimePicker
+          value={dayjs(requestData.date_time)}
+          onChange={(newValue) => handleDateChange(newValue)}
+        />
+        <Box>
+          <FormControlLabel
+            control={<Checkbox />}
+            label="Delivery"
+            name="delivery"
+            checked={requestData.delivery}
+            onChange={handleChange}
+          />
+        </Box>
+        <Button onClick={handleApprove}>Approve Request</Button>
+      </Stack>
+    </FormControl>
+  );
 }

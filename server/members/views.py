@@ -7,23 +7,16 @@ from django.contrib.auth.models import User, Group
 
 from datetime import datetime
 
-from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
-from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework import status
 
-
-class HomeView(APIView):
-    permission_classes = (IsAuthenticated, )
-
-    def get(self, request):
-
-        content = {'message': 'Welcome to CT-Scheduling!'}
-        return Response(content)
+from rest_framework.parsers import JSONParser
 
 
 class RequestView(viewsets.ModelViewSet):
+    permission_classes = (IsAuthenticated, )
+
     serializer_class = RequestSerializer
     queryset = Request.objects.all()
 
@@ -40,18 +33,19 @@ class RequestView(viewsets.ModelViewSet):
                     date_time__gte=start_date, date_time__lte=end_date)
         return queryset
 
-
-class LogoutView(APIView):
-    permission_classes = (IsAuthenticated, )
-
-    def post(self, request):
+    def put(self, request, pk, format=None):
         try:
-            refresh_token = request.data["refresh_token"]
-            token = RefreshToken(refresh_token)
-            token.blacklist()
-            return Response(status=status.HTTP_205_RESET_CONTENT)
-        except Exception as e:
-            return Response(status=status.HTTP_400_BAD_REQUEST)
+            requestUpdate = self.get_object(pk)
+        except Request.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+
+        data = JSONParser().parse(request)
+
+        serializer = RequestSerializer(requestUpdate, data=data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class WarehouseView(viewsets.ModelViewSet):

@@ -1,68 +1,66 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
-import Root from "./routes/root.jsx";
 import ErrorPage from "./routes/error-page.jsx";
 import "./index.css";
+import "./app.css";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import { LocalizationProvider } from "@mui/x-date-pickers";
 import { Provider as JotaiProvider } from "jotai";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
-import HeaderBar from "./components/HeaderBar.jsx";
 import Login from "./routes/Login.jsx";
 import Logout from "./routes/Logout.jsx";
 import Home from "./routes/Home.jsx";
 import RequestList from "./routes/RequestList.jsx";
 import RequestForm from "./routes/RequestForm.jsx";
 import PendingRequests from "./routes/PendingRequests.jsx";
+import Layout from "./components/layout.jsx";
 
 const queryClient = new QueryClient();
+const root = ReactDOM.createRoot(document.getElementById("root"));
 
 const router = createBrowserRouter([
   {
     path: "/",
     element: (
-      <div>
-        <HeaderBar />
+      <Layout>
         <Home />
-      </div>
-    ),
+      </Layout>
+    ), // Wrap Home with Layout
     errorElement: <ErrorPage />,
   },
   {
     path: "RequestList",
     element: (
-      <div>
-        <HeaderBar />
+      <Layout>
         <RequestList />
-      </div>
-    ),
+      </Layout>
+    ), // Wrap RequestList with Layout
   },
   {
     path: "RequestForm",
     element: (
-      <div>
-        <HeaderBar />
+      <Layout>
         <RequestForm />
-      </div>
-    ),
+      </Layout>
+    ), // Wrap RequestForm with Layout
   },
   {
     path: "login",
     element: (
-      <div>
-        <HeaderBar />
+      <Layout>
         <Login />
-      </div>
-    ),
+      </Layout>
+    ), // Wrap Login with Layout
     errorElement: <ErrorPage />,
   },
   {
     path: "logout",
     element: (
-      <div>
-        <HeaderBar />
+      <Layout>
         <Logout />
+      </Layout>
+    ), // Wrap Logout with Layout
       </div>
     ),
   },
@@ -78,11 +76,10 @@ const router = createBrowserRouter([
   {
     path: "PendingRequests",
     element: (
-      <div>
-        <HeaderBar />
+      <Layout>
         <PendingRequests />
-      </div>
-    ),
+      </Layout>
+    ), // Wrap PendingRequests with Layout
    },
    {
     path: "RequestForm",
@@ -99,7 +96,7 @@ const LinkBehavior = React.forwardRef((props, ref) => (
   <RouterLink ref={ref} to="/" {...props} role={undefined} />
 ));
 
-ReactDOM.createRoot(document.getElementById("root")).render(
+root.render(
   <React.StrictMode>
     <JotaiProvider>
       <QueryClientProvider client={queryClient}>
