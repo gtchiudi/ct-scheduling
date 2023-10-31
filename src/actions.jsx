@@ -34,7 +34,6 @@ export async function fetchWarehouseData() {
   } catch (error) {
     throw error;
   }
-
 }
 
 export function getApprovedRequests() {
@@ -51,26 +50,13 @@ export function getApprovedRequests() {
   });
 }
 
-export function getRequestsByDate(startDate, endDate) {
-  if (!dayjs.isDayjs(startDate) || !dayjs.isDayjs(endDate)) {
-    throw new Error("Both startDate and endDate must be Day.js date objects.");
-  }
-
-  const formattedStartDate = startDate.format("YYYY-MM-DD HH:mm:ss.SSSSSS[Z]");
-  const formattedEndDate = endDate.format("YYYY-MM-DD HH:mm:ss.SSSSSS[Z]");
-
-  return useQuery({
-    queryKey: ["requests", "date", startDate, endDate, "active"],
-    queryFn: async () => {
-      const response = await axios.get("/api/request", {
-        params: {
-          approved: "True",
-          active: "True",
-          start_date: formattedStartDate,
-          end_date: formattedEndDate,
-        },
-      });
-      return response;
+export async function getRequestsByDate(formattedStartDate, formattedEndDate) {
+  return await axios.get("/api/request", {
+    params: {
+      approved: "True",
+      active: "True",
+      start_date: formattedStartDate,
+      end_date: formattedEndDate,
     },
   });
 }
