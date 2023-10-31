@@ -24,6 +24,7 @@ function ResultDisplay({ startDate, endDate }) {
   const queryClient = useQueryClient();
   let pauseQuery = true;
   const navigate = useNavigate();
+
   const result = useQuery({
     queryKey: ["requests", "date", startDate, endDate, "active"],
     queryFn: getRequestsByDate(formattedStartDate, formattedEndDate),
@@ -46,6 +47,9 @@ function ResultDisplay({ startDate, endDate }) {
       }
     },
   });
+  if (result.isSuccess) {
+    console.log(result.data.data);
+  }
 
   return (
     <div>
