@@ -9,13 +9,20 @@ from datetime import datetime
 
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
-from rest_framework import status
+from rest_framework import status, permissions
 
 from rest_framework.parsers import JSONParser
 
 
+class IsAuthenticatedOrPostOnly(permissions.BasePermission):
+    def has_permission(self, request, view):
+        if request.method == 'POST':
+            return True  # Allow unauthenticated POST requests
+        return IsAuthenticated
+
+
 class RequestView(viewsets.ModelViewSet):
-    permission_classes = (IsAuthenticated, )
+    permission_classes = (IsAuthenticatedOrPostOnly, )
 
     serializer_class = RequestSerializer
     queryset = Request.objects.all()
