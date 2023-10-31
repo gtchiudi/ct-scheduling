@@ -27,6 +27,16 @@ export async function getPendingRequests() {
   return response;
 }
 
+export async function fetchWarehouseData() {
+  try {
+    const response = await axios.get("/api/warehouse");
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+
+}
+
 export function getApprovedRequests() {
   return useQuery({
     queryKey: ["requests", "approved"],
@@ -50,11 +60,12 @@ export function getRequestsByDate(startDate, endDate) {
   const formattedEndDate = endDate.format("YYYY-MM-DD HH:mm:ss.SSSSSS[Z]");
 
   return useQuery({
-    queryKey: ["requests", "date", startDate, endDate],
+    queryKey: ["requests", "date", startDate, endDate, "active"],
     queryFn: async () => {
       const response = await axios.get("/api/request", {
         params: {
           approved: "True",
+          active: "True",
           start_date: formattedStartDate,
           end_date: formattedEndDate,
         },
@@ -74,42 +85,22 @@ export function getUserData() {
   });
 }
 
-export function submitUserData(username, password, queryClient) {
-  return useMutation({
-    mutationFn: async () => {
-      const user = {
-        username: username,
-        password: password,
-      };
-
-      const response = await axios.post("/token/", user, {
-        headers: {
-          "Content-Type": "application/json",
-        },
-        withCredentials: true,
-      });
-      console.log(response.data.access);
-      if (!response.data.access) {
-        throw new Error("Network response was not ok");
-      }
-
-      queryClient.setDefaultOptions({
-        headers: {
-          Authorization: `Bearer ${response.data.access}`,
-        },
-      });
-
-      return response.data;
+export async function submitUserData(user) {
+  const response = await axios.post("/token/", user, {
+    headers: {
+      "Content-Type": "application/json",
     },
+    withCredentials: true,
   });
+  if (!response.data.access) {
+    throw new Error("Network response was not ok");
+  }
+  user.username = "";
+  user.password = "";
+  return response.data;
 }
 
-export function getSchedule() {
-  return useQuery({
-    queryKey: ["schedule"],
-    queryFn: async () => {
-      const response = await axios.get("/api/schedule");
-      return response;
-    },
-  });
+export async function getSchedule() {
+  const response = await axios.get("/api/schedule", {});
+  return response;
 }

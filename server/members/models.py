@@ -53,8 +53,8 @@ class Request(BaseModel):
         max_length=32, choices=LOAD_CHOICES, default='Full')  # changable via emp
     container_drop = models.BooleanField(
         default=False, blank=True)  # changable via emp
-    container_number = models.IntegerField(
-        null=True, blank=True)  # changeable via emp
+    container_number = models.CharField(
+        max_length=32, null=True, blank=True)  # changeable via emp
     note_section = models.CharField(
         max_length=512, null=True, blank=True)  # changable via emp
     date_time = models.DateTimeField("Request Date")  # changable via emp

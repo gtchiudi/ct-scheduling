@@ -1,8 +1,8 @@
 import React from "react";
-import { Form } from "../components/Form";
+import Form from "../components/Form.jsx";
 
-const RequestForm = () => {
+function RequestForm() {
   return <Form editable="false"></Form>;
-};
+}
 
 export default RequestForm;
