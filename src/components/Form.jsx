@@ -210,7 +210,7 @@ export function Form() {
             </TextField>            
 
             <FormGroup>
-              {load_type === "Container" ? (
+              {load_type === "Container" ? 
                 <Box>
                   <TextField
                     id="con_number"
