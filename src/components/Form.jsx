@@ -18,9 +18,10 @@ import { warehouseDataAtom, updateWarehouseDataAtom } from "./atoms.jsx";
 import { SingleDateSelector, TimeSelector } from "./DateSelector.jsx";
 import FormControlLabel from '@mui/material/FormControlLabel';
 import FormGroup from '@mui/material/FormGroup';
-import { DateTimeField } from "@mui/x-date-pickers";
+import { DateTimeField, DateTimePicker } from "@mui/x-date-pickers";
 import dayjs from "dayjs";
 import { useQueryClient } from "@tanstack/react-query";
+import { accessTokenAtom } from "./atoms.jsx";
 //import { error } from "console";
 
 // Use FilledForm for elements that will be autopopulated with request information
@@ -536,7 +537,6 @@ const handleButton = (e) => {
 }
 
 export function EditForm({ request, closeModal }) {
-  console.log(useLocation().pathname);
   const queryClient = useQueryClient();
   const [warehouseData] = useAtom(warehouseDataAtom);
   const [, updateWarehouseData] = useAtom(updateWarehouseDataAtom);
@@ -616,7 +616,27 @@ export function EditForm({ request, closeModal }) {
   // BUTTONS ARE MISSING onClick FUNCTIONALITY
   // Conditional rendering
   let formButton;
-  if (requestData.checkedTime == null) {
+  if (!requestData.approved) {
+    formButton = <Stack
+    display={"flex"}
+    justifyContent={"center"}
+    spacing={2}
+    direction={"row"}>
+      <Button 
+        color="success" 
+        variant="contained" 
+        onClick={handleApprove}>
+          Approve
+      </Button>
+      <Button 
+        color="error" 
+        variant="contained" 
+        onClick={handleApprove}>
+          Deny
+      </Button>
+    </Stack>
+  } 
+   else if (requestData.checkedTime == null) {
     formButton = <Button variant="contained"> Check-In </Button>;
   } else if (requestData.checkedTime != null && requestData.dockTime == null) {
     formButton = <Button variant="contained"> Dock </Button>;
@@ -643,8 +663,8 @@ export function EditForm({ request, closeModal }) {
         textAlign={"center"}
         display={"flex"}
         sx={{
-          "& .MuiTextField-root": { m: 1, width: "40ch" },
-          "& > :not(style)": { m: 1, width: "40ch" },
+          "& .MuiTextField-root": { m: 1, width: "60ch" },
+          "& > :not(style)": { m: 1, width: "60ch" },
           maxHeight: "90vh",
           maxWidth: "60vw",
         }}
@@ -744,8 +764,9 @@ export function EditForm({ request, closeModal }) {
             onChange={handleChange}
           />
         </Box>
-        <Button onClick={handleApprove}>Approve Request</Button>
+        
         {formButton}
+
       </Stack>
     </FormControl>
   );
