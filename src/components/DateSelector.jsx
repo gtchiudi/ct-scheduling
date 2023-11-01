@@ -17,14 +17,14 @@ export default function DateSelector({ onDateChange }) {
     const dayjsDate = dayjs(date);
     setSelectedStartDate(dayjsDate);
     onDateChange(selectedStartDate, selectedEndDate);
-    console.log("Selected Start Date:", selectedStartDate);
+    //console.log("Selected Start Date:", selectedStartDate);
   };
 
   const handleEndDateChange = (date) => {
     const dayjsDate = dayjs(date);
     setSelectedEndDate(dayjsDate);
     onDateChange(selectedStartDate, selectedEndDate);
-    console.log("Selected End Date:", selectedEndDate);
+    //console.log("Selected End Date:", selectedEndDate);
   };
 
   return (
@@ -60,7 +60,7 @@ export const SingleDateSelector = ({ onDateChange }) => {
     const dayjsDate = dayjs(date);
     setSelectedDate(dayjsDate);
     onDateChange(selectedDate);
-    console.log("Selected Date:", selectedDate);
+    //console.log("Selected Date:", selectedDate);
   };
 
   return (
@@ -89,7 +89,7 @@ export const TimeSelector = ({ onTimeChange }) => {
     const dayjsTime = dayjs(time);
     setSelectedTime(dayjsTime);
     onTimeChange(selectedTime);
-    console.log("Selected Time:", selectedTime);
+    //console.log("Selected Time:", selectedTime);
   };
 
   console.log(now);

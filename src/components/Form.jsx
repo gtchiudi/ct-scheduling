@@ -30,6 +30,7 @@ import {
 } from "@mui/x-date-pickers";
 import dayjs from "dayjs";
 import { useQueryClient } from "@tanstack/react-query";
+import { useLocation } from "react-router-dom";
 
 // Use FilledForm for elements that will be autopopulated with request information
 // As it stands the filled form can only display data and will be updated with buttons
@@ -63,24 +64,32 @@ export default function Form() {
   const [po_number, setpo_number] = useState("");
   const [warehouse, setwarehouse] = useState("");
   const [load_type, setload_type] = useState("");
-  const [date_time, setdate_time] = useState("");
+  const [date_time, setdate_time] = useState(dayjs());
   const [delivery, setdelivery] = useState(false);
   const [container, setcontainer] = useState(false);
   const [con_number, setcon_number] = useState("");
   const [notes, setnotes] = useState("");
   //const [submitted, setSubmitted] = useState(false);
 
-  const _date = "";
+  let _date = dayjs();
   const handleDateChange = (date) => {
-    const formattedDate = date.format("YYYY-MM-DD");
+    //const formattedDate = date.format("YYYY-MM-DDT");
 
-    setdate_time(formattedDate);
+    setdate_time(dayjs(date));
+    _date=date_time
     //setSubmitted(false);
   };
 
   const handleTimeChange = (time) => {
-    const formattedTime = time.format("HH:mm:ss.SSSSSS[Z]");
-    setdate_time(formattedTime);
+    //const formattedTime = time.format("hh:mm[:ss[.uuuuuu]][+HH:MM|-HH:MM|Z]");
+    setdate_time(dayjs()
+      .year(_date.year())
+      .month(_date.month())
+      .day(_date.day())
+      .hour(time.hour())
+      .minute(time.minute())
+      .second(0)
+    );
     //setSubmitted(false);
   };
 
@@ -97,7 +106,7 @@ export default function Form() {
     formField.append("load_type", load_type);
     formField.append("container_drop", container);
     formField.append("container_number", con_number);
-    formField.append("date_time", date_time);
+    formField.append("date_time", date_time.format("YYYY-MM-DD HH:mm:ss.SSSSSS[Z]"));
     formField.append("active", true);
     formField.append("delivery", delivery);
     formField.append("note_section", notes);
@@ -291,27 +300,7 @@ export function FilledForm({ requestData, change }) {
   const [dock_time, setdock_time] = useState(null);
   const [com_time, setcom_time] = useState(null);
 
-  // This controls the dyanmic display of buttons based on the state of the request
-  // BUTTONS ARE MISSING onClick FUNCTIONALITY
-  let formButton;
-  if (requestData.checkedTime == null) {
-    formButton = <Button variant="contained"> Check-In </Button>;
-  } else if (requestData.checkedTime != null && requestData.dockTime == null) {
-    formButton = <Button variant="contained"> Dock </Button>;
-  } else if (
-    requestData.checkedTime != null &&
-    requestData.dockTime != null &&
-    requestData.completeTime == null
-  ) {
-    formButton = <Button variant="contained"> Complete </Button>;
-  } else {
-    formButton = (
-      <Button disabled variant="contained" color="red">
-        {" "}
-        Error - See Admin{" "}
-      </Button>
-    );
-  }
+  
   return (
     <Typography textAlign={"center"}>
       <FormControl>
@@ -451,6 +440,7 @@ export function FilledForm({ requestData, change }) {
 }
 
 export function EditForm({ request, closeModal }) {
+  console.log(useLocation().pathname);
   const queryClient = useQueryClient();
   const [warehouseData] = useAtom(warehouseDataAtom);
   const [, updateWarehouseData] = useAtom(updateWarehouseDataAtom);
@@ -525,6 +515,29 @@ export function EditForm({ request, closeModal }) {
       closeModal();
     }
   };
+
+  // This controls the dyanmic display of buttons based on the state of the request
+  // BUTTONS ARE MISSING onClick FUNCTIONALITY
+  // Conditional rendering
+  let formButton;
+  if (requestData.checkedTime == null) {
+    formButton = <Button variant="contained"> Check-In </Button>;
+  } else if (requestData.checkedTime != null && requestData.dockTime == null) {
+    formButton = <Button variant="contained"> Dock </Button>;
+  } else if (
+    requestData.checkedTime != null &&
+    requestData.dockTime != null &&
+    requestData.completeTime == null
+  ) {
+    formButton = <Button variant="contained"> Complete </Button>;
+  } else {
+    formButton = (
+      <Button disabled variant="contained" color="red">
+        {" "}
+        Error - See Admin{" "}
+      </Button>
+    );
+  }
 
   return (
     <FormControl>
@@ -636,6 +649,7 @@ export function EditForm({ request, closeModal }) {
           />
         </Box>
         <Button onClick={handleApprove}>Approve Request</Button>
+        {formButton}
       </Stack>
     </FormControl>
   );

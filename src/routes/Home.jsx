@@ -31,6 +31,7 @@ const buttonStyle = {
 };
 
 export default function Home() {
+  
   return (
     <Typography>
       <div style={containerStyle}>
@@ -68,7 +69,7 @@ export default function Home() {
             component={Link}
             to="/RequestForm"
             variant="contained"
-            size="medium"
+            size="large"
             sx={{
               textAlign: "center",
               "&:hover": {
