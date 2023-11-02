@@ -15,6 +15,7 @@ import RequestList from "./routes/RequestList.jsx";
 import RequestForm from "./routes/RequestForm.jsx";
 import PendingRequests from "./routes/PendingRequests.jsx";
 import Layout from "./components/layout.jsx";
+import MyCalendar from "./routes/Calendar.jsx"
 
 const queryClient = new QueryClient();
 const root = ReactDOM.createRoot(document.getElementById("root"));
@@ -69,6 +70,14 @@ const router = createBrowserRouter([
         <PendingRequests />
       </Layout>
     ), // Wrap PendingRequests with Layout
+  },
+  {
+    path: "Calendar",
+    element: (
+      <Layout>
+        <MyCalendar />
+      </Layout>
+    ),
   },
 ]);
 

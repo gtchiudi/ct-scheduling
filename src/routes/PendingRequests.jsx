@@ -186,7 +186,7 @@ export default function PendingRequests() {
     retryDelay: 1000,
     enabled: !pauseQuery,
     onError: (error) => {
-      if (error.response.status === 401) {
+      if (error.response && error.response.status === 401) {
         // Check if token refresh is already in progress
         pauseQuery = true;
         if (!refresh) {
