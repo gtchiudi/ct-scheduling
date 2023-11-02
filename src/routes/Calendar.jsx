@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Calendar, dayjsLocalizer, Views } from "react-big-calendar";
+import { Calendar, Views, dayjsLocalizer } from "react-big-calendar";
 import dayjs from "dayjs";
 import "react-big-calendar/lib/css/react-big-calendar.css";
 import DateSelector from "../components/DateSelector";
@@ -25,7 +25,7 @@ import { EditForm } from "../components/Form.jsx";
 
 export default function MyCalendar() {
   // React component function
-  const localizer = dayjsLocalizer(dayjs);
+  const clocalizer = dayjsLocalizer(dayjs);
 
   const [startDate, setStartDate] = React.useState(dayjs().startOf("month"));
   const [endDate, setEndDate] = React.useState(startDate.add(1, "month"));
@@ -34,8 +34,6 @@ export default function MyCalendar() {
   const queryClient = useQueryClient();
   let pauseQuery = false;
   const navigate = useNavigate();
-  const formattedStartDate = startDate.format("YYYY-MM-DD HH:mm:ss.SSSSSS[Z]");
-  const formattedEndDate = endDate.format("YYYY-MM-DD HH:mm:ss.SSSSSS[Z]");
   const [refresh, setRefresh] = useAtom(refreshAtom);
   const [, isAuth] = useAtom(isAuthAtom);
   const [open, setOpen] = useState(false);
@@ -43,16 +41,42 @@ export default function MyCalendar() {
     setOpen(false);
   };
   const [selected, setSelected] = useState([]);
+  const [events, setEvents] = useState([]);
+
+  const updateRange = (range) => {
+    const newStart = dayjs(
+      (dayjs(range.start).valueOf() + dayjs(range.end).valueOf()) / 2
+    );
+    if (newStart.isBefore(startDate)) {
+      setStartDate(newStart.startOf("month"));
+      setEndDate(newStart.endOf("month"));
+      queryClient.invalidateQueries(["requests", "date"]);
+    } else if (newStart.isAfter(endDate)) {
+      setStartDate(newStart.startOf("month"));
+      setEndDate(newStart.endOf("month"));
+      queryClient.invalidateQueries(["requests", "date"]);
+    }
+  };
+
+  const { max, views, defaultView, key } = React.useMemo(
+    () => ({
+      max: dayjs().endOf("day").subtract(1, "hours").toDate(),
+      views: [Views.MONTH, Views.WEEK, Views.DAY],
+      defaultView: Views.MONTH,
+      key: ["requests", "date", startDate, endDate, "active"],
+    }),
+    [startDate, endDate]
+  );
 
   let result = useQuery({
-    queryKey: ["requests", "date", startDate, endDate, "active"],
+    queryKey: key,
     queryFn: async () =>
       await axios.get("/api/request", {
         params: {
           approved: "True",
           active: "True",
-          start_date: formattedStartDate,
-          end_date: formattedEndDate,
+          start_date: startDate.format("YYYY-MM-DD HH:mm:ss.SSSSSS[Z]"),
+          end_date: endDate.format("YYYY-MM-DD HH:mm:ss.SSSSSS[Z]"),
         },
       }),
     refetchInterval: 30000,
@@ -76,26 +100,23 @@ export default function MyCalendar() {
         queryClient.invalidateQueries(["requests", "date", startDate, endDate]);
       }
     },
+    onSuccess: (data) => {
+      console.log(data);
+      const newEvents = data.data.map((request) => ({
+        title: request.po_number,
+        start: dayjs(request.date_time),
+        end: dayjs(request.date_time),
+        request: request,
+      }));
+      // map each result row to an event
+      setEvents(newEvents);
+    },
   });
 
   if (!result) return null;
   if (result.isLoading) return <div>Loading...</div>;
   if (result.isError) return <div>Error: {result.error.message}</div>;
 
-  let i = 0;
-  let event = [];
-  console.log("Request data response: ", result.data.data);
-
-  for (const request of result.data.data) {
-    // map each result row to an event
-    event[i] = {
-      title: request.po_number,
-      start: dayjs(request.date_time),
-      end: dayjs(request.date_time),
-      request: request,
-    };
-    ++i;
-  }
   return (
     <div>
       {open && (
@@ -112,13 +133,22 @@ export default function MyCalendar() {
         </Dialog>
       )}
       <Calendar
-        events={event}
-        localizer={localizer}
-        views={[Views.MONTH, Views.WEEK, Views.DAY]}
-        startAccessor="start"
-        endAccessor="end"
+        events={events}
+        localizer={clocalizer}
+        views={views}
+        max={max}
+        startAccessor={(event) => {
+          return new dayjs(event.start);
+        }}
+        endAccessor={(event) => {
+          return new dayjs(event.end);
+        }}
         style={{ height: "90vh" }}
-        //onRangeChange
+        defaultView={defaultView}
+        onRangeChange={(range) => {
+          console.log(range);
+          updateRange(range);
+        }}
         onSelectEvent={(event) => {
           setSelected(event.request);
           setOpen(true);
