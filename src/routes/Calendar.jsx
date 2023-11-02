@@ -1,15 +1,24 @@
 import React, { useState, useEffect } from "react";
-import { Calendar, dayjsLocalizer } from "react-big-calendar";
+import { Calendar, dayjsLocalizer, Views } from "react-big-calendar";
 import dayjs from "dayjs";
 import "react-big-calendar/lib/css/react-big-calendar.css";
 import DateSelector from "../components/DateSelector";
 import { getRequestsByDate } from "../actions";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
-import { Typography } from "@mui/material";
+import {
+  Typography,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  Button,
+} from "@mui/material";
 import { useAtom } from "jotai";
 import { isAuthAtom, refreshAtom } from "../components/atoms.jsx";
 import axios from "axios";
+import "react-big-calendar/lib/css/react-big-calendar.css";
+import { EditForm } from "../components/Form.jsx";
 
 //const MyCalendar = () => {}
 //That is the declaration for a JavaScript function. You need...
@@ -29,6 +38,11 @@ export default function MyCalendar() {
   const formattedEndDate = endDate.format("YYYY-MM-DD HH:mm:ss.SSSSSS[Z]");
   const [refresh, setRefresh] = useAtom(refreshAtom);
   const [, isAuth] = useAtom(isAuthAtom);
+  const [open, setOpen] = useState(false);
+  const closeDialog = () => {
+    setOpen(false);
+  };
+  const [selected, setSelected] = useState([]);
 
   let result = useQuery({
     queryKey: ["requests", "date", startDate, endDate, "active"],
@@ -41,7 +55,7 @@ export default function MyCalendar() {
           end_date: formattedEndDate,
         },
       }),
-    refetchInterval: 15000,
+    refetchInterval: 30000,
     retry: 3,
     retryDelay: 1000,
     enabled: !pauseQuery,
@@ -78,18 +92,37 @@ export default function MyCalendar() {
       title: request.po_number,
       start: dayjs(request.date_time),
       end: dayjs(request.date_time),
-      id: request.id,
+      request: request,
     };
     ++i;
   }
   return (
     <div>
+      {open && (
+        <Dialog open={open} onClose={closeDialog}>
+          <DialogTitle textAlign={"center"}>
+            Edit and Approve Request
+          </DialogTitle>
+          <DialogContent>
+            <EditForm request={selected} closeModal={closeDialog} />
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={closeDialog}>Cancel</Button>
+          </DialogActions>
+        </Dialog>
+      )}
       <Calendar
         events={event}
         localizer={localizer}
+        views={[Views.MONTH, Views.WEEK, Views.DAY]}
         startAccessor="start"
         endAccessor="end"
-        style={{ height: "500px" }}
+        style={{ height: "90vh" }}
+        //onRangeChange
+        onSelectEvent={(event) => {
+          setSelected(event.request);
+          setOpen(true);
+        }}
       />
     </div>
   );
