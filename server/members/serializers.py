@@ -10,7 +10,7 @@ class RequestSerializer(serializers.ModelSerializer):
                   'email', 'warehouse', 'po_number', 'load_type', 'container_drop', 'container_number',
                   'note_section', 'date_time', 'delivery', 'trailer_number',
                   'driver_phone_number', 'dock_number', 'check_in_time', 'docked_time',
-                  'completed_time')
+                  'completed_time', 'active')
 
 
 class WarehouseSerializer(serializers.ModelSerializer):
