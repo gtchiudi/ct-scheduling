@@ -15,10 +15,9 @@ import {
 import axios from "axios";
 import { useAtom } from "jotai";
 import { warehouseDataAtom, updateWarehouseDataAtom } from "./atoms.jsx";
-import { SingleDateSelector, TimeSelector } from "./DateSelector.jsx";
 import FormControlLabel from '@mui/material/FormControlLabel';
 import FormGroup from '@mui/material/FormGroup';
-import { DateTimeField, DateTimePicker } from "@mui/x-date-pickers";
+import { DateTimePicker } from "@mui/x-date-pickers";
 import dayjs from "dayjs";
 import { useQueryClient } from "@tanstack/react-query";
 import { accessTokenAtom } from "./atoms.jsx";
@@ -64,28 +63,6 @@ export function Form() {
   const [con_number, setcon_number] = useState("");
   const [notes, setnotes] = useState("");
   //const [submitted, setSubmitted] = useState(false);
-
-  let _date = dayjs();
-  const handleDateChange = (date) => {
-    //const formattedDate = date.format("YYYY-MM-DDT");
-
-    setdate_time(dayjs(date));
-    _date=date_time
-    //setSubmitted(false);
-  };
-
-  const handleTimeChange = (time) => {
-    //const formattedTime = time.format("hh:mm[:ss[.uuuuuu]][+HH:MM|-HH:MM|Z]");
-    setdate_time(dayjs()
-      .year(_date.year())
-      .month(_date.month())
-      .day(_date.day())
-      .hour(time.hour())
-      .minute(time.minute())
-      .second(0)
-    );
-    //setSubmitted(false);
-  };
 
   const history = useNavigate();
 
@@ -246,7 +223,7 @@ export function Form() {
             />
 
             <FormGroup>
-            <Box
+            {/*<Box
               display={"flex"}
               sx={{
                 "& .MuiTextField-root": { m: 1, width: "19.1ch" },
@@ -254,7 +231,15 @@ export function Form() {
             >
               <SingleDateSelector required onDateChange={handleDateChange} />
               <TimeSelector required onTimeChange={handleTimeChange} />
-            </Box>
+              
+            </Box>*/}
+            <DateTimePicker
+              label="Select Request Date"
+              value={date_time}
+              onAccept={(e) => setdate_time(e)}
+            ></DateTimePicker>
+            {console.log("After Handle Function")}
+            {console.log(date_time)}
 
               <FormControlLabel 
                 control={<Checkbox />} 
@@ -303,17 +288,18 @@ export function EditForm({ request, closeModal }) {
     load_type: request.load_type || "",
     container_drop: request.container_drop || false,
     container_number: request.container_number || "",
-    notes: request.note_section || "",
+    note_section: request.note_section || "",
     date_time: dayjs(request.date_time) || new dayjs(),
     delivery: request.delivery || false,
-    trailerNum: request.trailer_number || "",
-    driverPhone: request.driver_phone_number || "",
-    dockNum: request.dock_number || "",
-    checkInTime: request.check_in_time || null,
-    dockTime: request.docked_time || null,
-    completeTime: request.completed_time || null,
+    trailer_number: request.trailer_number || "",
+    driver_phone_number: request.driver_phone_number || "",
+    dock_number: request.dock_number || "",
+    check_in_time: request.check_in_time || null,
+    docked_time: dayjs(request.docked_time) || null,
+    completed_time: dayjs(request.completed_time) || null,
     active: request.active || true,
   });
+
   const load_types = [
     {
       value: "Full",
@@ -334,6 +320,16 @@ export function EditForm({ request, closeModal }) {
     }
     setRequestData({ ...requestData, [name]: value });
   };
+
+  const handleButton = (e) => {
+    const { name } = e.target;
+    const time = dayjs();
+    console.log("Setting Time ---------------------");
+    console.log(name)
+    setRequestData({...requestData, [name]: time.format("HH:mm:ss")});
+    console.log(time.format("HH:mm:ss"));
+    updateRequest();    
+  }
 
   const handleDateChange = (date) => {
     setRequestData({
@@ -359,6 +355,7 @@ export function EditForm({ request, closeModal }) {
     updateRequest();
   }
 
+
   const updateRequest = async () => {
     try {
       const response = await axios.put(
@@ -370,7 +367,9 @@ export function EditForm({ request, closeModal }) {
     } catch (error) {
       console.error("Error updating request:", error);
       closeModal();
-    }
+    }    
+    console.log("Request Updated........");
+    console.log(requestData);
   };
 
   // This controls the dyanmic display of buttons based on the state of the request
@@ -392,7 +391,8 @@ export function EditForm({ request, closeModal }) {
                 value={requestData.dock_number}
                 onChange={handleChange}
               />
-              <Button variant="contained"> Check-In </Button>
+              <Button 
+                name="check_in_time" variant="contained" onClick={handleButton}> Check-In </Button>
               </Box>
     
   }
