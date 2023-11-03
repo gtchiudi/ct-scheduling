@@ -295,8 +295,8 @@ export function EditForm({ request, closeModal }) {
     driver_phone_number: request.driver_phone_number || "",
     dock_number: request.dock_number || "",
     check_in_time: request.check_in_time || null,
-    docked_time: dayjs(request.docked_time) || null,
-    completed_time: dayjs(request.completed_time) || null,
+    docked_time: request.docked_time || null,
+    completed_time: request.completed_time || null,
     active: request.active || true,
   });
 
@@ -323,11 +323,11 @@ export function EditForm({ request, closeModal }) {
 
   const handleButton = (e) => {
     const { name } = e.target;
-    const time = dayjs();
+    const time = dayjs().format("HH:mm:ss");
     console.log("Setting Time ---------------------");
     console.log(name)
-    setRequestData({...requestData, [name]: time.format("HH:mm:ss")});
-    console.log(time.format("HH:mm:ss"));
+    requestData[name] = time;
+    name=="completed_time" ? requestData.active = false : true;
     updateRequest();    
   }
 
@@ -376,6 +376,40 @@ export function EditForm({ request, closeModal }) {
   // BUTTONS ARE MISSING onClick FUNCTIONALITY
   // Conditional rendering
   let formEnd;
+  let formButton;
+
+  if (requestData.check_in_time == null) {
+    formButton = 
+    <Button 
+      name="check_in_time" 
+      variant="contained" 
+      onClick={handleButton}> 
+      Check-In 
+    </Button>  
+  } else if (requestData.docked_time == null) {
+    formButton =
+    <Button
+      name="docked_time"
+      variant="contained"
+      onClick={handleButton}>
+      Dock
+    </Button>
+  } else if (requestData.completed_time == null) {
+    formButton =
+    <Button
+      name="completed_time"
+      variant="contained"
+      onClick={handleButton}>
+      Complete
+    </Button>
+  } else {
+    formButton = 
+    <Button
+      variant="contained"
+      color="error">
+      Error
+    </Button>
+  }
 
   if (useLocation().pathname == "/Calendar"){
     formEnd = <Box>
@@ -391,8 +425,7 @@ export function EditForm({ request, closeModal }) {
                 value={requestData.dock_number}
                 onChange={handleChange}
               />
-              <Button 
-                name="check_in_time" variant="contained" onClick={handleButton}> Check-In </Button>
+              {formButton}
               </Box>
     
   }
