@@ -34,11 +34,12 @@ class RequestView(viewsets.ModelViewSet):
         end_date = self.request.query_params.get('end_date')
         active = self.request.query_params.get('active')
 
-        if isApproved and active:
+        if isApproved:
             queryset = queryset.filter(approved=isApproved)
             if start_date and end_date:
                 queryset = queryset.filter(
                     date_time__gte=start_date, date_time__lte=end_date)
+        queryset = queryset.filter(active=True)
         return queryset
 
     def put(self, request, pk, format=None):
