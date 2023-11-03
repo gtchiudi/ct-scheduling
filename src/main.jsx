@@ -16,6 +16,7 @@ import RequestForm from "./routes/RequestForm.jsx";
 import HeaderBar from "./components/HeaderBar.jsx";
 import PendingRequests from "./routes/PendingRequests.jsx";
 import Layout from "./components/layout.jsx";
+import MyCalendar from "./routes/Calendar.jsx";
 
 const queryClient = new QueryClient();
 const root = ReactDOM.createRoot(document.getElementById("root"));
@@ -87,6 +88,14 @@ const router = createBrowserRouter([
         <HeaderBar />
         <RequestForm />
       </div>
+    ),
+  },
+  {
+    path: "Calendar",
+    element: (
+      <Layout>
+        <MyCalendar />
+      </Layout>
     ),
   },
 ]);

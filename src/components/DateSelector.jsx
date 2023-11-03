@@ -56,19 +56,20 @@ export const SingleDateSelector = ({ onDateChange }) => {
     onDateChange(selectedDate);
   }, [selectedDate]);
 
-  const handleDateChange = (date) => {
+  /*const handleDateChange = (date) => {
     const dayjsDate = dayjs(date);
     setSelectedDate(dayjsDate);
     onDateChange(selectedDate);
     //console.log("Selected Date:", selectedDate);
   };
+  */
 
   return (
     <div>
       <DatePicker
         label="Select Date"
         value={selectedDate}
-        onChange={(newValue) => handleDateChange(newValue)}
+        onChange={(newValue) => onDateChange(newValue)}
         disablePast
         //defaultDate={selectedStartDate} // Set today's date as the default for the start date picker
       />
