@@ -93,7 +93,7 @@ export function Form() {
   };
 
 
-  
+
   return (
     <Typography textAlign={"center"}>
       <FormControl>
@@ -112,17 +112,17 @@ export function Form() {
         >
           <div>
             <FormLabel for="company_name">Request A Delivery</FormLabel>
-              <TextField
-                required
-                id="company_name"
-                name="company_name"
-                value={company_name}
-                label="Company Name"
-                variant="filled"
-                onChange={(e) => setcompany_name(e.target.value)}
-              ></TextField>
+            <TextField
+              required
+              id="company_name"
+              name="company_name"
+              value={company_name}
+              label="Company Name"
+              variant="filled"
+              onChange={(e) => setcompany_name(e.target.value)}
+            ></TextField>
             <br></br>
-            
+
             <TextField
               id="phone_number"
               name="phone_number"
@@ -132,7 +132,7 @@ export function Form() {
               onChange={(e) => setphone_number(e.target.value)}
             ></TextField>
             <br></br>
-            
+
             <TextField
               required
               id="email"
@@ -143,7 +143,7 @@ export function Form() {
               onChange={(e) => setemail(e.target.value)}
             ></TextField>
             <br></br>
-            
+
             <TextField
               required
               id="po_number"
@@ -154,7 +154,7 @@ export function Form() {
               onChange={(e) => setpo_number(e.target.value)}
             ></TextField>
             <br></br>
-            
+
             <TextField
               select
               required
@@ -186,10 +186,10 @@ export function Form() {
                   {option.value}
                 </MenuItem>
               ))}
-            </TextField>            
+            </TextField>
 
             <FormGroup>
-              {load_type === "Container" ? 
+              {load_type === "Container" ?
                 <Box>
                   <TextField
                     id="con_number"
@@ -205,7 +205,7 @@ export function Form() {
                     onChange={(e) => setcontainer(e.target.checked)}
                   />
                 </Box>
-               : null}
+                : null}
               <FormControlLabel
                 control={<Checkbox />}
                 label="Select for delivery"
@@ -223,7 +223,7 @@ export function Form() {
             />
 
             <FormGroup>
-            {/*<Box
+              {/*<Box
               display={"flex"}
               sx={{
                 "& .MuiTextField-root": { m: 1, width: "19.1ch" },
@@ -233,21 +233,15 @@ export function Form() {
               <TimeSelector required onTimeChange={handleTimeChange} />
               
             </Box>*/}
-            <DateTimePicker
-              label="Select Request Date"
-              value={date_time}
-              onAccept={(e) => setdate_time(e)}
-            ></DateTimePicker>
-            {console.log("After Handle Function")}
-            {console.log(date_time)}
-
-              <FormControlLabel 
-                control={<Checkbox />} 
-                label="Select for delivery"
-                onChange={(e) => setdelivery(e.target.checked)}
-                />
+              <DateTimePicker
+                label="Select Request Date"
+                value={date_time}
+                onAccept={(e) => setdate_time(e)}
+              ></DateTimePicker>
+              {console.log("After Handle Function")}
+              {console.log(date_time)}
             </FormGroup>
-            
+
             <Button onClick={AddDeliveryRequest}>Submit</Button>
           </div>
         </Box>
@@ -280,20 +274,20 @@ export function EditForm({ request, closeModal }) {
   const [requestData, setRequestData] = useState({
     id: request.id || null,
     approved: request.approved || false,
-    company_name: request.company_name || "",
-    phone_number: request.phone_number || "",
-    email: request.email || "",
-    warehouse: request.warehouse || "",
-    po_number: request.po_number || "",
-    load_type: request.load_type || "",
+    company_name: request.company_name || null,
+    phone_number: request.phone_number || null,
+    email: request.email || null,
+    warehouse: request.warehouse || null,
+    po_number: request.po_number || null,
+    load_type: request.load_type || null,
     container_drop: request.container_drop || false,
-    container_number: request.container_number || "",
-    note_section: request.note_section || "",
+    container_number: request.container_number || null,
+    note_section: request.note_section || null,
     date_time: dayjs(request.date_time) || new dayjs(),
     delivery: request.delivery || false,
-    trailer_number: request.trailer_number || "",
-    driver_phone_number: request.driver_phone_number || "",
-    dock_number: request.dock_number || "",
+    trailer_number: request.trailer_number || null,
+    driver_phone_number: request.driver_phone_number || null,
+    dock_number: request.dock_number || null,
     check_in_time: request.check_in_time || null,
     docked_time: request.docked_time || null,
     completed_time: request.completed_time || null,
@@ -323,12 +317,16 @@ export function EditForm({ request, closeModal }) {
 
   const handleButton = (e) => {
     const { name } = e.target;
-    const time = dayjs().format("HH:mm:ss");
-    console.log("Setting Time ---------------------");
-    console.log(name)
-    requestData[name] = time;
-    name=="completed_time" ? requestData.active = false : true;
-    updateRequest();    
+    console.log("HandleButton Function Call", {name});
+    if (name == "dock_number") {
+      console.log(document.getElementById("dock_number_text").value);
+      requestData[name] = document.getElementById("dock_number_text").value;
+    } else {
+      const time = dayjs().format("HH:mm:ss");
+      requestData[name] = time;
+      name == "completed_time" ? requestData.active = false : true;
+    }
+    updateRequest();
   }
 
   const handleDateChange = (date) => {
@@ -362,114 +360,151 @@ export function EditForm({ request, closeModal }) {
         `/api/request/${requestData.id}/`,
         requestData
       );
+      console.log("Request Updated........");
+      console.log(response);
+
       queryClient.invalidateQueries("pendingRequests");
       closeModal();
     } catch (error) {
       console.error("Error updating request:", error);
       closeModal();
-    }    
-    console.log("Request Updated........");
-    console.log(requestData);
+    }
   };
 
   // This controls the dyanmic display of buttons based on the state of the request
   // BUTTONS ARE MISSING onClick FUNCTIONALITY
   // Conditional rendering
-  let formEnd;
   let formButton;
-
-  if (requestData.check_in_time == null) {
-    formButton = 
-    <Button 
-      name="check_in_time" 
-      variant="contained" 
-      onClick={handleButton}> 
-      Check-In 
-    </Button>  
-  } else if (requestData.docked_time == null) {
-    formButton =
-    <Button
+  let formBottom;
+  let formEnd =
+    <TextField
+      required
+      label="Driver Phone #"
+      name="driver_phone_number"
+      value={requestData.driver_phone_number}
+      onChange={handleChange}
+    />;
+  let checkedContent =
+    <div>
+      <TextField
+        readOnly
+        label="Checked-In Time"
+        name="checked_in_time"
+        value={requestData.check_in_time}
+      />
+      
+      <TextField
+        required
+        id="dock_number_text"
+        label="Dock #"
+        name="dock_number"
+        value={requestData.dock_number}
+        //onChange={}
+      />      
+    </div>
+  let dockedContent = <div> {checkedContent}
+    <TextField
+      readOnly
+      label="Docked Time"
       name="docked_time"
-      variant="contained"
-      onClick={handleButton}>
-      Dock
-    </Button>
-  } else if (requestData.completed_time == null) {
-    formButton =
-    <Button
-      name="completed_time"
-      variant="contained"
-      onClick={handleButton}>
-      Complete
-    </Button>
-  } else {
-    formButton = 
-    <Button
-      variant="contained"
-      color="error">
-      Error
-    </Button>
-  }
+      value={requestData.docked_time}
+    />
+  </div>;
+  let completionContent;
 
-  if (useLocation().pathname == "/Calendar"){
-    formEnd = <Box>
-              <TextField
-                label="Driver Phone #"
-                name="driver_phone_number"
-                value={requestData.driver_phone_number}
-                onChange={handleChange}
-              />
-              <TextField
-                label="Dock Number"
-                name="dock_number"
-                value={requestData.dock_number}
-                onChange={handleChange}
-              />
-              {formButton}
-              </Box>
-    
+
+  if (useLocation().pathname == "/calendar" || useLocation().pathname == "/Calendar") {
+    if (requestData.check_in_time == null) {
+      formButton =
+        <Button
+          name="check_in_time"
+          variant="contained"
+          onClick={handleButton}>
+          Check-In
+        </Button>
+
+      formBottom = <Box> {formEnd} {formButton} </Box>
+
+    } else if (requestData.dock_number == null) {
+      formButton =
+        <Button
+          name="dock_number"
+          variant="contained"
+          onClick={handleButton}>
+          Send To Dock
+        </Button> 
+
+      formBottom = <Box> {formEnd} {checkedContent} {formButton} </Box>
+
+    } else if (requestData.docked_time == null) { 
+      formButton =
+        <Button
+          name="docked_time"
+          variant="contained"
+          onClick={handleButton}>
+          Dock Truck
+        </Button>
+
+      formBottom = <Box> {formEnd} {checkedContent} {formButton} </Box>
+
+    } else if (requestData.completed_time == null) {
+      formButton =
+        <Button
+          name="completed_time"
+          variant="contained"
+          onClick={handleButton}>
+          Complete
+        </Button>
+    } else {
+      formButton =
+        <Button
+          variant="contained"
+          color="error">
+          Error
+        </Button>
+    }
   }
 
   if (!requestData.approved) {
-    formEnd = <Stack
-                display={"flex"}
-                justifyContent={"center"}
-                spacing={2}
-                direction={"row"}
-              >
-                <Button 
-                  color="success" 
-                  variant="contained" 
-                  onClick={handleApprove}>
-                    Approve
-                </Button>
-                <Button 
-                  color="error" 
-                  variant="contained" 
-                  onClick={handleDeny}>
-                    Deny
-                </Button>
-              </Stack>;
-  } 
-   /*else if (requestData.checkInTime == null) {
-    formEnd += <Button variant="contained"> Check-In </Button>;
-  } else if (requestData.checkInTime != null && requestData.dockTime == null) {
-    formEnd += <Button variant="contained"> Dock </Button>;
-  } else if (
-    requestData.checkInTime != null &&
-    requestData.dockTime != null &&
-    requestData.completeTime == null
-  ) {
-    formEnd += <Button variant="contained"> Complete </Button>;
-  } else {
-    formEnd += (
-      <Button disabled variant="contained" color="red">
-        {" "}
-        Error - See Admin{" "}
+    formBottom = <Stack
+      display={"flex"}
+      justifyContent={"center"}
+      spacing={2}
+      direction={"row"}
+    >
+      <Button
+        color="success"
+        variant="contained"
+        onClick={handleApprove}>
+        Approve
       </Button>
-    );
+      <Button
+        color="error"
+        variant="contained"
+        onClick={handleDeny}>
+        Deny
+      </Button>
+    </Stack>;
   }
-  */
+  /*else if (requestData.checkInTime == null) {
+   formEnd += <Button variant="contained"> Check-In </Button>;
+ } else if (requestData.checkInTime != null && requestData.dockTime == null) {
+   formEnd += <Button variant="contained"> Dock </Button>;
+ } else if (
+   requestData.checkInTime != null &&
+   requestData.dockTime != null &&
+   requestData.completeTime == null
+ ) {
+   formEnd += <Button variant="contained"> Complete </Button>;
+ } else {
+   formEnd += (
+     <Button disabled variant="contained" color="red">
+       {" "}
+       Error - See Admin{" "}
+     </Button>
+   );
+ }
+ */
 
   return (
     <FormControl>
@@ -571,6 +606,7 @@ export function EditForm({ request, closeModal }) {
           value={dayjs(requestData.date_time)}
           onChange={(newValue) => handleDateChange(newValue)}
         />
+
         <Box>
           <FormControlLabel
             control={<Checkbox />}
@@ -580,8 +616,15 @@ export function EditForm({ request, closeModal }) {
             onChange={handleChange}
           />
         </Box>
-        
-        {formEnd}
+
+        <TextField
+          label="Trailer Number"
+          name="trailer_number"
+          value={requestData.trailer_number}
+          onChange={handleChange}
+        />
+
+        {formBottom}
 
       </Stack>
     </FormControl>
