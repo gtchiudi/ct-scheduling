@@ -3,6 +3,7 @@ import { Box, ThemeProvider, createTheme } from "@mui/system";
 import { Typography } from "@mui/material";
 import Button from "@mui/material/Button";
 import { Link } from "react-router-dom";
+import Footer from "./Footer";
 
 const containerStyle = {
   position: "relative",
@@ -11,6 +12,7 @@ const containerStyle = {
   backgroundImage: `url("../truckBackground.png")`, // Set the image as background
   backgroundSize: "cover", // Make the image cover the entire container
   backgroundAttachment: "fixed",
+  maxWidth: "100%",
 };
 
 const boxStyle = {
@@ -56,8 +58,8 @@ export default function Home() {
           <br />
           <p style={{ margin: 0}}>
           For more information about Candor Logistics 
-          and Candor Transportation, visit our website:
-          <a href="https://www.candortransport.com/home"> Here</a>
+          and Candor Transportation, visit our websites&nbsp;
+          <a href="https://www.candortransport.com/home">Here</a>
           </p>
         </div>
 
@@ -79,6 +81,7 @@ export default function Home() {
           </Button>
         </div>
       </div>
+      <Footer />
     </Typography>
   );
 }
