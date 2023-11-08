@@ -1,13 +1,9 @@
 import React, { useState, useEffect } from "react";
-import { Calendar, Views, dayjsLocalizer } from "react-big-calendar";
 import dayjs from "dayjs";
-import "react-big-calendar/lib/css/react-big-calendar.css";
-import DateSelector from "../components/DateSelector";
-import { getRequestsByDate } from "../actions";
+import { Scheduler } from "@aldabil/react-scheduler";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import {
-  Typography,
   Dialog,
   DialogActions,
   DialogContent,
@@ -17,60 +13,148 @@ import {
 import { useAtom } from "jotai";
 import { isAuthAtom, refreshAtom } from "../components/atoms.jsx";
 import axios from "axios";
-import "react-big-calendar/lib/css/react-big-calendar.css";
-import { EditForm } from "../components/Form.jsx";
+import Form, { EditForm } from "../components/Form.jsx";
 
 //const MyCalendar = () => {}
 //That is the declaration for a JavaScript function. You need...
-
-export default function MyCalendar() {
-  // React component function
-  const clocalizer = dayjsLocalizer(dayjs);
-
-  const [startDate, setStartDate] = React.useState(dayjs().startOf("month"));
-  const [endDate, setEndDate] = React.useState(startDate.add(1, "month"));
-  console.log("Start Date: ", startDate);
-  console.log("End Date: ", endDate);
-  const queryClient = useQueryClient();
-  let pauseQuery = false;
-  const navigate = useNavigate();
-  const [refresh, setRefresh] = useAtom(refreshAtom);
-  const [, isAuth] = useAtom(isAuthAtom);
-  const [open, setOpen] = useState(false);
+export function CustomViewer({ event }) {
+  const [open, setOpen] = useState(true);
   const closeDialog = () => {
     setOpen(false);
   };
-  const [selected, setSelected] = useState([]);
-  const [events, setEvents] = useState([]);
 
-  const updateRange = (range) => {
-    const newStart = dayjs(
-      (dayjs(range.start).valueOf() + dayjs(range.end).valueOf()) / 2
-    );
-    if (newStart.isBefore(startDate)) {
-      setStartDate(newStart.startOf("month"));
-      setEndDate(newStart.endOf("month"));
-      queryClient.invalidateQueries(["requests", "date"]);
-    } else if (newStart.isAfter(endDate)) {
-      setStartDate(newStart.startOf("month"));
-      setEndDate(newStart.endOf("month"));
-      queryClient.invalidateQueries(["requests", "date"]);
-    }
+  return (
+    <div>
+      {open && (
+        <Dialog open={open} onClose={closeDialog}>
+          <DialogTitle textAlign={"center"}>
+            PO #: {event.request.po_number}
+          </DialogTitle>
+          <DialogContent>
+            <EditForm request={event.request} closeModal={closeDialog} />
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={closeDialog}>Cancel</Button>
+          </DialogActions>
+        </Dialog>
+      )}
+    </div>
+  );
+}
+export function CustomEditor({ event }) {
+  const [open, setOpen] = useState(true);
+  const closeDialog = () => {
+    event.close();
+    setOpen(false);
   };
 
-  const { max, views, defaultView, key } = React.useMemo(
+  return (
+    <div>
+      {open && (
+        <Dialog open={open} onClose={closeDialog}>
+          <DialogTitle textAlign={"center"}>Create Request</DialogTitle>
+          <DialogContent>
+            <Form
+              closeModal={closeDialog}
+              date_time={dayjs(event.state.start)}
+            />
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={closeDialog}>Cancel</Button>
+          </DialogActions>
+        </Dialog>
+      )}
+    </div>
+  );
+}
+
+export default function Calendar() {
+  // React component function
+  const navigate = useNavigate();
+  const [, isAuth] = useAtom(isAuthAtom);
+  // set start date to be previous month
+  const [startDate, setStartDate] = React.useState(
+    dayjs().startOf("month").subtract(1, "month")
+  );
+  // set end date to be 3 months from start date
+  const [endDate, setEndDate] = React.useState(startDate.add(3, "month"));
+  // get query client
+  const queryClient = useQueryClient();
+  let pauseQuery = false;
+
+  // used as refresh token tag for error 401 handling
+  const [refresh, setRefresh] = useAtom(refreshAtom);
+
+  // store selected request
+  const [selected, setSelected] = useState([]);
+  // store events
+  const [events, setEvents] = useState([]);
+  // store query result
+  let result = useState(null);
+  // store if user is authorized
+  let authorized = useState(null);
+  // store if dialog is open
+  const [open, setOpen] = useState(false);
+  // close dialog
+  const closeDialog = () => {
+    setOpen(false);
+  };
+
+  // check authentication
+  useEffect(() => {
+    pauseQuery = true; // pause query
+    authorized = isAuth(); // check authorization
+    if (!authorized) {
+      // nav to login if not authorized
+      navigate("/Login");
+    }
+    const intervalId = setInterval(() => {
+      // set interval to check auth every 30 seconds
+      pauseQuery = true;
+      authorized = isAuth();
+      if (!authorized) {
+        navigate("/Login");
+      }
+      pauseQuery = false;
+    }, 30000);
+    pauseQuery = false;
+    // Clean up the interval when the component unmounts
+    return () => {
+      clearInterval(intervalId);
+    };
+  }, []);
+
+  const updateRange = (date) => {
+    const newDate = dayjs(date); // store date as dayjs object
+    if (newDate.isBefore(startDate) || newDate.isAfter(endDate)) {
+      // check if outside curr range
+      setStartDate(newDate.startOf("month").subtract(1, "month")); // one month before curr
+      setEndDate(startDate.add(3, "month")); // 3 months after start
+      pauseQuery = true; // pause query
+      queryClient.invalidateQueries(["requests", "date"]); // invalidate query
+    }
+    pauseQuery = false; // unpause query
+  };
+
+  const { key } = React.useMemo(
     () => ({
-      max: dayjs().endOf("day").subtract(1, "hours").toDate(),
-      views: [Views.MONTH, Views.WEEK, Views.DAY],
-      defaultView: Views.MONTH,
-      key: ["requests", "date", startDate, endDate, "active"],
+      key: ["requests", "date", startDate, endDate, "active"], // store query key. updates with dates
     }),
     [startDate, endDate]
   );
 
-  let result = useQuery({
+  const isLoading = React.useMemo(() => {
+    // check if query is loading
+    if (result) {
+      return result.isLoading;
+    }
+    return true;
+  }, [result]);
+
+  result = useQuery({
     queryKey: key,
     queryFn: async () =>
+      // query for requests
       await axios.get("/api/request", {
         params: {
           approved: "True",
@@ -79,80 +163,58 @@ export default function MyCalendar() {
           end_date: endDate.format("YYYY-MM-DD HH:mm:ss.SSSSSS[Z]"),
         },
       }),
-    refetchInterval: 30000,
-    retry: 3,
-    retryDelay: 1000,
-    enabled: !pauseQuery,
+    refetchInterval: 30000, // refetches every 30 seconds
+    retry: 3, // retry 3 times
+    retryDelay: 1000, // retry every 1 second
+    enabled: !pauseQuery, // enable query if not paused
     onError: (error) => {
+      // handle error 401
       if (error.response && error.response.status === 401) {
         // Check if token refresh is already in progress
-        pauseQuery = true;
+        pauseQuery = true; // pause query
         if (!refresh) {
-          setRefresh(true);
-          authorized = isAuth();
+          // check if already refreshing
+          setRefresh(true); // set refresh to true
+          authorized = isAuth(); // check auth (handles refreshing token)
 
           if (!authorized) {
-            queryClient.cancelQueries(["requests", "date", startDate, endDate]);
-            navigate("/logout");
+            // refresh failed
+            queryClient.cancelQueries(["requests", "date"]); // cancel query
+            navigate("/logout"); // logout
           }
         }
-        pauseQuery = false;
         queryClient.invalidateQueries(["requests", "date", startDate, endDate]);
+        pauseQuery = false; // unpause query
       }
     },
     onSuccess: (data) => {
-      console.log(data);
       const newEvents = data.data.map((request) => ({
-        title: request.po_number,
-        start: dayjs(request.date_time),
-        end: dayjs(request.date_time),
-        request: request,
+        // map requests to events on success
+        event_id: request.id,
+        title: `PO #: ${request.po_number}`, // set title to po number
+        start: dayjs(request.date_time).toDate(), // start and end are same
+        end: dayjs(request.date_time).toDate(),
+        request: request, // store request in event
+        editable: false,
+        deletable: false,
+        draggable: false,
       }));
       // map each result row to an event
-      setEvents(newEvents);
+      setEvents(newEvents); // set events
     },
   });
 
-  if (!result) return null;
-  if (result.isLoading) return <div>Loading...</div>;
-  if (result.isError) return <div>Error: {result.error.message}</div>;
-
   return (
     <div>
-      {open && (
-        <Dialog open={open} onClose={closeDialog}>
-          <DialogTitle textAlign={"center"}>
-            Edit and Approve Request
-          </DialogTitle>
-          <DialogContent>
-            <EditForm request={selected} closeModal={closeDialog} />
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={closeDialog}>Cancel</Button>
-          </DialogActions>
-        </Dialog>
-      )}
-      <Calendar
+      <Scheduler
+        stickyNavigation={true}
         events={events}
-        localizer={clocalizer}
-        views={views}
-        max={max}
-        startAccessor={(event) => {
-          return new dayjs(event.start);
+        onSelectedDateChange={(date) => {
+          updateRange(date);
         }}
-        endAccessor={(event) => {
-          return new dayjs(event.end);
-        }}
-        style={{ height: "90vh" }}
-        defaultView={defaultView}
-        onRangeChange={(range) => {
-          console.log(range);
-          updateRange(range);
-        }}
-        onSelectEvent={(event) => {
-          setSelected(event.request);
-          setOpen(true);
-        }}
+        loading={isLoading}
+        customViewer={(event) => <CustomViewer event={event} />}
+        customEditor={(event) => <CustomEditor event={event} />}
       />
     </div>
   );

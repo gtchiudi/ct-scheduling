@@ -3,6 +3,9 @@ import { Box, ThemeProvider, createTheme } from "@mui/system";
 import { Typography } from "@mui/material";
 import Button from "@mui/material/Button";
 import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
+import { useAtom } from "jotai";
+import { isAuthAtom } from "../components/atoms.jsx";
 
 
 const containerStyle = {
@@ -33,6 +36,11 @@ const buttonStyle = {
 };
 
 export default function Home() {
+  const navigate = useNavigate();
+  const [, isAuth] = useAtom(isAuthAtom);
+  React.useEffect(() => {
+    if (isAuth()) navigate("/Calendar");
+  });
   return (
     <Typography>
       <div style={containerStyle}>
