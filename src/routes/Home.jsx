@@ -3,7 +3,7 @@ import { Box, ThemeProvider, createTheme } from "@mui/system";
 import { Typography } from "@mui/material";
 import Button from "@mui/material/Button";
 import { Link } from "react-router-dom";
-import Footer from "./Footer";
+
 
 const containerStyle = {
   position: "relative",
@@ -81,7 +81,7 @@ export default function Home() {
           </Button>
         </div>
       </div>
-      <Footer />
+      
     </Typography>
   );
 }

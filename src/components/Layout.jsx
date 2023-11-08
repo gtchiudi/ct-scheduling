@@ -11,6 +11,7 @@ import {
   isAuthAtom,
 } from "./atoms.jsx";
 import axios from "axios";
+import Footer from "./Footer.jsx"
 
 function Layout({ children }) {
   const [, isAuth] = useAtom(isAuthAtom);
@@ -26,6 +27,7 @@ function Layout({ children }) {
     <div>
       <HeaderBar />
       {children}
+      <Footer />
     </div>
   );
 }

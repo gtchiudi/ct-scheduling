@@ -7,7 +7,7 @@ const footerStyle = {
   padding: "2px",
 };
 
-const Footer = () => {
+function Footer() {
   return (
     
     <footer >
