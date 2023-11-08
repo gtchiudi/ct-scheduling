@@ -41,9 +41,10 @@ export function CustomViewer({ event }) {
     </div>
   );
 }
-export function CustomEditor() {
+export function CustomEditor({ event }) {
   const [open, setOpen] = useState(true);
   const closeDialog = () => {
+    event.close();
     setOpen(false);
   };
 
@@ -53,7 +54,10 @@ export function CustomEditor() {
         <Dialog open={open} onClose={closeDialog}>
           <DialogTitle textAlign={"center"}>Create Request</DialogTitle>
           <DialogContent>
-            <Form closeModal={closeDialog} />
+            <Form
+              closeModal={closeDialog}
+              date_time={dayjs(event.state.start)}
+            />
           </DialogContent>
           <DialogActions>
             <Button onClick={closeDialog}>Cancel</Button>
@@ -210,7 +214,7 @@ export default function Calendar() {
         }}
         loading={isLoading}
         customViewer={(event) => <CustomViewer event={event} />}
-        customEditor={() => <CustomEditor />}
+        customEditor={(event) => <CustomEditor event={event} />}
       />
     </div>
   );
