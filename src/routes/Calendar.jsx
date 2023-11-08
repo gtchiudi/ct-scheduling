@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import dayjs from "dayjs";
 import { Scheduler } from "@aldabil/react-scheduler";
-import { ScheduleRef } from "@aldabil/react-scheduler";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import {
@@ -14,7 +13,7 @@ import {
 import { useAtom } from "jotai";
 import { isAuthAtom, refreshAtom } from "../components/atoms.jsx";
 import axios from "axios";
-import { EditForm } from "../components/Form.jsx";
+import Form, { EditForm } from "../components/Form.jsx";
 
 //const MyCalendar = () => {}
 //That is the declaration for a JavaScript function. You need...
@@ -33,6 +32,28 @@ export function CustomViewer({ event }) {
           </DialogTitle>
           <DialogContent>
             <EditForm request={event.request} closeModal={closeDialog} />
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={closeDialog}>Cancel</Button>
+          </DialogActions>
+        </Dialog>
+      )}
+    </div>
+  );
+}
+export function CustomEditor() {
+  const [open, setOpen] = useState(true);
+  const closeDialog = () => {
+    setOpen(false);
+  };
+
+  return (
+    <div>
+      {open && (
+        <Dialog open={open} onClose={closeDialog}>
+          <DialogTitle textAlign={"center"}>Create Request</DialogTitle>
+          <DialogContent>
+            <Form closeModal={closeDialog} />
           </DialogContent>
           <DialogActions>
             <Button onClick={closeDialog}>Cancel</Button>
@@ -181,20 +202,6 @@ export default function Calendar() {
 
   return (
     <div>
-      {/* dialog for for edit.  */}
-      {open && (
-        <Dialog open={open} onClose={closeDialog}>
-          <DialogTitle textAlign={"center"}>
-            Edit and Approve Request
-          </DialogTitle>
-          <DialogContent>
-            <EditForm request={selected} closeModal={closeDialog} />
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={closeDialog}>Cancel</Button>
-          </DialogActions>
-        </Dialog>
-      )}
       <Scheduler
         stickyNavigation={true}
         events={events}
@@ -203,7 +210,7 @@ export default function Calendar() {
         }}
         loading={isLoading}
         customViewer={(event) => <CustomViewer event={event} />}
-        customEditor={null}
+        customEditor={() => <CustomEditor />}
       />
     </div>
   );
