@@ -150,7 +150,7 @@ EnhancedTableHead.propTypes = {
 export default function PendingRequests() {
   const navigate = useNavigate(); // used to navigate to other pages
   const [, isAuth] = useAtom(isAuthAtom); // used to check if user is authenticated
-  const [authorized, setAuthorized] = React.useState(null); // store if user is authorized
+  const [authorized, setAuthorized] = React.useState(isAuth()); // store if user is authorized
   const queryClient = useQueryClient(); // used to get query client
   const [refresh, setRefresh] = useAtom(refreshAtom); // used as refresh token tag for error 401 handling
   const [pauseQuery, setPause] = useState(false); // used to pause query
