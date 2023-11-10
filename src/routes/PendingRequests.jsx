@@ -235,7 +235,7 @@ export default function PendingRequests() {
   const closeDialog = () => {
     // remove the selected request from the table and close dialog
     const updatedRows = rows.filter((row) => row.id !== selected.id);
-    setRows(updatedRows);
+    rows = updatedRows;
     setOpen(false);
   };
 
