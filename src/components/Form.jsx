@@ -175,7 +175,17 @@ export function Form() {
               variant="filled"
               onChange={(e) => setcompany_name(e.target.value)}
             ></TextField>
+            <TextField
+              required
+              id="company_name"
+              name="company_name"
+              value={company_name}
+              label="Company Name"
+              variant="filled"
+              onChange={(e) => setcompany_name(e.target.value)}
+            ></TextField>
             <br></br>
+
 
             <TextField
               id="phone_number"
@@ -186,6 +196,7 @@ export function Form() {
               onChange={(e) => setphone_number(e.target.value)}
             ></TextField>
             <br></br>
+
 
             <TextField
               required
@@ -198,6 +209,7 @@ export function Form() {
             ></TextField>
             <br></br>
 
+
             <TextField
               required
               id="po_number"
@@ -208,6 +220,7 @@ export function Form() {
               onChange={(e) => setpo_number(e.target.value)}
             ></TextField>
             <br></br>
+
 
             <TextField
               select
