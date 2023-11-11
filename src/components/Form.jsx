@@ -19,7 +19,7 @@ import FormControlLabel from '@mui/material/FormControlLabel';
 import FormGroup from '@mui/material/FormGroup';
 import { DateTimePicker } from "@mui/x-date-pickers";
 import dayjs from "dayjs";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { accessTokenAtom } from "./atoms.jsx";
 import { getRequestsByDate } from "../actions.jsx";
 //import { error } from "console";
@@ -69,6 +69,10 @@ export function Form() {
   const AddDeliveryRequest = async () => {
     let formField = new FormData();
 
+    if (useLocation().pathname == "/calendar" || useLocation().pathname == "/Calendar") {
+      formField.append("approved", true);
+    }
+
     formField.append("company_name", company_name);
     formField.append("phone_number", phone_number);
     formField.append("email", email);
@@ -92,6 +96,56 @@ export function Form() {
     });
   };
 
+  /*
+  ----------------------------------------------------------------------------------------------
+  The following code deals with determining what hours are unavailable for a sepcific date.
+  findTimes makes a get request based on the date from the DateTimePicker onChange function
+    The response contains only the requests for that particular date
+    The date_time of each response for a particular date is added to the extractHours variable
+      which is then assigned to the state variable of times
+  getTimes is called by the ShouldDiasbleTime prop attached to the DateTimePicker
+    it returns boolean based on whether a time is contained within the times state 
+    Note: This disables the full hour. It should probably only disable a 15-30 minute window within 
+          the time frame of an existing request. That's a lot of logic I didn't feel like putting in yet.
+    *** THIS STILL NEEDS UPDATED TO CONTAIN TIMES OUTSIED OF WORKING HOURS ***
+  */
+
+  const [times, setTimes] = useState([]);
+  let result;
+
+  const findTimes = async (date) => {
+    console.log("Selected Date: ", date);
+    const _date = dayjs(date).format("YYYY-MM-DD");
+    console.log("Formatted Date: ", _date);
+
+    await axios({
+      method: "get",
+      url: "http://localhost:5173/api/request/",
+      params: {
+        approved: "True",
+        active: "True",
+        start_date: dayjs(_date).startOf('date').toDate(),
+        end_date: dayjs(_date).endOf('date').toDate(),
+      }
+    }).then(response => {
+      console.log('Data: ', response.data);
+      
+      const extractHours = response.data.map(entry => {
+        const hours = dayjs(entry.date_time).hour();
+        return hours;
+      });
+      result = response.data;
+      setTimes(extractHours);
+    })
+    console.log('Response Result: ', result);
+  }
+
+  const getTimes = (date) => {
+    const unavailableTimes = times.includes(dayjs(date).hour());
+    return  unavailableTimes;
+  }
+
+  // --------------------------------------------------------------------------------------------
 
 
   return (
@@ -223,19 +277,13 @@ export function Form() {
             />
 
             <FormGroup>
-              {/*<Box
-              display={"flex"}
-              sx={{
-                "& .MuiTextField-root": { m: 1, width: "19.1ch" },
-              }}
-            >
-              <SingleDateSelector required onDateChange={handleDateChange} />
-              <TimeSelector required onTimeChange={handleTimeChange} />
-              
-            </Box>*/}
               <DateTimePicker
+                disablePast
+                closeOnSelect={false}
                 label="Select Request Date"
-                value={date_time}
+                value={date_time}                
+                shouldDisableTime={getTimes}
+                onChange={findTimes}
                 onAccept={(e) => setdate_time(e)}
               ></DateTimePicker>
               {console.log("After Handle Function")}
@@ -250,15 +298,9 @@ export function Form() {
   );
 }
 
-// Warehouse is showing as nonsense, not sure how to get that back to plain english
-// GIIIIIIIIIIIIIIIIIIINNNNNNNNNNNNNNOOOOOOOOOOOOOOOOOOOOOOOOOO
-
 // The FilledForm will be used to allow CT employees the ability to modify a request
 // This form also contains information that is restricted to employees only.
 // As well as accept, deny, progress a request through buttons.
-// For now the form is ReadOnly, the implementation of confirmation popups will be
-//     paramount to ensuring no data is accidentally modified.
-// ------
 // Buttons are made available depending on the state of the request, that state is pulled from the request data.
 
 export function EditForm({ request, closeModal }) {
