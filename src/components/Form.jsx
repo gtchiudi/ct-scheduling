@@ -15,8 +15,8 @@ import {
 import axios from "axios";
 import { useAtom } from "jotai";
 import { warehouseDataAtom, updateWarehouseDataAtom } from "./atoms.jsx";
-import FormControlLabel from '@mui/material/FormControlLabel';
-import FormGroup from '@mui/material/FormGroup';
+import FormControlLabel from "@mui/material/FormControlLabel";
+import FormGroup from "@mui/material/FormGroup";
 import { DateTimePicker } from "@mui/x-date-pickers";
 import dayjs from "dayjs";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -29,7 +29,6 @@ import { getRequestsByDate } from "../actions.jsx";
 // The buttons will handle accepting, notifications to drivers, docked, completed, etc.
 // To use the filled form just pass in request data from whatever page you are using the filled form on.
 // The form shuold be as simple to implement as possible, if any code (other than styling) is being done to implement a form then it needs added here.
-
 
 export function Form() {
   const [warehouseData] = useAtom(warehouseDataAtom);
@@ -65,11 +64,12 @@ export function Form() {
   //const [submitted, setSubmitted] = useState(false);
 
   const history = useNavigate();
+  const path = useLocation().pathname;
 
   const AddDeliveryRequest = async () => {
     let formField = new FormData();
 
-    if (useLocation().pathname == "/calendar" || useLocation().pathname == "/Calendar") {
+    if (path == "/calendar" || path == "/Calendar") {
       formField.append("approved", true);
     }
 
@@ -81,14 +81,14 @@ export function Form() {
     formField.append("load_type", load_type);
     formField.append("container_drop", container);
     formField.append("container_number", con_number);
-    formField.append("date_time", date_time.format("YYYY-MM-DD HH:mm:ss.SSSSSS[Z]"));
+    formField.append("date_time", date_time.format("YYYY-MM-DD HH:mm:ss"));
     formField.append("active", true);
     formField.append("delivery", delivery);
     formField.append("note_section", notes);
 
     await axios({
       method: "post",
-      url: "http://localhost:5173/api/request/", // Terribly unsure what URL to put here so I'm just hoping this one is right. Will need Gino to confirm
+      url: "/api/request/", // Terribly unsure what URL to put here so I'm just hoping this one is right. Will need Gino to confirm
       data: formField,
     }).then((response) => {
       console.log(response.data);
@@ -120,33 +120,32 @@ export function Form() {
 
     await axios({
       method: "get",
-      url: "http://localhost:5173/api/request/",
+      url: "/api/request/",
       params: {
-        approved: "True",
+        approved: "True", // do we want it to only be approved requests?
         active: "True",
-        start_date: dayjs(_date).startOf('date').toDate(),
-        end_date: dayjs(_date).endOf('date').toDate(),
-      }
-    }).then(response => {
-      console.log('Data: ', response.data);
-      
-      const extractHours = response.data.map(entry => {
+        start_date: dayjs(_date).startOf("date").toDate(),
+        end_date: dayjs(_date).endOf("date").toDate(),
+      },
+    }).then((response) => {
+      console.log("Data: ", response.data);
+
+      const extractHours = response.data.map((entry) => {
         const hours = dayjs(entry.date_time).hour();
         return hours;
       });
       result = response.data;
       setTimes(extractHours);
-    })
-    console.log('Response Result: ', result);
-  }
+    });
+    console.log("Response Result: ", result);
+  };
 
   const getTimes = (date) => {
     const unavailableTimes = times.includes(dayjs(date).hour());
-    return  unavailableTimes;
-  }
+    return unavailableTimes;
+  };
 
   // --------------------------------------------------------------------------------------------
-
 
   return (
     <Typography textAlign={"center"}>
@@ -175,17 +174,7 @@ export function Form() {
               variant="filled"
               onChange={(e) => setcompany_name(e.target.value)}
             ></TextField>
-            <TextField
-              required
-              id="company_name"
-              name="company_name"
-              value={company_name}
-              label="Company Name"
-              variant="filled"
-              onChange={(e) => setcompany_name(e.target.value)}
-            ></TextField>
             <br></br>
-
 
             <TextField
               id="phone_number"
@@ -196,7 +185,6 @@ export function Form() {
               onChange={(e) => setphone_number(e.target.value)}
             ></TextField>
             <br></br>
-
 
             <TextField
               required
@@ -209,7 +197,6 @@ export function Form() {
             ></TextField>
             <br></br>
 
-
             <TextField
               required
               id="po_number"
@@ -220,7 +207,6 @@ export function Form() {
               onChange={(e) => setpo_number(e.target.value)}
             ></TextField>
             <br></br>
-
 
             <TextField
               select
@@ -256,7 +242,7 @@ export function Form() {
             </TextField>
 
             <FormGroup>
-              {load_type === "Container" ?
+              {load_type === "Container" ? (
                 <Box>
                   <TextField
                     id="con_number"
@@ -272,7 +258,7 @@ export function Form() {
                     onChange={(e) => setcontainer(e.target.checked)}
                   />
                 </Box>
-                : null}
+              ) : null}
               <FormControlLabel
                 control={<Checkbox />}
                 label="Select for delivery"
@@ -294,7 +280,7 @@ export function Form() {
                 disablePast
                 closeOnSelect={false}
                 label="Select Request Date"
-                value={date_time}                
+                value={date_time}
                 shouldDisableTime={getTimes}
                 onChange={findTimes}
                 onAccept={(e) => setdate_time(e)}
@@ -372,17 +358,17 @@ export function EditForm({ request, closeModal }) {
 
   const handleButton = (e) => {
     const { name } = e.target;
-    console.log("HandleButton Function Call", {name});
+    console.log("HandleButton Function Call", { name });
     if (name == "dock_number") {
       console.log(document.getElementById("dock_number_text").value);
       requestData[name] = document.getElementById("dock_number_text").value;
     } else {
       const time = dayjs().format("HH:mm:ss");
       requestData[name] = time;
-      name == "completed_time" ? requestData.active = false : true;
+      name == "completed_time" ? (requestData.active = false) : true;
     }
     updateRequest();
-  }
+  };
 
   const handleDateChange = (date) => {
     setRequestData({
@@ -406,8 +392,7 @@ export function EditForm({ request, closeModal }) {
     );
     requestData.active = false;
     updateRequest();
-  }
-
+  };
 
   const updateRequest = async () => {
     try {
@@ -431,15 +416,16 @@ export function EditForm({ request, closeModal }) {
   // Conditional rendering
   let formButton;
   let formBottom;
-  let formEnd =
+  let formEnd = (
     <TextField
       required
       label="Driver Phone #"
       name="driver_phone_number"
       value={requestData.driver_phone_number}
       onChange={handleChange}
-    />;
-  let checkedContent =
+    />
+  );
+  let checkedContent = (
     <div>
       <TextField
         readOnly
@@ -447,7 +433,7 @@ export function EditForm({ request, closeModal }) {
         name="checked_in_time"
         value={requestData.check_in_time}
       />
-      
+
       <TextField
         required
         id="dock_number_text"
@@ -455,91 +441,101 @@ export function EditForm({ request, closeModal }) {
         name="dock_number"
         value={requestData.dock_number}
         //onChange={}
-      />      
+      />
     </div>
-  let dockedContent = <div> {checkedContent}
-    <TextField
-      readOnly
-      label="Docked Time"
-      name="docked_time"
-      value={requestData.docked_time}
-    />
-  </div>;
+  );
+  let dockedContent = (
+    <div>
+      {" "}
+      {checkedContent}
+      <TextField
+        readOnly
+        label="Docked Time"
+        name="docked_time"
+        value={requestData.docked_time}
+      />
+    </div>
+  );
   let completionContent;
 
-
-  if (useLocation().pathname == "/calendar" || useLocation().pathname == "/Calendar") {
+  if (
+    useLocation().pathname == "/calendar" ||
+    useLocation().pathname == "/Calendar"
+  ) {
     if (requestData.check_in_time == null) {
-      formButton =
-        <Button
-          name="check_in_time"
-          variant="contained"
-          onClick={handleButton}>
+      formButton = (
+        <Button name="check_in_time" variant="contained" onClick={handleButton}>
           Check-In
         </Button>
+      );
 
-      formBottom = <Box> {formEnd} {formButton} </Box>
-
+      formBottom = (
+        <Box>
+          {" "}
+          {formEnd} {formButton}{" "}
+        </Box>
+      );
     } else if (requestData.dock_number == null) {
-      formButton =
-        <Button
-          name="dock_number"
-          variant="contained"
-          onClick={handleButton}>
+      formButton = (
+        <Button name="dock_number" variant="contained" onClick={handleButton}>
           Send To Dock
-        </Button> 
+        </Button>
+      );
 
-      formBottom = <Box> {formEnd} {checkedContent} {formButton} </Box>
-
-    } else if (requestData.docked_time == null) { 
-      formButton =
-        <Button
-          name="docked_time"
-          variant="contained"
-          onClick={handleButton}>
+      formBottom = (
+        <Box>
+          {" "}
+          {formEnd} {checkedContent} {formButton}{" "}
+        </Box>
+      );
+    } else if (requestData.docked_time == null) {
+      formButton = (
+        <Button name="docked_time" variant="contained" onClick={handleButton}>
           Dock Truck
         </Button>
+      );
 
-      formBottom = <Box> {formEnd} {checkedContent} {formButton} </Box>
-
-    } else if (requestData.completed_time == null) {
-      formButton =
+      formBottom = (
+        <Box>
+          {" "}
+          {formEnd} {checkedContent} {formButton}{" "}
+        </Box>
+      );
+    } else {
+      formButton = (
         <Button
           name="completed_time"
           variant="contained"
-          onClick={handleButton}>
+          onClick={handleButton}
+        >
           Complete
         </Button>
-    } else {
-      formButton =
-        <Button
-          variant="contained"
-          color="error">
-          Error
-        </Button>
+      );
+      formBottom = (
+        <Box>
+          {" "}
+          {formEnd} {checkedContent} {formButton}{" "}
+        </Box>
+      );
     }
   }
 
   if (!requestData.approved) {
-    formBottom = <Stack
-      display={"flex"}
-      justifyContent={"center"}
-      spacing={2}
-      direction={"row"}
-    >
-      <Button
-        color="success"
-        variant="contained"
-        onClick={handleApprove}>
-        Approve
-      </Button>
-      <Button
-        color="error"
-        variant="contained"
-        onClick={handleDeny}>
-        Deny
-      </Button>
-    </Stack>;
+    formBottom = (
+      <Stack
+        display={"flex"}
+        justifyContent={"center"}
+        spacing={2}
+        direction={"row"}
+      >
+        <Button color="success" variant="contained" onClick={handleApprove}>
+          Approve
+        </Button>
+        <Button color="error" variant="contained" onClick={handleDeny}>
+          Deny
+        </Button>
+      </Stack>
+    );
   }
   /*else if (requestData.checkInTime == null) {
    formEnd += <Button variant="contained"> Check-In </Button>;
@@ -680,7 +676,6 @@ export function EditForm({ request, closeModal }) {
         />
 
         {formBottom}
-
       </Stack>
     </FormControl>
   );
