@@ -42,7 +42,7 @@ export default function Login() {
       setLastLoginDatetime(dayjs());
       setUsername("");
       setPassword("");
-      navigate("/RequestList");
+      navigate("/Calendar");
     },
   });
 

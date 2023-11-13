@@ -30,7 +30,7 @@ import { getRequestsByDate } from "../actions.jsx";
 // To use the filled form just pass in request data from whatever page you are using the filled form on.
 // The form shuold be as simple to implement as possible, if any code (other than styling) is being done to implement a form then it needs added here.
 
-export function Form() {
+export default function Form(closeModal) {
   const [warehouseData] = useAtom(warehouseDataAtom);
   const [, updateWarehouseData] = useAtom(updateWarehouseDataAtom);
 
@@ -92,7 +92,7 @@ export function Form() {
       data: formField,
     }).then((response) => {
       console.log(response.data);
-      history("/");
+      history("/Calendar");
     });
   };
 
