@@ -30,10 +30,10 @@ import { getRequestsByDate } from "../actions.jsx";
 // To use the filled form just pass in request data from whatever page you are using the filled form on.
 // The form shuold be as simple to implement as possible, if any code (other than styling) is being done to implement a form then it needs added here.
 
-export default function Form(closeModal) {
+export default function Form({ closeModal, dateTime }) {
   const [warehouseData] = useAtom(warehouseDataAtom);
   const [, updateWarehouseData] = useAtom(updateWarehouseDataAtom);
-
+  console.log(dateTime);
   React.useEffect(() => {
     updateWarehouseData();
   }, [updateWarehouseData]);
@@ -56,7 +56,8 @@ export default function Form(closeModal) {
   const [po_number, setpo_number] = useState("");
   const [warehouse, setwarehouse] = useState("");
   const [load_type, setload_type] = useState("");
-  const [date_time, setdate_time] = useState(dayjs());
+  const [date_time, setdate_time] =
+    dateTime === null ? useState(dayjs()) : useState(dayjs(dateTime));
   const [delivery, setdelivery] = useState(false);
   const [container, setcontainer] = useState(false);
   const [con_number, setcon_number] = useState("");
@@ -92,7 +93,9 @@ export default function Form(closeModal) {
       data: formField,
     }).then((response) => {
       console.log(response.data);
-      history("/Calendar");
+      if (path == "/calendar" || path == "/Calendar") {
+        closeModal();
+      } else history("/");
     });
   };
 
@@ -284,7 +287,7 @@ export default function Form(closeModal) {
                 shouldDisableTime={getTimes}
                 onChange={findTimes}
                 onAccept={(e) => setdate_time(e)}
-              ></DateTimePicker>
+              />
               {console.log("After Handle Function")}
               {console.log(date_time)}
             </FormGroup>
