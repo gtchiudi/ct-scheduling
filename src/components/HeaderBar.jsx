@@ -70,7 +70,7 @@ function HeaderBar() {
   };
 
   return (
-    <AppBar position="absolute">
+    <AppBar position="static">
       <Container maxWidth="false">
         <Toolbar disableGutters>
           <a href="/"><img
