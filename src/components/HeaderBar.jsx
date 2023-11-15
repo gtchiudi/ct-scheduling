@@ -22,10 +22,22 @@ import { isAuthAtom } from "../components/atoms.jsx";
 // text: <== This changes what actual text displays
 // href: <== This changes what the header button links to
 // All of this is the same for the 'Settings' menu
-const pages = [
+
+//old
+// const pages = [
+//   { text: "Pending Requests", href: "/PendingRequests" },
+//   { text: "Make A request", href: "/RequestForm" },
+// ];
+
+const pagesAuth = [
   { text: "Pending Requests", href: "/PendingRequests" },
+  { text: "Calendar", href: "/Calendar" },
+];
+
+const pagesNonAuth = [
   { text: "Make A request", href: "/RequestForm" },
 ];
+
 const settings = [{ text: "Login", href: "/Login" }];
 
 function HeaderBar() {
@@ -33,7 +45,17 @@ function HeaderBar() {
   const [anchorElUser, setAnchorElUser] = React.useState(null);
   const [, isAuth] = useAtom(isAuthAtom);
   const location = useLocation();
-
+  let pagesToRender = isAuth() ? pagesAuth : pagesNonAuth;
+  if (location.pathname === "/Calendar" && isAuth()) {
+    pagesToRender = [{ text: "Pending Requests", href: "/PendingRequests" }];
+  } 
+  else if (location.pathname === "/PendingRequests" && isAuth()) {
+    pagesToRender = [{ text: "Calendar", href: "/Calendar" }];
+  }
+  else if (isAuth()) //to fix bug when rendering when first logging in
+  {
+    pagesToRender = [{ text: "Pending Requests", href: "/PendingRequests" }];
+  }
   const handleOpenNavMenu = (event) => {
     setAnchorElNav(event.currentTarget);
   };
@@ -88,7 +110,7 @@ function HeaderBar() {
                 display: { xs: "block", md: "none" },
               }}
             >
-              {pages.map((page) => (
+              {pagesToRender.map((page) => (
                 <Button
                   key={page.text}
                   onClick={handleCloseNavMenu}
@@ -109,7 +131,7 @@ function HeaderBar() {
               display: { xs: "none", md: "flex" },
             }}
           >
-            {pages.map((page) => (
+            {pagesToRender.map((page) => (
               <Button
                 key={page.text}
                 onClick={handleCloseNavMenu}
