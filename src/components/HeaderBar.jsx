@@ -54,7 +54,7 @@ function HeaderBar() {
   }
   else if (isAuth()) //to fix bug when rendering when first logging in
   {
-    pagesToRender = [{ text: "Pending Requests", href: "/PendingRequests" }];
+    pagesToRender = pagesAuth;
   }
   const handleOpenNavMenu = (event) => {
     setAnchorElNav(event.currentTarget);
@@ -71,15 +71,14 @@ function HeaderBar() {
 
   return (
     <AppBar position="static">
-      <Container maxWidth="xl">
+      <Container maxWidth="false">
         <Toolbar disableGutters>
-          <img
+          <a href="/"><img
             src="https://www.candortransport.com/static/images/candorlogo.png"
             className="candorLogo"
             alt="Candor Logo"
             component={RouterLink}
-            to={"/"}
-          />
+          /></a>
 
           <Box sx={{ flexGrow: 1, display: { xs: "flex", md: "none" } }}>
             <IconButton

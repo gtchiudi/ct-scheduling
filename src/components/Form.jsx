@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 //import dayjs from "dayjs";
 import TextField from "@mui/material/TextField";
 import Button from "@mui/material/Button";
@@ -14,22 +14,15 @@ import {
 } from "@mui/material";
 import axios from "axios";
 import { useAtom } from "jotai";
-import {
-  warehouseDataAtom,
-  updateWarehouseDataAtom,
-  accessTokenAtom,
-} from "./atoms.jsx";
-import { SingleDateSelector, TimeSelector } from "./DateSelector.jsx";
+import { warehouseDataAtom, updateWarehouseDataAtom } from "./atoms.jsx";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import FormGroup from "@mui/material/FormGroup";
-import {
-  DatePicker,
-  TimePicker,
-  DateTimePicker,
-  DateTimeField,
-} from "@mui/x-date-pickers";
+import { DateTimePicker } from "@mui/x-date-pickers";
 import dayjs from "dayjs";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { accessTokenAtom } from "./atoms.jsx";
+import { getRequestsByDate } from "../actions.jsx";
+//import { error } from "console";
 
 // Use FilledForm for elements that will be autopopulated with request information
 // As it stands the filled form can only display data and will be updated with buttons
@@ -37,10 +30,10 @@ import { useQueryClient } from "@tanstack/react-query";
 // To use the filled form just pass in request data from whatever page you are using the filled form on.
 // The form shuold be as simple to implement as possible, if any code (other than styling) is being done to implement a form then it needs added here.
 
-export default function Form() {
+export default function Form({ closeModal, dateTime }) {
   const [warehouseData] = useAtom(warehouseDataAtom);
   const [, updateWarehouseData] = useAtom(updateWarehouseDataAtom);
-
+  console.log(dateTime);
   React.useEffect(() => {
     updateWarehouseData();
   }, [updateWarehouseData]);
@@ -63,31 +56,23 @@ export default function Form() {
   const [po_number, setpo_number] = useState("");
   const [warehouse, setwarehouse] = useState("");
   const [load_type, setload_type] = useState("");
-  const [date_time, setdate_time] = useState("");
+  const [date_time, setdate_time] =
+    dateTime === null ? useState(dayjs()) : useState(dayjs(dateTime));
   const [delivery, setdelivery] = useState(false);
   const [container, setcontainer] = useState(false);
   const [con_number, setcon_number] = useState("");
   const [notes, setnotes] = useState("");
   //const [submitted, setSubmitted] = useState(false);
 
-  const _date = "";
-  const handleDateChange = (date) => {
-    const formattedDate = date.format("YYYY-MM-DD");
-
-    setdate_time(formattedDate);
-    //setSubmitted(false);
-  };
-
-  const handleTimeChange = (time) => {
-    const formattedTime = time.format("HH:mm:ss.SSSSSS[Z]");
-    setdate_time(formattedTime);
-    //setSubmitted(false);
-  };
-
   const history = useNavigate();
+  const path = useLocation().pathname;
 
   const AddDeliveryRequest = async () => {
     let formField = new FormData();
+
+    if (path == "/calendar" || path == "/Calendar") {
+      formField.append("approved", true);
+    }
 
     formField.append("company_name", company_name);
     formField.append("phone_number", phone_number);
@@ -97,20 +82,73 @@ export default function Form() {
     formField.append("load_type", load_type);
     formField.append("container_drop", container);
     formField.append("container_number", con_number);
-    formField.append("date_time", date_time);
+    formField.append("date_time", date_time.format("YYYY-MM-DD HH:mm:ss"));
     formField.append("active", true);
     formField.append("delivery", delivery);
     formField.append("note_section", notes);
 
     await axios({
       method: "post",
-      url: "http://localhost:5173/api/request/", // Terribly unsure what URL to put here so I'm just hoping this one is right. Will need Gino to confirm
+      url: "/api/request/", // Terribly unsure what URL to put here so I'm just hoping this one is right. Will need Gino to confirm
       data: formField,
     }).then((response) => {
       console.log(response.data);
-      history("/");
+      if (path == "/calendar" || path == "/Calendar") {
+        closeModal();
+      } else history("/");
     });
   };
+
+  /*
+  ----------------------------------------------------------------------------------------------
+  The following code deals with determining what hours are unavailable for a sepcific date.
+  findTimes makes a get request based on the date from the DateTimePicker onChange function
+    The response contains only the requests for that particular date
+    The date_time of each response for a particular date is added to the extractHours variable
+      which is then assigned to the state variable of times
+  getTimes is called by the ShouldDiasbleTime prop attached to the DateTimePicker
+    it returns boolean based on whether a time is contained within the times state 
+    Note: This disables the full hour. It should probably only disable a 15-30 minute window within 
+          the time frame of an existing request. That's a lot of logic I didn't feel like putting in yet.
+    *** THIS STILL NEEDS UPDATED TO CONTAIN TIMES OUTSIED OF WORKING HOURS ***
+  */
+
+  const [times, setTimes] = useState([]);
+  let result;
+
+  const findTimes = async (date) => {
+    console.log("Selected Date: ", date);
+    const _date = dayjs(date).format("YYYY-MM-DD");
+    console.log("Formatted Date: ", _date);
+
+    await axios({
+      method: "get",
+      url: "/api/request/",
+      params: {
+        approved: "True", // do we want it to only be approved requests?
+        active: "True",
+        start_date: dayjs(_date).startOf("date").toDate(),
+        end_date: dayjs(_date).endOf("date").toDate(),
+      },
+    }).then((response) => {
+      console.log("Data: ", response.data);
+
+      const extractHours = response.data.map((entry) => {
+        const hours = dayjs(entry.date_time).hour();
+        return hours;
+      });
+      result = response.data;
+      setTimes(extractHours);
+    });
+    console.log("Response Result: ", result);
+  };
+
+  const getTimes = (date) => {
+    const unavailableTimes = times.includes(dayjs(date).hour());
+    return unavailableTimes;
+  };
+
+  // --------------------------------------------------------------------------------------------
 
   return (
     <Typography textAlign={"center"}>
@@ -240,15 +278,19 @@ export default function Form() {
               onChange={(e) => setnotes(e.target.value)}
             />
 
-            <Box
-              display={"flex"}
-              sx={{
-                "& .MuiTextField-root": { m: 1, width: "19.1ch" },
-              }}
-            >
-              <SingleDateSelector required onDateChange={handleDateChange} />
-              <TimeSelector required onTimeChange={handleTimeChange} />
-            </Box>
+            <FormGroup>
+              <DateTimePicker
+                disablePast
+                closeOnSelect={false}
+                label="Select Request Date"
+                value={date_time}
+                shouldDisableTime={getTimes}
+                onChange={findTimes}
+                onAccept={(e) => setdate_time(e)}
+              />
+              {console.log("After Handle Function")}
+              {console.log(date_time)}
+            </FormGroup>
 
             <Button onClick={AddDeliveryRequest}>Submit</Button>
           </div>
@@ -258,195 +300,10 @@ export default function Form() {
   );
 }
 
-// Warehouse is showing as nonsense, not sure how to get that back to plain english
-// GIIIIIIIIIIIIIIIIIIINNNNNNNNNNNNNNOOOOOOOOOOOOOOOOOOOOOOOOOO
-
 // The FilledForm will be used to allow CT employees the ability to modify a request
 // This form also contains information that is restricted to employees only.
 // As well as accept, deny, progress a request through buttons.
-// For now the form is ReadOnly, the implementation of confirmation popups will be
-//     paramount to ensuring no data is accidentally modified.
-// ------
 // Buttons are made available depending on the state of the request, that state is pulled from the request data.
-
-export function FilledForm({ requestData, change }) {
-  const [id, set_id] = useState(requestData.id);
-  const [company_name, setcompany_name] = useState(requestData.company_name);
-  const [phone_number, setphone_number] = useState(requestData.phone_number);
-  const [email, setemail] = useState(requestData.email);
-  const [po_number, setpo_number] = useState(requestData.po_number);
-  const [warehouse, setwarehouse] = useState(requestData.warehouse);
-  const [load_type, setload_type] = useState(requestData.load_type);
-  const [date_time, setdate_time] = useState(requestData.date_time);
-  const [delivery, setdelivery] = useState(requestData.isDelivery);
-  const [container, setcontainer] = useState(requestData.con_drop);
-  const [con_number, setcon_number] = useState(requestData.container_number);
-  const [notes, setnotes] = useState(requestData.notes);
-  const [trailer_num, settrailer_num] = useState(requestData.trailerNum);
-  const [driver_phone, setdriver_phone] = useState("");
-  const [dock_num, setdock_num] = useState("");
-  const [check_time, setcheck_time] = useState(null);
-  const [dock_time, setdock_time] = useState(null);
-  const [com_time, setcom_time] = useState(null);
-
-  // This controls the dyanmic display of buttons based on the state of the request
-  // BUTTONS ARE MISSING onClick FUNCTIONALITY
-  let formButton;
-  if (requestData.checkedTime == null) {
-    formButton = <Button variant="contained"> Check-In </Button>;
-  } else if (requestData.checkedTime != null && requestData.dockTime == null) {
-    formButton = <Button variant="contained"> Dock </Button>;
-  } else if (
-    requestData.checkedTime != null &&
-    requestData.dockTime != null &&
-    requestData.completeTime == null
-  ) {
-    formButton = <Button variant="contained"> Complete </Button>;
-  } else {
-    formButton = (
-      <Button disabled variant="contained" color="red">
-        {" "}
-        Error - See Admin{" "}
-      </Button>
-    );
-  }
-  return (
-    <Typography textAlign={"center"}>
-      <FormControl>
-        <Box
-          component="form"
-          justifyContent="center"
-          alignItems="center"
-          display="flex"
-          margin="normal"
-          sx={{
-            "& .MuiTextField-root": { m: 1, width: "40ch" },
-            "& > :not(style)": { m: 1, width: "40ch" },
-          }}
-          noValidate
-          autoComplete="off"
-        >
-          <div>
-            <FormLabel for="company_name">Information for request</FormLabel>
-            <TextField
-              readOnly
-              label="Company Name"
-              value={company_name}
-              onChange={change}
-            ></TextField>
-
-            <TextField
-              readOnly
-              label="Phone Number"
-              value={phone_number}
-              onChange={change}
-            ></TextField>
-
-            <TextField
-              readOnly
-              label="Email"
-              value={email}
-              onChange={change}
-            ></TextField>
-
-            <TextField
-              readOnly
-              label="PO Number"
-              value={po_number}
-              onChange={change}
-            ></TextField>
-
-            <TextField
-              readOnly
-              label="Warehouse"
-              value={warehouse}
-              onChange={change}
-            ></TextField>
-
-            <TextField
-              readOnly
-              label="Load Type"
-              value={load_type}
-              onChange={change}
-            ></TextField>
-
-            {container ? (
-              <TextField
-                readOnly
-                label="Container Number"
-                value={con_number}
-                onChange={change}
-              />
-            ) : null}
-
-            <FormControlLabel
-              control={<Checkbox />}
-              label="Delivery"
-              checked={delivery}
-              onChange={change}
-            />
-
-            <DateTimeField readOnly label="Request Time" value={date_time} />
-
-            <TextField
-              readOnly
-              label="Trailer Number"
-              value={trailer_num}
-              onChange={change}
-            />
-
-            <TextField
-              readOnly
-              label="Driver Phone #"
-              value={driver_phone}
-              onChange={change}
-            />
-
-            <TextField
-              readOnly
-              label="Dock Number"
-              value={dock_num}
-              onChange={change}
-            />
-
-            <TextField
-              readOnly
-              label="Checked-In Time"
-              value={check_time}
-              onChange={change} // This data is not yet a part of the request (Expected: request.checkedTime)
-              // On change will be handled by buttons below that update the request
-            />
-
-            <DateTimeField
-              readOnly
-              label="Docked Time"
-              value={dock_time} // This data is not yet a part of the request (Expected: request.dockTime)
-              // On change will be handled by buttons below that update the request
-            />
-
-            <DateTimeField
-              readOnly
-              label="Completed Time"
-              value={com_time} // This data is not yet a part of the request (Expected: request.compleTime)
-              // On change will be handled by buttons below that update the request
-            />
-
-            <TextField
-              readOnly
-              multiline
-              rows={4}
-              label="Notes"
-              value={notes} // This data is not yet a part of the request (Expected: request.compleTime)
-              // On change will be handled by buttons below that update the request
-            />
-
-            {formButton}
-          </div>
-        </Box>
-      </FormControl>
-    </Typography>
-  );
-}
 
 export function EditForm({ request, closeModal }) {
   const queryClient = useQueryClient();
@@ -461,19 +318,26 @@ export function EditForm({ request, closeModal }) {
   const [requestData, setRequestData] = useState({
     id: request.id || null,
     approved: request.approved || false,
-    company_name: request.company_name || "",
-    phone_number: request.phone_number || "",
-    email: request.email || "",
-    warehouse: request.warehouse || "",
-    po_number: request.po_number || "",
-    load_type: request.load_type || "",
+    company_name: request.company_name || null,
+    phone_number: request.phone_number || null,
+    email: request.email || null,
+    warehouse: request.warehouse || null,
+    po_number: request.po_number || null,
+    load_type: request.load_type || null,
     container_drop: request.container_drop || false,
-    container_number: request.container_number || "",
-    notes: request.note_section || "",
+    container_number: request.container_number || null,
+    note_section: request.note_section || null,
     date_time: dayjs(request.date_time) || new dayjs(),
     delivery: request.delivery || false,
-    trailerNum: request.trailer_number || "",
+    trailer_number: request.trailer_number || null,
+    driver_phone_number: request.driver_phone_number || null,
+    dock_number: request.dock_number || null,
+    check_in_time: request.check_in_time || null,
+    docked_time: request.docked_time || null,
+    completed_time: request.completed_time || null,
+    active: request.active || true,
   });
+
   const load_types = [
     {
       value: "Full",
@@ -495,6 +359,20 @@ export function EditForm({ request, closeModal }) {
     setRequestData({ ...requestData, [name]: value });
   };
 
+  const handleButton = (e) => {
+    const { name } = e.target;
+    console.log("HandleButton Function Call", { name });
+    if (name == "dock_number") {
+      console.log(document.getElementById("dock_number_text").value);
+      requestData[name] = document.getElementById("dock_number_text").value;
+    } else {
+      const time = dayjs().format("HH:mm:ss");
+      requestData[name] = time;
+      name == "completed_time" ? (requestData.active = false) : true;
+    }
+    updateRequest();
+  };
+
   const handleDateChange = (date) => {
     setRequestData({
       ...requestData,
@@ -507,15 +385,27 @@ export function EditForm({ request, closeModal }) {
     requestData.date_time = requestData.date_time.format(
       "YYYY-MM-DD HH:mm:ss.SSSSSS[Z]"
     );
-    approveRequest();
+    updateRequest();
   };
 
-  const approveRequest = async () => {
+  const handleDeny = () => {
+    requestData.approved = false;
+    requestData.date_time = requestData.date_time.format(
+      "YYYY-MM-DD HH:mm:ss.SSSSSS[Z]"
+    );
+    requestData.active = false;
+    updateRequest();
+  };
+
+  const updateRequest = async () => {
     try {
       const response = await axios.put(
         `/api/request/${requestData.id}/`,
         requestData
       );
+      console.log("Request Updated........");
+      console.log(response);
+
       queryClient.invalidateQueries("pendingRequests");
       closeModal();
     } catch (error) {
@@ -523,6 +413,152 @@ export function EditForm({ request, closeModal }) {
       closeModal();
     }
   };
+
+  // This controls the dyanmic display of buttons based on the state of the request
+  // BUTTONS ARE MISSING onClick FUNCTIONALITY
+  // Conditional rendering
+  let formButton;
+  let formBottom;
+  let formEnd = (
+    <TextField
+      required
+      label="Driver Phone #"
+      name="driver_phone_number"
+      value={requestData.driver_phone_number}
+      onChange={handleChange}
+    />
+  );
+  let checkedContent = (
+    <div>
+      <TextField
+        readOnly
+        label="Checked-In Time"
+        name="checked_in_time"
+        value={requestData.check_in_time}
+      />
+
+      <TextField
+        required
+        id="dock_number_text"
+        label="Dock #"
+        name="dock_number"
+        value={requestData.dock_number}
+        //onChange={}
+      />
+    </div>
+  );
+  let dockedContent = (
+    <div>
+      {" "}
+      {checkedContent}
+      <TextField
+        readOnly
+        label="Docked Time"
+        name="docked_time"
+        value={requestData.docked_time}
+      />
+    </div>
+  );
+  let completionContent;
+
+  if (
+    useLocation().pathname == "/calendar" ||
+    useLocation().pathname == "/Calendar"
+  ) {
+    if (requestData.check_in_time == null) {
+      formButton = (
+        <Button name="check_in_time" variant="contained" onClick={handleButton}>
+          Check-In
+        </Button>
+      );
+
+      formBottom = (
+        <Box>
+          {" "}
+          {formEnd} {formButton}{" "}
+        </Box>
+      );
+    } else if (requestData.dock_number == null) {
+      formButton = (
+        <Button name="dock_number" variant="contained" onClick={handleButton}>
+          Send To Dock
+        </Button>
+      );
+
+      formBottom = (
+        <Box>
+          {" "}
+          {formEnd} {checkedContent} {formButton}{" "}
+        </Box>
+      );
+    } else if (requestData.docked_time == null) {
+      formButton = (
+        <Button name="docked_time" variant="contained" onClick={handleButton}>
+          Dock Truck
+        </Button>
+      );
+
+      formBottom = (
+        <Box>
+          {" "}
+          {formEnd} {checkedContent} {formButton}{" "}
+        </Box>
+      );
+    } else {
+      formButton = (
+        <Button
+          name="completed_time"
+          variant="contained"
+          onClick={handleButton}
+        >
+          Complete
+        </Button>
+      );
+      formBottom = (
+        <Box>
+          {" "}
+          {formEnd} {checkedContent} {formButton}{" "}
+        </Box>
+      );
+    }
+  }
+
+  if (!requestData.approved) {
+    formBottom = (
+      <Stack
+        display={"flex"}
+        justifyContent={"center"}
+        spacing={2}
+        direction={"row"}
+      >
+        <Button color="success" variant="contained" onClick={handleApprove}>
+          Approve
+        </Button>
+        <Button color="error" variant="contained" onClick={handleDeny}>
+          Deny
+        </Button>
+      </Stack>
+    );
+  }
+  /*else if (requestData.checkInTime == null) {
+   formEnd += <Button variant="contained"> Check-In </Button>;
+ } else if (requestData.checkInTime != null && requestData.dockTime == null) {
+   formEnd += <Button variant="contained"> Dock </Button>;
+ } else if (
+   requestData.checkInTime != null &&
+   requestData.dockTime != null &&
+   requestData.completeTime == null
+ ) {
+   formEnd += <Button variant="contained"> Complete </Button>;
+ } else {
+   formEnd += (
+     <Button disabled variant="contained" color="red">
+       {" "}
+       Error - See Admin{" "}
+     </Button>
+   );
+ }
+ */
 
   return (
     <FormControl>
@@ -532,8 +568,8 @@ export function EditForm({ request, closeModal }) {
         textAlign={"center"}
         display={"flex"}
         sx={{
-          "& .MuiTextField-root": { m: 1, width: "40ch" },
-          "& > :not(style)": { m: 1, width: "40ch" },
+          "& .MuiTextField-root": { m: 1, width: "60ch" },
+          "& > :not(style)": { m: 1, width: "60ch" },
           maxHeight: "90vh",
           maxWidth: "60vw",
         }}
@@ -624,6 +660,7 @@ export function EditForm({ request, closeModal }) {
           value={dayjs(requestData.date_time)}
           onChange={(newValue) => handleDateChange(newValue)}
         />
+
         <Box>
           <FormControlLabel
             control={<Checkbox />}
@@ -633,7 +670,15 @@ export function EditForm({ request, closeModal }) {
             onChange={handleChange}
           />
         </Box>
-        <Button onClick={handleApprove}>Approve Request</Button>
+
+        <TextField
+          label="Trailer Number"
+          name="trailer_number"
+          value={requestData.trailer_number}
+          onChange={handleChange}
+        />
+
+        {formBottom}
       </Stack>
     </FormControl>
   );

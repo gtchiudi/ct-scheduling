@@ -43,6 +43,7 @@ function FormEdit(request) {
   const [requestData, setRequestData] = useState({
     id: request.request.id || null,
     id: request.request.id,
+    approved: request.request.approved,
     company_name: request.request.company_name || "",
     phone_number: request.request.phone_number || "",
     email: request.request.email || "",
@@ -117,6 +118,14 @@ function FormEdit(request) {
 }
 
 export default FormEdit;
+
+
+  // <Form
+  //  _company = {requestData.company_name}
+  //  _phone = {requestData.phone_number}
+  //   etc..
+  //></Form>
+  // Replaces <FormControl>
 
 
 
