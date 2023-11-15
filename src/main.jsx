@@ -13,7 +13,6 @@ import Logout from "./routes/Logout.jsx";
 import Home from "./routes/Home.jsx";
 import RequestList from "./routes/RequestList.jsx";
 import RequestForm from "./routes/RequestForm.jsx";
-import HeaderBar from "./components/HeaderBar.jsx";
 import PendingRequests from "./routes/PendingRequests.jsx";
 import Layout from "./components/layout.jsx";
 import Calendar from "./routes/Calendar.jsx";
@@ -65,38 +64,12 @@ const router = createBrowserRouter([
     ), // Wrap Logout with Layout
   },
   {
-    path: "home",
-    element: (
-      <div>
-        <HeaderBar />
-        <Home />
-      </div>
-    ),
-  },
-  {
     path: "PendingRequests",
     element: (
       <Layout>
         <PendingRequests />
       </Layout>
     ), // Wrap PendingRequests with Layout
-   },
-   /*{
-    path: "RequestForm",
-    element: (
-      <div>
-        <HeaderBar />
-        <RequestForm />
-      </div>
-    ),
-  },*/
-  {
-    path: "Calendar",
-    element: (
-      <Layout>
-        <Calendar />
-      </Layout>
-    ),
   },
   {
     path: "Calendar",

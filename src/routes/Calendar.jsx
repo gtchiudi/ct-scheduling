@@ -56,7 +56,7 @@ export function CustomEditor({ event }) {
           <DialogContent>
             <Form
               closeModal={closeDialog}
-              dateTime={dayjs(event.state.start.value)}
+              date_time={dayjs(event.state.start)}
             />
           </DialogContent>
           <DialogActions>
