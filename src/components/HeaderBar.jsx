@@ -1,5 +1,5 @@
 import React from "react";
-import { Link as RouterLink } from "react-router-dom";
+import { Link as RouterLink, useLocation } from "react-router-dom";
 import {
   AppBar,
   Box,
@@ -22,17 +22,40 @@ import { isAuthAtom } from "../components/atoms.jsx";
 // text: <== This changes what actual text displays
 // href: <== This changes what the header button links to
 // All of this is the same for the 'Settings' menu
-const pages = [
+
+//old
+// const pages = [
+//   { text: "Pending Requests", href: "/PendingRequests" },
+//   { text: "Make A request", href: "/RequestForm" },
+// ];
+
+const pagesAuth = [
   { text: "Pending Requests", href: "/PendingRequests" },
+  { text: "Calendar", href: "/Calendar" },
+];
+
+const pagesNonAuth = [
   { text: "Make A request", href: "/RequestForm" },
 ];
+
 const settings = [{ text: "Login", href: "/Login" }];
 
 function HeaderBar() {
   const [anchorElNav, setAnchorElNav] = React.useState(null);
   const [anchorElUser, setAnchorElUser] = React.useState(null);
   const [, isAuth] = useAtom(isAuthAtom);
-
+  const location = useLocation();
+  let pagesToRender = isAuth() ? pagesAuth : pagesNonAuth;
+  if (location.pathname === "/Calendar" && isAuth()) {
+    pagesToRender = [{ text: "Pending Requests", href: "/PendingRequests" }];
+  } 
+  else if (location.pathname === "/PendingRequests" && isAuth()) {
+    pagesToRender = [{ text: "Calendar", href: "/Calendar" }];
+  }
+  else if (isAuth()) //to fix bug when rendering when first logging in
+  {
+    pagesToRender = pagesAuth;
+  }
   const handleOpenNavMenu = (event) => {
     setAnchorElNav(event.currentTarget);
   };
@@ -47,14 +70,15 @@ function HeaderBar() {
   };
 
   return (
-    <AppBar position="static">
-      <Container maxWidth="xl">
+    <AppBar position="absolute">
+      <Container maxWidth="false">
         <Toolbar disableGutters>
-          <img
+          <a href="/"><img
             src="https://www.candortransport.com/static/images/candorlogo.png"
             className="candorLogo"
             alt="Candor Logo"
-          />
+            component={RouterLink}
+          /></a>
 
           <Box sx={{ flexGrow: 1, display: { xs: "flex", md: "none" } }}>
             <IconButton
@@ -85,7 +109,7 @@ function HeaderBar() {
                 display: { xs: "block", md: "none" },
               }}
             >
-              {pages.map((page) => (
+              {pagesToRender.map((page) => (
                 <Button
                   key={page.text}
                   onClick={handleCloseNavMenu}
@@ -99,8 +123,14 @@ function HeaderBar() {
             </Menu>
           </Box>
 
-          <Box sx={{ flexGrow: 1, display: { xs: "none", md: "flex" } }}>
-            {pages.map((page) => (
+          <Box
+            sx={{
+              flexGrow: 1,
+              justifyContent: "flex-end",
+              display: { xs: "none", md: "flex" },
+            }}
+          >
+            {pagesToRender.map((page) => (
               <Button
                 key={page.text}
                 onClick={handleCloseNavMenu}

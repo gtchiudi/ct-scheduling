@@ -11,11 +11,12 @@ const containerStyle = {
   backgroundImage: `url("../truckBackground.png")`, // Set the image as background
   backgroundSize: "cover", // Make the image cover the entire container
   backgroundAttachment: "fixed",
+  paddingTop: "50px",
 };
 
 const boxStyle = {
   position: "absolute",
-  top: "50%", // Adjust this value to position the box vertically
+  top: "30%", // Adjust this value to position the box vertically
   left: "50%", // Adjust this value to position the box horizontally
   transform: "translate(-50%, -50%)", // Center the box
   backgroundColor: "rgba(255, 255, 255, 0.8)", // Background color with opacity
@@ -25,7 +26,7 @@ const boxStyle = {
 
 const buttonStyle = {
   position: "absolute",
-  top: "calc(50% + 250px)", // Position the button below the box
+  top: "calc(30% + 250px)", // Position the button below the box
   left: "50%", // Adjust this value to position the button horizontally
   transform: "translate(-50%, -50%)", // Center the button
 };
