@@ -7,7 +7,6 @@ import { useNavigate } from "react-router-dom";
 import { useAtom } from "jotai";
 import { isAuthAtom } from "../components/atoms.jsx";
 
-
 const containerStyle = {
   position: "relative",
   height: "100vh", // Set the container to 100% viewport height
@@ -36,11 +35,6 @@ const buttonStyle = {
 };
 
 export default function Home() {
-  const navigate = useNavigate();
-  const [, isAuth] = useAtom(isAuthAtom);
-  React.useEffect(() => {
-    if (isAuth()) navigate("/Calendar");
-  });
   return (
     <Typography>
       <div style={containerStyle}>
@@ -57,17 +51,18 @@ export default function Home() {
           <h1>Welcome to CT-Scheduling</h1>
         </Box>
         <div style={boxStyle}>
-          <h1 style={{textAlign: "center"}}>CandorTransportationCo.LLC</h1>
+          <h1 style={{ textAlign: "center" }}>CandorTransportationCo.LLC</h1>
           <p style={{ margin: 0 }}>
-          Experience seamless logistics management with CT-Scheduling. Our user-friendly platform connects Candor Logistics clients and
-              employees to streamline requests, manage warehouse operations, and
-              deliver top-notch service.
+            Experience seamless logistics management with CT-Scheduling. Our
+            user-friendly platform connects Candor Logistics clients and
+            employees to streamline requests, manage warehouse operations, and
+            deliver top-notch service.
           </p>{" "}
           <br />
-          <p style={{ margin: 0}}>
-          For more information about Candor Logistics 
-          and Candor Transportation, visit our websites&nbsp;
-          <a href="https://www.candortransport.com/home">Here</a>
+          <p style={{ margin: 0 }}>
+            For more information about Candor Logistics and Candor
+            Transportation, visit our websites&nbsp;
+            <a href="https://www.candortransport.com/home">Here</a>
           </p>
         </div>
 
@@ -89,7 +84,6 @@ export default function Home() {
           </Button>
         </div>
       </div>
-      
     </Typography>
   );
 }
