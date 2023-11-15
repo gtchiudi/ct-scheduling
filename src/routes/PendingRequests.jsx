@@ -6,7 +6,6 @@ import {
   accessTokenAtom,
   refreshAtom,
 } from "../components/atoms.jsx";
-import { getPendingRequests } from "../actions.jsx";
 import { useQuery } from "@tanstack/react-query";
 import { PropTypes } from "prop-types";
 import Box from "@mui/material/Box";
@@ -33,8 +32,10 @@ import { visuallyHidden } from "@mui/utils";
 import { EditForm } from "../components/Form.jsx";
 import { useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
+import dayjs from "dayjs";
 
 function descendingComparator(a, b, orderBy) {
+  // used to sort table
   if (b[orderBy] < a[orderBy]) {
     return -1;
   }
@@ -46,12 +47,14 @@ function descendingComparator(a, b, orderBy) {
 }
 
 function getComparator(order, orderBy) {
+  // used to sort table
   return order === "desc"
     ? (a, b) => descendingComparator(a, b, orderBy)
     : (a, b) => -descendingComparator(a, b, orderBy);
 }
 
 function stableSort(array, comparator) {
+  // sort table by comparator
   const stabilizedThis = array.map((el, index) => [el, index]);
   stabilizedThis.sort((a, b) => {
     const order = comparator(a[0], b[0]);
@@ -64,6 +67,7 @@ function stableSort(array, comparator) {
 }
 
 const headCells = [
+  // table headers
   {
     id: "company_name",
     numeric: false,
@@ -144,62 +148,67 @@ EnhancedTableHead.propTypes = {
 };
 
 export default function PendingRequests() {
-  const navigate = useNavigate();
-  const [accessToken] = useAtom(accessTokenAtom);
-  const [, isAuth] = useAtom(isAuthAtom);
-  let authorized = React.useState(false);
-  const queryClient = useQueryClient();
-  const [refresh, setRefresh] = useAtom(refreshAtom);
-  let pauseQuery = false;
+  const navigate = useNavigate(); // used to navigate to other pages
+  const [, isAuth] = useAtom(isAuthAtom); // used to check if user is authenticated
+  const [authorized, setAuthorized] = React.useState(isAuth()); // store if user is authorized
+  const queryClient = useQueryClient(); // used to get query client
+  const [refresh, setRefresh] = useAtom(refreshAtom); // used as refresh token tag for error 401 handling
+  const [pauseQuery, setPause] = useState(false); // used to pause query
+  let rows = useState([]); // store rows of table
 
   React.useEffect(() => {
-    pauseQuery = true;
-
+    // check authentication then set interval to check authentication every 30 seconds
+    setPause(true);
+    setAuthorized(isAuth());
+    if (!authorized) {
+      navigate("/Login");
+    }
     const intervalId = setInterval(() => {
-      pauseQuery = true;
-      authorized = isAuth();
-      console.log("Authorized: ", authorized);
+      setPause(true);
+      setAuthorized(isAuth());
       if (!authorized) {
         navigate("/Login");
       }
-      pauseQuery = false;
-    }, 300000);
-    pauseQuery = false;
+      setPause(false);
+    }, 30000);
+    setPause(false);
     // Clean up the interval when the component unmounts
     return () => {
       clearInterval(intervalId);
     };
   }, []);
 
-  let [rows, setRows] = useState([]);
-
   const result = useQuery({
+    // query to get pending requests
     queryKey: ["pendingRequests"],
     queryFn: async () =>
       await axios.get("/api/request", {
+        // get all requests that are not approved
         params: {
           approved: "False",
         },
+        withCredentials: true,
       }),
-    refetchInterval: 15000,
-    retry: 1,
-    retryDelay: 1000,
-    enabled: !pauseQuery,
+    refetchInterval: 30000, // refetch every 30 seconds
+    retry: 1, // retry once
+    retryDelay: 1000, // retry after 1 second
+    enabled: !pauseQuery, // pause query if pauseQuery is true
     onError: (error) => {
-      if (error.response.status === 401) {
+      if (error.response && error.response.status === 401) {
         // Check if token refresh is already in progress
-        pauseQuery = true;
+        setPause(true); // pause query
         if (!refresh) {
-          setRefresh(true);
-          authorized = isAuth();
+          // run if not already refreshing
+          setRefresh(true); // set refresh to true
+          setAuthorized(isAuth()); // check if user is authorized
 
           if (!authorized) {
-            queryClient.cancelQueries(["pendingRequests"]);
-            navigate("/logout");
+            queryClient.cancelQueries(["pendingRequests"]); // cancel query
+            navigate("/logout"); // navigate to logout
           }
         }
-        pauseQuery = false;
-        queryClient.invalidateQueries(["pendingRequests"]);
+        queryClient.invalidateQueries(["pendingRequests"]); // invalidate query
+        setPause(false); // unpause query
       }
     },
   });
@@ -215,6 +224,7 @@ export default function PendingRequests() {
   const [page, setPage] = React.useState(0);
   const [dense, setDense] = React.useState(false);
   const [rowsPerPage, setRowsPerPage] = React.useState(5);
+  // variables used for table functions
 
   const handleRequestSort = (event, property) => {
     const isAsc = orderBy === property && order === "asc";
@@ -223,35 +233,41 @@ export default function PendingRequests() {
   };
 
   const closeDialog = () => {
+    // remove the selected request from the table and close dialog
     const updatedRows = rows.filter((row) => row.id !== selected.id);
-    setRows(updatedRows);
+    rows = updatedRows;
     setOpen(false);
   };
 
   const handleClick = (event, row) => {
+    // set selected request and open dialog
     setSelected(row);
     setOpen(true);
   };
 
   const handleChangePage = (event, newPage) => {
+    // change page
     setPage(newPage);
   };
 
   const handleChangeRowsPerPage = (event) => {
+    // change rows per page
     setRowsPerPage(parseInt(event.target.value, 10));
     setPage(0);
   };
 
   const handleChangeDense = (event) => {
+    // change dense
     setDense(event.target.checked);
   };
 
-  const isSelected = (row) => selected.id === row.id;
+  const isSelected = (row) => selected.id === row.id; // check if row is selected
 
   // Avoid a layout jump when reaching the last page with empty rows.
-  const emptyRows =
+  const emptyRows = // check if there are no rows
     page > 0 ? Math.max(0, (1 + page) * rowsPerPage - rows.length) : 0;
   const visibleRows = React.useMemo(
+    // get visible rows
     () =>
       stableSort(rows, getComparator(order, orderBy)).slice(
         page * rowsPerPage,
@@ -262,7 +278,7 @@ export default function PendingRequests() {
 
   return (
     <div>
-      {open && (
+      {open && ( // dialog open if open is true
         <Dialog open={open} onClose={closeDialog}>
           <DialogTitle textAlign={"center"}>
             Edit and Approve Request
@@ -275,7 +291,7 @@ export default function PendingRequests() {
           </DialogActions>
         </Dialog>
       )}
-      {result.isLoading && (
+      {result.isLoading && ( // query is loading
         <div>
           <br />
           <Typography textAlign="center" variant="h2">
@@ -283,7 +299,7 @@ export default function PendingRequests() {
           </Typography>
         </div>
       )}
-      {result.isError && (
+      {result.isError && ( // query has error
         <div>
           <br />
           <Typography textAlign="center" variant="h2">
@@ -291,93 +307,97 @@ export default function PendingRequests() {
           </Typography>
         </div>
       )}
-      {result.isSuccess && result.data.data.length === 0 && (
-        <div>
-          <br />
-          <Typography textAlign="center" variant="h2">
-            No Pending Requests
-          </Typography>
-        </div>
-      )}
-      {result.isSuccess && result.data.data.length > 0 && (
-        <Box sx={{ width: "100%" }}>
-          <Paper sx={{ width: "100%", mb: 2 }}>
-            <TableContainer>
-              <Table
-                sx={{ minWidth: 750 }}
-                aria-labelledby="tableTitle"
-                size={dense ? "small" : "medium"}
-              >
-                <EnhancedTableHead
-                  numSelected={selected.length}
-                  order={order}
-                  orderBy={orderBy}
-                  onRequestSort={handleRequestSort}
-                  rowCount={result.data.data.length}
-                />
-                <TableBody>
-                  {visibleRows.map((row, index) => {
-                    const isItemSelected = isSelected(row);
-                    const labelId = `enhanced-table-checkbox-${index}`;
+      {result.isSuccess &&
+        result.data.data.length === 0 && ( // no data
+          <div>
+            <br />
+            <Typography textAlign="center" variant="h2">
+              No Pending Requests
+            </Typography>
+          </div>
+        )}
+      {result.isSuccess &&
+        result.data.data.length > 0 && ( // load/populate table
+          <Box sx={{ width: "100%" }}>
+            <Paper sx={{ width: "100%", mb: 2 }}>
+              <TableContainer>
+                <Table
+                  sx={{ minWidth: 750 }}
+                  aria-labelledby="tableTitle"
+                  size={dense ? "small" : "medium"}
+                >
+                  <EnhancedTableHead
+                    numSelected={selected.length}
+                    order={order}
+                    orderBy={orderBy}
+                    onRequestSort={handleRequestSort}
+                    rowCount={result.data.data.length}
+                  />
+                  <TableBody>
+                    {visibleRows.map((row, index) => {
+                      const isItemSelected = isSelected(row);
+                      const labelId = `enhanced-table-checkbox-${index}`;
 
-                    return (
-                      <TableRow
-                        hover
-                        onClick={(event) => handleClick(event, row)}
-                        role="request_popup"
-                        aria-checked={isItemSelected}
-                        tabIndex={-1}
-                        key={row.id}
-                        selected={isItemSelected}
-                        sx={{ cursor: "pointer" }}
-                      >
-                        <TableCell></TableCell>
-                        <TableCell
-                          component="th"
-                          id={labelId}
-                          scope="row"
-                          padding="none"
+                      return (
+                        <TableRow
+                          hover
+                          onClick={(event) => handleClick(event, row)}
+                          role="request_popup"
+                          aria-checked={isItemSelected}
+                          tabIndex={-1}
+                          key={row.id}
+                          selected={isItemSelected}
+                          sx={{ cursor: "pointer" }}
                         >
-                          {row.company_name}
-                        </TableCell>
-                        <TableCell align="left">{row.email}</TableCell>
-                        <TableCell align="left">{row.po_number}</TableCell>
-                        <TableCell align="left">{row.load_type}</TableCell>
-                        <TableCell align="left">{row.date_time}</TableCell>
-                        <TableCell align="left">
-                          {row.delivery ? "Yes" : "No"}
-                        </TableCell>
+                          <TableCell></TableCell>
+                          <TableCell
+                            component="th"
+                            id={labelId}
+                            scope="row"
+                            padding="none"
+                          >
+                            {row.company_name}
+                          </TableCell>
+                          <TableCell align="left">{row.email}</TableCell>
+                          <TableCell align="left">{row.po_number}</TableCell>
+                          <TableCell align="left">{row.load_type}</TableCell>
+                          <TableCell align="left">
+                            {dayjs(row.date_time).format("MM/DD/YYYY hh:mm A")}
+                          </TableCell>
+                          <TableCell align="left">
+                            {row.delivery ? "Yes" : "No"}
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                    {emptyRows > 0 && (
+                      <TableRow
+                        style={{
+                          height: (dense ? 33 : 53) * emptyRows,
+                        }}
+                      >
+                        <TableCell colSpan={6} />
                       </TableRow>
-                    );
-                  })}
-                  {emptyRows > 0 && (
-                    <TableRow
-                      style={{
-                        height: (dense ? 33 : 53) * emptyRows,
-                      }}
-                    >
-                      <TableCell colSpan={6} />
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            </TableContainer>
-            <TablePagination
-              rowsPerPageOptions={[5, 10, 25]}
-              component="div"
-              count={result.data.data.length}
-              rowsPerPage={rowsPerPage}
-              page={page}
-              onPageChange={handleChangePage}
-              onRowsPerPageChange={handleChangeRowsPerPage}
+                    )}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+              <TablePagination
+                rowsPerPageOptions={[5, 10, 25]}
+                component="div"
+                count={result.data.data.length}
+                rowsPerPage={rowsPerPage}
+                page={page}
+                onPageChange={handleChangePage}
+                onRowsPerPageChange={handleChangeRowsPerPage}
+              />
+            </Paper>
+            <FormControlLabel
+              control={<Switch checked={dense} onChange={handleChangeDense} />}
+              label="Dense padding"
             />
-          </Paper>
-          <FormControlLabel
-            control={<Switch checked={dense} onChange={handleChangeDense} />}
-            label="Dense padding"
-          />
-        </Box>
-      )}
+          </Box>
+        )}
     </div>
   );
 }

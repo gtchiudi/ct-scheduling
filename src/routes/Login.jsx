@@ -42,13 +42,13 @@ export default function Login() {
       setLastLoginDatetime(dayjs());
       setUsername("");
       setPassword("");
-      navigate("/Calendar");
+      navigate("/calendar");
     },
   });
 
   React.useEffect(() => {
     if (isAuth()) {
-      navigate("/RequestList");
+      navigate("/calendar");
     }
   }, []);
 

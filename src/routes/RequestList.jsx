@@ -12,7 +12,7 @@ const RequestList = () => {
   const [startDate, setStartDate] = React.useState(dayjs());
   const [endDate, setEndDate] = React.useState(dayjs());
   const [submitted, setSubmitted] = React.useState(false);
-  const [isAuth] = useAtom(isAuthAtom);
+  const [, isAuth] = useAtom(isAuthAtom);
 
   const handleDateChange = (start, end) => {
     setStartDate(start);
@@ -20,7 +20,7 @@ const RequestList = () => {
     setSubmitted(false);
   };
   React.useEffect(() => {
-    if (isAuth === false) {
+    if (isAuth() === false) {
       navigate("/login");
     }
   });
@@ -28,10 +28,14 @@ const RequestList = () => {
   return (
     <div>
       <br />
-      <DateSelector onDateChange={handleDateChange} />
-      <Button variant="contained" color="primary" onClick={setSubmitted}>
-        Submit
-      </Button>
+      {!submitted && (
+        <div>
+          <DateSelector onDateChange={handleDateChange} />
+          <Button variant="contained" color="primary" onClick={setSubmitted}>
+            Submit
+          </Button>
+        </div>
+      )}
       {submitted && <ResultDisplay startDate={startDate} endDate={endDate} />}
     </div>
   );

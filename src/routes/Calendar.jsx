@@ -47,7 +47,6 @@ export function CustomEditor({ event }) {
     event.close();
     setOpen(false);
   };
-  console.log(event.state.start.value);
 
   return (
     <div>
