@@ -33,7 +33,7 @@ import { getRequestsByDate } from "../actions.jsx";
 export default function Form({ closeModal, dateTime }) {
   const [warehouseData] = useAtom(warehouseDataAtom);
   const [, updateWarehouseData] = useAtom(updateWarehouseDataAtom);
-  console.log(dateTime);
+
   React.useEffect(() => {
     updateWarehouseData();
   }, [updateWarehouseData]);
@@ -57,7 +57,9 @@ export default function Form({ closeModal, dateTime }) {
   const [warehouse, setwarehouse] = useState("");
   const [load_type, setload_type] = useState("");
   const [date_time, setdate_time] =
-    dateTime === null ? useState(dayjs()) : useState(dayjs(dateTime));
+    dateTime == null
+      ? useState(dayjs().add(1, "hour").startOf("hour"))
+      : useState(dayjs(dateTime).startOf("hour"));
   const [delivery, setdelivery] = useState(false);
   const [container, setcontainer] = useState(false);
   const [con_number, setcon_number] = useState("");
@@ -113,38 +115,54 @@ export default function Form({ closeModal, dateTime }) {
     *** THIS STILL NEEDS UPDATED TO CONTAIN TIMES OUTSIED OF WORKING HOURS ***
   */
 
+  const [pauseQuery, setPause] = useState(false);
   const [times, setTimes] = useState([]);
-  let result;
+  const [selectedDate, setDate] = useState(new dayjs());
+  const { key } = React.useMemo(
+    () => ({
+      key: ["requests", selectedDate],
+    }),
+    [selectedDate, pauseQuery]
+  );
 
-  const findTimes = async (date) => {
+  const findTimes = (date) => {
     console.log("Selected Date: ", date);
     const _date = dayjs(date).format("YYYY-MM-DD");
     console.log("Formatted Date: ", _date);
-
-    await axios({
-      method: "get",
-      url: "/api/request/",
-      params: {
-        approved: "True", // do we want it to only be approved requests?
-        active: "True",
-        start_date: dayjs(_date).startOf("date").toDate(),
-        end_date: dayjs(_date).endOf("date").toDate(),
-      },
-    }).then((response) => {
-      console.log("Data: ", response.data);
-
-      const extractHours = response.data.map((entry) => {
-        const hours = dayjs(entry.date_time).hour();
-        return hours;
-      });
-      result = response.data;
-      setTimes(extractHours);
-    });
-    console.log("Response Result: ", result);
+    setDate(_date);
+    setPause(false);
   };
 
+  const result = useQuery({
+    queryKey: key,
+    queryFn: async () =>
+      await axios.get("/api/request/", {
+        params: {
+          start_date: dayjs(selectedDate).startOf("date").toDate(),
+          end_date: dayjs(selectedDate).endOf("date").toDate(),
+        },
+      }),
+    refetchInterval: 300000, // refetches every 300 seconds
+    retry: 3,
+    enabled: !pauseQuery,
+    onSuccess: (data) => {
+      const extractHours = data.data.map((entry) => {
+        const hours = dayjs(entry.date_time).format("HH:mm");
+        return hours;
+      });
+      console.log(extractHours);
+      setTimes(extractHours);
+      setPause(true);
+    },
+    onError: (error) => {
+      console.error("Error fetching requests:", error);
+      setPause(true);
+    },
+  });
+
   const getTimes = (date) => {
-    const unavailableTimes = times.includes(dayjs(date).hour());
+    const formatted = dayjs(date).format("HH:mm");
+    const unavailableTimes = times.includes(formatted);
     return unavailableTimes;
   };
 
@@ -287,9 +305,8 @@ export default function Form({ closeModal, dateTime }) {
                 shouldDisableTime={getTimes}
                 onChange={findTimes}
                 onAccept={(e) => setdate_time(e)}
+                timeSteps={{ hours: 1, minutes: 15 }}
               />
-              {console.log("After Handle Function")}
-              {console.log(date_time)}
             </FormGroup>
 
             <Button onClick={AddDeliveryRequest}>Submit</Button>
