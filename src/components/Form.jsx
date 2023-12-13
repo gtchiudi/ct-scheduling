@@ -33,7 +33,7 @@ import { getRequestsByDate } from "../actions.jsx";
 export default function Form({ closeModal, dateTime }) {
   const [warehouseData] = useAtom(warehouseDataAtom);
   const [, updateWarehouseData] = useAtom(updateWarehouseDataAtom);
-
+  const queryClient = useQueryClient();
   React.useEffect(() => {
     updateWarehouseData();
   }, [updateWarehouseData]);
@@ -96,6 +96,7 @@ export default function Form({ closeModal, dateTime }) {
     }).then((response) => {
       console.log(response.data);
       if (path == "/calendar" || path == "/Calendar") {
+        queryClient.invalidateQueries("requests");
         closeModal();
       } else history("/");
     });
@@ -399,17 +400,13 @@ export function EditForm({ request, closeModal }) {
 
   const handleApprove = () => {
     requestData.approved = true;
-    requestData.date_time = requestData.date_time.format(
-      "YYYY-MM-DD HH:mm:ss.SSSSSS[Z]"
-    );
+    requestData.date_time = requestData.date_time.format("YYYY-MM-DD HH:mm:ss");
     updateRequest();
   };
 
   const handleDeny = () => {
     requestData.approved = false;
-    requestData.date_time = requestData.date_time.format(
-      "YYYY-MM-DD HH:mm:ss.SSSSSS[Z]"
-    );
+    requestData.date_time = requestData.date_time.format("YYYY-MM-DD HH:mm:ss");
     requestData.active = false;
     updateRequest();
   };
@@ -557,25 +554,6 @@ export function EditForm({ request, closeModal }) {
       </Stack>
     );
   }
-  /*else if (requestData.checkInTime == null) {
-   formEnd += <Button variant="contained"> Check-In </Button>;
- } else if (requestData.checkInTime != null && requestData.dockTime == null) {
-   formEnd += <Button variant="contained"> Dock </Button>;
- } else if (
-   requestData.checkInTime != null &&
-   requestData.dockTime != null &&
-   requestData.completeTime == null
- ) {
-   formEnd += <Button variant="contained"> Complete </Button>;
- } else {
-   formEnd += (
-     <Button disabled variant="contained" color="red">
-       {" "}
-       Error - See Admin{" "}
-     </Button>
-   );
- }
- */
 
   return (
     <FormControl>

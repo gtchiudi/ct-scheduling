@@ -37,6 +37,7 @@ const router = createBrowserRouter([
         <RequestList />
       </Layout>
     ), // Wrap RequestList with Layout
+    errorElement: <ErrorPage />,
   },
   {
     path: "RequestForm",
@@ -45,6 +46,7 @@ const router = createBrowserRouter([
         <RequestForm />
       </Layout>
     ), // Wrap RequestForm with Layout
+    errorElement: <ErrorPage />,
   },
   {
     path: "login",
@@ -62,6 +64,7 @@ const router = createBrowserRouter([
         <Logout />
       </Layout>
     ), // Wrap Logout with Layout
+    errorElement: <ErrorPage />,
   },
   {
     path: "PendingRequests",
@@ -70,6 +73,7 @@ const router = createBrowserRouter([
         <PendingRequests />
       </Layout>
     ), // Wrap PendingRequests with Layout
+    errorElement: <ErrorPage />,
   },
   {
     path: "Calendar",
@@ -78,6 +82,7 @@ const router = createBrowserRouter([
         <Calendar />
       </Layout>
     ),
+    errorElement: <ErrorPage />,
   },
 ]);
 

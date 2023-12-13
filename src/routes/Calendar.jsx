@@ -138,7 +138,7 @@ export default function Calendar() {
 
   const { key } = React.useMemo(
     () => ({
-      key: ["requests", "date", startDate, endDate, "active"], // store query key. updates with dates
+      key: ["requests", "date", startDate, endDate], // store query key. updates with dates
     }),
     [startDate, endDate]
   );
@@ -158,7 +158,6 @@ export default function Calendar() {
       await axios.get("/api/request", {
         params: {
           approved: "True",
-          active: "True",
           start_date: startDate.format("YYYY-MM-DD HH:mm:ss.SSSSSS[Z]"),
           end_date: endDate.format("YYYY-MM-DD HH:mm:ss.SSSSSS[Z]"),
         },
