@@ -22,16 +22,13 @@ function Layout({ children }) {
   React.useEffect(() => {
     updateWarehouseData();
   }, []);
-
   return (
     <div>
       <HeaderBar />
-      <body style={{}}>
-        <div style={{}}>{children}</div>
-        <footer style={{}}>
-          <Footer />
-        </footer>
-      </body>
+      <div style={{}}>{children}</div>
+      <footer style={{}}>
+        <Footer />
+      </footer>
     </div>
   );
 }

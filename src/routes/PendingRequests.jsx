@@ -3,8 +3,9 @@ import { useNavigate } from "react-router-dom";
 import { useAtom } from "jotai";
 import {
   isAuthAtom,
-  accessTokenAtom,
   refreshAtom,
+  warehouseDataAtom,
+  updateWarehouseDataAtom,
 } from "../components/atoms.jsx";
 import { useQuery } from "@tanstack/react-query";
 import { PropTypes } from "prop-types";
@@ -87,6 +88,12 @@ const headCells = [
     label: "PO Number",
   },
   {
+    id: "warehouse",
+    numeric: false,
+    disablePadding: false,
+    label: "Warehouse",
+  },
+  {
     id: "load_type",
     numeric: false,
     disablePadding: false,
@@ -154,10 +161,23 @@ export default function PendingRequests() {
   const queryClient = useQueryClient(); // used to get query client
   const [refresh, setRefresh] = useAtom(refreshAtom); // used as refresh token tag for error 401 handling
   const [pauseQuery, setPause] = useState(false); // used to pause query
+  const [warehouseData] = useAtom(warehouseDataAtom);
+  const [, updateWarehouseData] = useAtom(updateWarehouseDataAtom);
+
   let rows = useState([]); // store rows of table
+  React.useEffect(() => {
+    updateWarehouseData();
+    console.log(warehouseData);
+  }, []);
+
+  function getWarehouseNameById(id) {
+    const warehouse = warehouseData.find((warehouse) => warehouse.id === id);
+    return warehouse ? warehouse.name : "Warehouse not found";
+  }
 
   React.useEffect(() => {
     // check authentication then set interval to check authentication every 30 seconds
+
     setPause(true);
     setAuthorized(isAuth());
     if (!authorized) {
@@ -224,6 +244,7 @@ export default function PendingRequests() {
   const [page, setPage] = React.useState(0);
   const [dense, setDense] = React.useState(false);
   const [rowsPerPage, setRowsPerPage] = React.useState(5);
+
   // variables used for table functions
 
   const handleRequestSort = (event, property) => {
@@ -360,6 +381,9 @@ export default function PendingRequests() {
                           </TableCell>
                           <TableCell align="left">{row.email}</TableCell>
                           <TableCell align="left">{row.po_number}</TableCell>
+                          <TableCell align="left">
+                            {getWarehouseNameById(row.warehouse)}
+                          </TableCell>
                           <TableCell align="left">{row.load_type}</TableCell>
                           <TableCell align="left">
                             {dayjs(row.date_time).format("MM/DD/YYYY hh:mm A")}

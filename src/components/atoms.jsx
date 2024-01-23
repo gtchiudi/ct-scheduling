@@ -2,7 +2,7 @@ import { atom, useAtom } from "jotai";
 import axios from "axios";
 import { atomWithStorage } from "jotai/utils";
 import dayjs from "dayjs";
-import { fetchWarehouseData } from "../actions.jsx";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 const refreshTokens = async (get, set) => {
   console.log("Refreshing Tokens");
@@ -99,10 +99,7 @@ export const removeTokensAtom = atom(null, (get, set) => {
 export const warehouseDataAtom = atom([]);
 
 export const updateWarehouseDataAtom = atom(null, async (get, set, updated) => {
-  try {
-    const data = await fetchWarehouseData();
-    set(warehouseDataAtom, data);
-  } catch (error) {
-    console.error(error);
-  }
+  // if (get(warehouseDataAtom) != []) return;
+  const data = await axios.get("/api/warehouse");
+  set(warehouseDataAtom, data.data);
 });

@@ -82,7 +82,6 @@ const router = createBrowserRouter([
         <Calendar />
       </Layout>
     ),
-    errorElement: <ErrorPage />,
   },
 ]);
 

@@ -9,15 +9,23 @@ import {
   DialogContent,
   DialogTitle,
   Button,
+  Box,
+  Checkbox,
+  FormControlLabel,
+  TextField,
 } from "@mui/material";
 import { useAtom } from "jotai";
-import { isAuthAtom, refreshAtom } from "../components/atoms.jsx";
+import {
+  isAuthAtom,
+  refreshAtom,
+  warehouseDataAtom,
+  updateWarehouseDataAtom,
+} from "../components/atoms.jsx";
 import axios from "axios";
 import Form, { EditForm } from "../components/Form.jsx";
 
-//const MyCalendar = () => {}
-//That is the declaration for a JavaScript function. You need...
 export function CustomViewer({ event }) {
+  // view/edit a request
   const [open, setOpen] = useState(true);
   const closeDialog = () => {
     setOpen(false);
@@ -42,6 +50,8 @@ export function CustomViewer({ event }) {
   );
 }
 export function CustomEditor({ event }) {
+  console.log(event);
+  // create a new request. Automatically approved
   const [open, setOpen] = useState(true);
   const closeDialog = () => {
     event.close();
@@ -69,37 +79,36 @@ export function CustomEditor({ event }) {
 }
 
 export default function Calendar() {
-  // React component function
   const navigate = useNavigate();
   const [, isAuth] = useAtom(isAuthAtom);
-  // set start date to be previous month
+  // set start date to be previous month and set end date to be 3 months from start date
   const [startDate, setStartDate] = React.useState(
     dayjs().startOf("month").subtract(1, "month")
   );
-  // set end date to be 3 months from start date
   const [endDate, setEndDate] = React.useState(startDate.add(3, "month"));
-  // get query client
+
   const queryClient = useQueryClient();
   let pauseQuery = false;
 
-  // used as refresh token tag for error 401 handling
-  const [refresh, setRefresh] = useAtom(refreshAtom);
+  const [refresh, setRefresh] = useAtom(refreshAtom); // is refreshing
+  const [events, setEvents] = useState([]); // calendar event storage
+  let result = useState(null); // query result storage
+  let authorized = useState(null); // authorized boolean storage
 
-  // store selected request
-  const [selected, setSelected] = useState([]);
-  // store events
-  const [events, setEvents] = useState([]);
-  // store query result
-  let result = useState(null);
-  // store if user is authorized
-  let authorized = useState(null);
-  // store if dialog is open
-  const [open, setOpen] = useState(false);
-  // close dialog
-  const closeDialog = () => {
-    setOpen(false);
+  const [, updateWarehouseData] = useAtom(updateWarehouseDataAtom);
+  const warehouseData = useAtom(warehouseDataAtom);
+
+  const [parsedWarehouseData, setParsedWarehouseData] = useState([]); // parsed warehouse data storage
+
+  const handleCheckboxChange = (id) => (event) => {
+    setParsedWarehouseData(
+      parsedWarehouseData.map((warehouse) =>
+        warehouse.id === id
+          ? { ...warehouse, checked: event.target.checked }
+          : warehouse
+      )
+    );
   };
-
   // check authentication
   useEffect(() => {
     pauseQuery = true; // pause query
@@ -123,7 +132,16 @@ export default function Calendar() {
       clearInterval(intervalId);
     };
   }, []);
-
+  React.useEffect(() => {
+    updateWarehouseData();
+    setParsedWarehouseData(
+      warehouseData[0].map((warehouse) => ({
+        id: warehouse.id,
+        name: warehouse.name,
+        checked: true,
+      }))
+    );
+  }, [updateWarehouseData]);
   const updateRange = (date) => {
     const newDate = dayjs(date); // store date as dayjs object
     if (newDate.isBefore(startDate) || newDate.isAfter(endDate)) {
@@ -205,6 +223,27 @@ export default function Calendar() {
 
   return (
     <div>
+      <Box display="flex" justifyContent="flex-end" marginBottom={2}>
+        {parsedWarehouseData.map((warehouse) => (
+          <Box key={warehouse.id} marginRight={2}>
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={warehouse.checked}
+                  onChange={handleCheckboxChange(warehouse.id)}
+                />
+              }
+              label={warehouse.name}
+            />
+            {/* <TextField
+              variant="outlined"
+              size="small"
+              disabled={!warehouse.checked}
+              // Add other TextField properties as needed
+            /> */}
+          </Box>
+        ))}
+      </Box>
       <Scheduler
         stickyNavigation={true}
         events={events}
