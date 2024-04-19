@@ -4,15 +4,15 @@ import { Scheduler } from "@aldabil/react-scheduler";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import {
+  Button,
+  Box,
+  Checkbox,
   Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
-  Button,
-  Box,
-  Checkbox,
   FormControlLabel,
-  TextField,
+  Typography,
 } from "@mui/material";
 import { useAtom } from "jotai";
 import {
@@ -22,12 +22,13 @@ import {
   updateWarehouseDataAtom,
 } from "../components/atoms.jsx";
 import axios from "axios";
-import Form, { EditForm } from "../components/Form.jsx";
+import Form from "../components/Form.jsx";
 
-export function CustomViewer({ event }) {
+export function CustomViewer({ event, onClose }) {
   // view/edit a request
   const [open, setOpen] = useState(true);
   const closeDialog = () => {
+    if (typeof onClose === "function") onClose();
     setOpen(false);
   };
 
@@ -36,10 +37,10 @@ export function CustomViewer({ event }) {
       {open && (
         <Dialog open={open} onClose={closeDialog}>
           <DialogTitle textAlign={"center"}>
-            PO #: {event.request.po_number}
+            Ref #: {event.request.po_number}
           </DialogTitle>
           <DialogContent>
-            <EditForm request={event.request} closeModal={closeDialog} />
+            <Form request={event.request} closeModal={closeDialog} />
           </DialogContent>
           <DialogActions>
             <Button onClick={closeDialog}>Cancel</Button>
@@ -49,6 +50,7 @@ export function CustomViewer({ event }) {
     </div>
   );
 }
+
 export function CustomEditor({ event }) {
   console.log(event);
   // create a new request. Automatically approved
@@ -62,7 +64,7 @@ export function CustomEditor({ event }) {
     <div>
       {open && (
         <Dialog open={open} onClose={closeDialog}>
-          <DialogTitle textAlign={"center"}>Create Request</DialogTitle>
+          <DialogTitle textAlign={"center"}>Create Appointment</DialogTitle>
           <DialogContent>
             <Form
               closeModal={closeDialog}
@@ -91,7 +93,7 @@ export default function Calendar() {
   let pauseQuery = false;
 
   const [refresh, setRefresh] = useAtom(refreshAtom); // is refreshing
-  const [events, setEvents] = useState([]); // calendar event storage
+  const [allEvents, setAllEvents] = useState([]); // calendar event storage of all events
   let result = useState(null); // query result storage
   let authorized = useState(null); // authorized boolean storage
 
@@ -109,6 +111,7 @@ export default function Calendar() {
       )
     );
   };
+  const ref = React.useRef(null);
   // check authentication
   useEffect(() => {
     pauseQuery = true; // pause query
@@ -138,7 +141,7 @@ export default function Calendar() {
       warehouseData[0].map((warehouse) => ({
         id: warehouse.id,
         name: warehouse.name,
-        checked: true,
+        checked: warehouse.name == "Aurora" ? true : false, // Aurora is checked by default
       }))
     );
   }, [updateWarehouseData]);
@@ -169,6 +172,21 @@ export default function Calendar() {
     return true;
   }, [result]);
 
+  const events = React.useMemo(() => {
+    // filter events based on warehouse
+    const includeWarehouses = parsedWarehouseData.filter((warehouse) => {
+      return warehouse.checked;
+    });
+    console.log(allEvents, includeWarehouses);
+    return allEvents.filter((event) => {
+      for (const warehouse of includeWarehouses) {
+        if (event.request.warehouse == warehouse.id) return true;
+      }
+      return false;
+    });
+  }, [allEvents, parsedWarehouseData]);
+
+  console.log("current events: ", events);
   result = useQuery({
     queryKey: key,
     queryFn: async () =>
@@ -205,25 +223,38 @@ export default function Calendar() {
       }
     },
     onSuccess: (data) => {
+      console.log("raw events: ", data.data);
       const newEvents = data.data.map((request) => ({
         // map requests to events on success
         event_id: request.id,
-        title: `PO #: ${request.po_number}`, // set title to po number
-        start: dayjs(request.date_time).toDate(), // start and end are same
-        end: dayjs(request.date_time).toDate(),
+        title: `Ref #: ${request.po_number}`, // set title to po number
+        start: new Date(request.date_time), // start and end are same
+        end: new Date(request.date_time),
         request: request, // store request in event
         editable: false,
         deletable: false,
         draggable: false,
       }));
       // map each result row to an event
-      setEvents(newEvents); // set events
+      setAllEvents(newEvents); // set events
+      console.log("Refreshed Events: ", newEvents);
     },
   });
 
   return (
-    <div>
-      <Box display="flex" justifyContent="flex-end" marginBottom={2}>
+    <Box id="body">
+      <Box
+        id="checkboxes"
+        display="flex"
+        justifyContent="flex-end"
+        marginBottom={0}
+        backgroundColor="white"
+        position="fixed"
+        right={0}
+        top="70.29px"
+        zIndex={1000}
+        width="100%"
+      >
         {parsedWarehouseData.map((warehouse) => (
           <Box key={warehouse.id} marginRight={2}>
             <FormControlLabel
@@ -235,25 +266,72 @@ export default function Calendar() {
               }
               label={warehouse.name}
             />
-            {/* <TextField
-              variant="outlined"
-              size="small"
-              disabled={!warehouse.checked}
-              // Add other TextField properties as needed
-            /> */}
           </Box>
         ))}
       </Box>
-      <Scheduler
-        stickyNavigation={true}
-        events={events}
-        onSelectedDateChange={(date) => {
-          updateRange(date);
-        }}
-        loading={isLoading}
-        customViewer={(event) => <CustomViewer event={event} />}
-        customEditor={(event) => <CustomEditor event={event} />}
-      />
-    </div>
+      <Box id="calendar" paddingTop="129px">
+        <Scheduler
+          hourFormat="24"
+          events={events}
+          month={{
+            weekDays: [0, 1, 2, 3, 4, 5, 6],
+            weekStartOn: 6,
+            startHour: 6,
+            endHour: 18,
+          }}
+          week={{
+            weekDays: [0, 1, 2, 3, 4, 5, 6],
+            weekStartOn: 6,
+            startHour: 6,
+            endHour: 18,
+            step: 30,
+          }}
+          day={{
+            startHour: 6,
+            endHour: 18,
+            step: 15,
+          }}
+          onSelectedDateChange={(date) => {
+            updateRange(date);
+          }}
+          loading={isLoading}
+          customViewer={(event, closeViewer) => {
+            return <CustomViewer event={event} onClose={closeViewer} />;
+          }}
+          customEditor={(event) => <CustomEditor event={event} />}
+          eventRenderer={({ event, ...props }) => {
+            console.log(event.request.check_in_time, dayjs(event.start));
+            const isLate =
+              (event.request.check_in_time === null &&
+                dayjs().isAfter(dayjs(event.start))) ||
+              (event.request.check_in_time !== null &&
+                dayjs(event.request.check_in_time).isAfter(dayjs(event.start)));
+            const background = isLate ? "#FF0000" : "#00FF00";
+            return (
+              <Box
+                display="flex"
+                flexDirection="column"
+                justifyContent="space-between"
+                bgcolor={background}
+                height="100%"
+                {...props}
+                sx={{
+                  fontSize: 12,
+                }}
+              >
+                <Typography sx={{ fontSize: 12 }}>{event.title}</Typography>
+                <Typography sx={{ fontSize: 12 }}>
+                  {`Start Time: ${event.start.getHours()}:${
+                    event.start.getMinutes() == 0
+                      ? "00"
+                      : event.start.getMinutes()
+                  }`}
+                </Typography>
+              </Box>
+            );
+          }}
+        />
+      </Box>
+    </Box>
   );
 }

@@ -34,9 +34,7 @@ const pagesAuth = [
   { text: "Calendar", href: "/Calendar" },
 ];
 
-const pagesNonAuth = [
-  { text: "Make A request", href: "/RequestForm" },
-];
+const pagesNonAuth = [{ text: "Make A request", href: "/RequestForm" }];
 
 const settings = [{ text: "Login", href: "/Login" }];
 
@@ -48,12 +46,10 @@ function HeaderBar() {
   let pagesToRender = isAuth() ? pagesAuth : pagesNonAuth;
   if (location.pathname === "/Calendar" && isAuth()) {
     pagesToRender = [{ text: "Pending Requests", href: "/PendingRequests" }];
-  } 
-  else if (location.pathname === "/PendingRequests" && isAuth()) {
+  } else if (location.pathname === "/PendingRequests" && isAuth()) {
     pagesToRender = [{ text: "Calendar", href: "/Calendar" }];
-  }
-  else if (isAuth()) //to fix bug when rendering when first logging in
-  {
+  } else if (isAuth()) {
+    //to fix bug when rendering when first logging in
     pagesToRender = pagesAuth;
   }
   const handleOpenNavMenu = (event) => {
@@ -70,15 +66,20 @@ function HeaderBar() {
   };
 
   return (
-    <AppBar position="static">
+    <AppBar
+      position="sticky"
+      style={{ border: "1px solid rgba(0, 0, 0, 0.1)" }}
+    >
       <Container maxWidth="false">
         <Toolbar disableGutters>
-          <a href="/"><img
-            src="https://www.candortransport.com/static/images/candorlogo.png"
-            className="candorLogo"
-            alt="Candor Logo"
-            component={RouterLink}
-          /></a>
+          <a href="/">
+            <img
+              src="//img1.wsimg.com/isteam/ip/f69d92aa-cce5-4851-89e5-56380f14d8f1/candorlogo.png/:/rs=h:75,cg:true,m/qt=q:100/ll"
+              className="candorLogo"
+              alt="Candor Logo"
+              component={RouterLink}
+            />
+          </a>
 
           <Box sx={{ flexGrow: 1, display: { xs: "flex", md: "none" } }}>
             <IconButton

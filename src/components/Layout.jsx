@@ -12,6 +12,7 @@ import {
 } from "./atoms.jsx";
 import axios from "axios";
 import Footer from "./Footer.jsx";
+import { Box } from "@mui/material";
 
 function Layout({ children }) {
   const [, isAuth] = useAtom(isAuthAtom);
@@ -23,13 +24,11 @@ function Layout({ children }) {
     updateWarehouseData();
   }, []);
   return (
-    <div>
+    <Box>
       <HeaderBar />
-      <div style={{}}>{children}</div>
-      <footer style={{}}>
-        <Footer />
-      </footer>
-    </div>
+      <Box position="relative">{children}</Box>
+      <Footer />
+    </Box>
   );
 }
 
