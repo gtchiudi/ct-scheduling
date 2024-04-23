@@ -11,6 +11,8 @@ import {
   Typography,
   Stack,
   Container,
+  Alert,
+  Dialog,
 } from "@mui/material";
 import axios from "axios";
 import { useAtom } from "jotai";
@@ -33,6 +35,14 @@ import { accessTokenAtom } from "./atoms.jsx";
 // This form also contains information that is restricted to employees only.
 // As well as accept, deny, progress a request through buttons.
 // Buttons are made available depending on the state of the request, that state is pulled from the request data.
+function AlertDialog({ message, open, onClose }) {
+  return (
+    <Dialog open={open} onClose={onClose}>
+      <Alert severity="error">{message}</Alert>
+      <Button onClick={onClose}>Dismiss</Button>
+    </Dialog>
+  );
+}
 
 function Form({ request, closeModal, dateTime }) {
   const queryClient = useQueryClient();
@@ -42,7 +52,14 @@ function Form({ request, closeModal, dateTime }) {
   const path = useLocation().pathname;
   const navigate = useNavigate();
 
+  const [alertOpen, setAlertOpen] = useState(false);
+  const closeAlert = () => {
+    setAlertOpen(false);
+  };
+  const [AlertMessage, setAlertMessage] = useState("");
+
   const nextWorkDay = () => {
+    // gets the next work day at 8:00 am
     let now = dayjs();
     if (now.day() === 5) {
       // date is Friday
@@ -85,6 +102,27 @@ function Form({ request, closeModal, dateTime }) {
     completed_time: null,
     active: true,
   });
+
+  const requiredFields = [
+    "company_name",
+    "phone_number",
+    "email",
+    "warehouse",
+    "po_number",
+    "load_type",
+  ];
+  const [requiredFieldsCompleted, setRequiredFieldsCompleted] = useState(
+    requiredFields.reduce((acc, field) => {
+      acc[field] = false;
+      return acc;
+    }, {})
+  );
+  const isFormCompleted = () => {
+    return Object.values(requiredFieldsCompleted).every(
+      (completed) => completed
+    );
+  };
+  const submitButtonDisabled = !isFormCompleted();
 
   const load_types = [
     {
@@ -154,7 +192,6 @@ function Form({ request, closeModal, dateTime }) {
         const hours = dayjs(entry.date_time).format("HH:mm");
         return hours;
       });
-      console.log(extractHours);
       setTimes(extractHours);
       setPause(true);
     },
@@ -165,6 +202,10 @@ function Form({ request, closeModal, dateTime }) {
   });
 
   const getTimes = (value, view) => {
+    // return true will disable the time
+    if (requestData["warehouse"] === "") {
+      return true;
+    }
     const formatted = dayjs(value).format("HH:mm");
     const unavailableTimes = times.includes(formatted);
     const time = dayjs(formatted, "HH:mm");
@@ -180,7 +221,16 @@ function Form({ request, closeModal, dateTime }) {
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     const newValue = type === "checkbox" ? checked : value;
-    setRequestData({ ...requestData, [name]: newValue });
+    if (name === "pickup") {
+      setRequestData({ ...requestData, delivery: !newValue });
+    } else setRequestData({ ...requestData, [name]: newValue });
+
+    if (requiredFields.includes(name)) {
+      setRequiredFieldsCompleted((prevCompleted) => ({
+        ...prevCompleted,
+        [name]: !!value,
+      }));
+    }
   };
 
   const handleButton = (e) => {
@@ -215,23 +265,15 @@ function Form({ request, closeModal, dateTime }) {
     updateRequest();
   };
 
-  const handleDeny = () => {
-    // should we have a deny button?
-    requestData.approved = false;
-    requestData.date_time = requestData.date_time.format("YYYY-MM-DD HH:mm:ss");
-    requestData.active = false;
-    updateRequest();
-  };
-
   const handleNewRequest = async () => {
-    if (path === "/calendar" || path === "/Calendar") {
+    if (path === "/Calendar") {
       requestData.approved = true;
     }
 
     try {
       const response = await axios.post("/api/request/", requestData);
 
-      if (path === "/calendar" || path === "/Calendar") {
+      if (path === "/Calendar") {
         queryClient.invalidateQueries("requests");
         closeModal();
       } else {
@@ -269,6 +311,9 @@ function Form({ request, closeModal, dateTime }) {
       name="driver_phone_number"
       value={requestData.driver_phone_number}
       onChange={handleChange}
+      InputProps={{
+        readOnly: requestData.check_in_time != null ? true : false,
+      }}
     />
   );
   let checkedContent = // Content for checked in appointments
@@ -287,6 +332,9 @@ function Form({ request, closeModal, dateTime }) {
           label="Dock Number"
           name="dock_number"
           value={requestData.dock_number}
+          InputProps={{
+            readOnly: requestData.dock_number != null ? true : false,
+          }}
           //onChange={}
         />
       </Box>
@@ -307,15 +355,16 @@ function Form({ request, closeModal, dateTime }) {
   let completionContent; // completed appointments are not displayed
   if (path == "/RequestForm" || !requestData.approved) {
     formButton = (
-      <Button variant="contained" onClick={handleNewRequest}>
+      <Button
+        variant="contained"
+        onClick={handleNewRequest}
+        disabled={submitButtonDisabled}
+      >
         Submit
       </Button>
     );
     formBottom = <Box> {formButton} </Box>;
-  } else if (
-    (path == "/calendar" || path == "/Calendar") &&
-    requestData.approved
-  ) {
+  } else if (path == "/Calendar" && requestData.approved) {
     if (requestData.check_in_time == null) {
       formButton = (
         <Button name="check_in_time" variant="contained" onClick={handleButton}>
@@ -352,7 +401,7 @@ function Form({ request, closeModal, dateTime }) {
       );
       formBottom = (
         <Box>
-          {formEnd} {checkedContent} {dockedContent} {formButton}
+          {formEnd} {dockedContent} {formButton}
         </Box>
       );
     }
@@ -369,152 +418,198 @@ function Form({ request, closeModal, dateTime }) {
         <Button color="success" variant="contained" onClick={handleApprove}>
           Approve
         </Button>
-        <Button color="error" variant="contained" onClick={handleDeny}>
-          Deny
-        </Button>
       </Stack>
     );
   }
 
   return (
-    <FormControl>
-      <Stack
-        spacing={2}
-        alignContent={"center"}
-        textAlign={"center"}
-        display={"flex"}
-        margine="normal"
-        sx={{
-          "& .MuiTextField-root": { m: 1, width: "60ch" },
-          "& > :not(style)": { m: 1, width: "60ch" },
-          maxHeight: "90vh",
-          maxWidth: "60vw",
-        }}
-      >
-        <TextField
-          required
-          label="Company Name"
-          name="company_name"
-          value={requestData.company_name}
-          onChange={handleChange}
-        ></TextField>
-
-        <TextField
-          required
-          label="Phone Number"
-          name="phone_number"
-          value={requestData.phone_number}
-          onChange={handleChange}
-        ></TextField>
-
-        <TextField
-          required
-          label="Email"
-          name="email"
-          value={requestData.email}
-          onChange={handleChange}
-        ></TextField>
-
-        <TextField
-          required
-          label="Reference Number"
-          name="po_number"
-          value={requestData.po_number}
-          onChange={handleChange}
-        ></TextField>
-
-        <TextField
-          required
-          select
-          label="Warehouse"
-          name="warehouse"
-          variant="filled"
-          value={requestData.warehouse}
-          onChange={handleChange}
+    <div>
+      <AlertDialog
+        message={AlertMessage}
+        open={alertOpen}
+        onClose={closeAlert}
+      />
+      <FormControl>
+        <Stack
+          spacing={2}
+          alignContent={"center"}
+          textAlign={"center"}
+          display={"flex"}
+          margine="normal"
+          sx={{
+            "& .MuiTextField-root": { m: 1, width: "60ch" },
+            "& > :not(style)": { m: 1, width: "60ch" },
+            maxHeight: "90vh",
+            maxWidth: "60vw",
+          }}
         >
-          {warehouseData.map((option) => (
-            <MenuItem key={option.id} value={option.id}>
-              {option.name}
-            </MenuItem>
-          ))}
-        </TextField>
-
-        <TextField
-          required
-          select
-          id="load_type"
-          label="Load Type"
-          name="load_type"
-          variant="filled"
-          value={requestData.load_type}
-          onChange={handleChange}
-        >
-          {load_types.map((option) => (
-            <MenuItem key={option.value} value={option.value}>
-              {option.value}
-            </MenuItem>
-          ))}
-        </TextField>
-
-        {requestData.load_type === "Container" ? (
-          <Box>
-            <FormControlLabel
-              control={<Checkbox />}
-              label="Select for Container Drop"
-              name="container_drop"
-              checked={requestData.container_drop}
-              onChange={handleChange}
-            />
-            <TextField
-              label="Container Number"
-              name="container_number"
-              value={requestData.container_number}
-              onChange={handleChange}
-            ></TextField>
-          </Box>
-        ) : null}
-
-        <FormControlLabel
-          control={<Checkbox />}
-          label="Delivery"
-          name="delivery"
-          checked={requestData.delivery}
-          onChange={handleChange}
-        />
-
-        <TextField
-          name="notes"
-          label="Notes"
-          multiline
-          rows={4}
-          value={requestData.notes}
-          onChange={handleChange}
-        />
-
-        <DateTimePicker
-          ampm={false}
-          thresholdToRenderTimeInASingleColumn={30}
-          skipDisabled={true}
-          label="Select Appointment Date and Time"
-          value={dayjs(requestData.date_time)}
-          shouldDisableTime={getTimes}
-          onChange={findTimes}
-          onAccept={(newValue) => handleDateChange(newValue)}
-          timeSteps={{ minutes: 15 }}
-        />
-
-        {path != "/RequestForm" && (
           <TextField
-            label="Trailer Number"
-            name="trailer_number"
-            value={requestData.trailer_number}
+            required
+            label="Company Name"
+            name="company_name"
+            value={requestData.company_name}
+            onChange={handleChange}
+            InputProps={{
+              readOnly: path === "/Calendar" ? true : false,
+            }}
+          ></TextField>
+
+          <TextField
+            required
+            label="Phone Number"
+            name="phone_number"
+            value={requestData.phone_number}
+            onChange={handleChange}
+            InputProps={{
+              readOnly: path === "/Calendar" ? true : false,
+            }}
+          ></TextField>
+
+          <TextField
+            required
+            label="Email"
+            name="email"
+            value={requestData.email}
+            onChange={handleChange}
+            InputProps={{
+              readOnly: path === "/Calendar" ? true : false,
+            }}
+          ></TextField>
+
+          <TextField
+            required
+            label="Reference Number"
+            name="po_number"
+            value={requestData.po_number}
+            onChange={handleChange}
+            InputProps={{
+              readOnly: path === "/Calendar" ? true : false,
+            }}
+          ></TextField>
+
+          <TextField
+            required
+            select
+            label="Warehouse"
+            name="warehouse"
+            variant="filled"
+            value={requestData.warehouse}
+            onChange={handleChange}
+            InputProps={{
+              readOnly: path === "/Calendar" ? true : false,
+            }}
+          >
+            {warehouseData.map((option) => (
+              <MenuItem key={option.id} value={option.id}>
+                {option.name}
+              </MenuItem>
+            ))}
+          </TextField>
+
+          <TextField
+            required
+            select
+            id="load_type"
+            label="Load Type"
+            name="load_type"
+            variant="filled"
+            value={requestData.load_type}
+            onChange={handleChange}
+            InputProps={{
+              readOnly: path === "/Calendar" ? true : false,
+            }}
+          >
+            {load_types.map((option) => (
+              <MenuItem key={option.value} value={option.value}>
+                {option.value}
+              </MenuItem>
+            ))}
+          </TextField>
+
+          {requestData.load_type === "Container" ? (
+            <Box>
+              <FormControlLabel
+                control={<Checkbox />}
+                label="Select for Container Drop"
+                name="container_drop"
+                checked={requestData.container_drop}
+                onChange={handleChange}
+              />
+              <TextField
+                label="Container Number"
+                name="container_number"
+                value={requestData.container_number}
+                onChange={handleChange}
+              ></TextField>
+            </Box>
+          ) : null}
+
+          <FormControlLabel
+            control={<Checkbox />}
+            label="Delivery"
+            name="delivery"
+            checked={requestData.delivery}
             onChange={handleChange}
           />
-        )}
+          <FormControlLabel
+            control={<Checkbox />}
+            label="Pickup"
+            name="pickup"
+            checked={!requestData.delivery}
+            onChange={handleChange}
+          />
 
-        {formBottom}
-      </Stack>
-    </FormControl>
+          <TextField
+            name="notes"
+            label="Notes"
+            multiline
+            rows={4}
+            value={requestData.notes}
+            onChange={handleChange}
+          />
+
+          {path === "/Calendar" ? (
+            <DateTimeField
+              readOnly
+              label="Select Appointment Date and Time"
+              name="date_time"
+              value={requestData.date_time}
+            />
+          ) : (
+            <DateTimePicker
+              ampm={false}
+              thresholdToRenderTimeInASingleColumn={30}
+              skipDisabled={true}
+              label="Select Appointment Date and Time"
+              value={dayjs(requestData.date_time)}
+              shouldDisableTime={getTimes}
+              onChange={(date) => {
+                if (requestData["warehouse"] === "") {
+                  setAlertMessage("Please select a warehouse");
+                  setAlertOpen(true);
+                } else findTimes(date);
+              }}
+              onAccept={(newValue) => handleDateChange(newValue)}
+              timeSteps={{ minutes: 15 }}
+            />
+          )}
+
+          {path != "/RequestForm" && (
+            <TextField
+              label="Trailer Number"
+              name="trailer_number"
+              value={requestData.trailer_number}
+              onChange={handleChange}
+              InputProps={{
+                readOnly: requestData.trailer_number != null ? true : false,
+              }}
+            />
+          )}
+
+          {formBottom}
+        </Stack>
+      </FormControl>
+    </div>
   );
 }
 

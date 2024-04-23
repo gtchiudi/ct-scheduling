@@ -30,7 +30,7 @@ function Footer() {
               : theme.palette.grey[800],
         }}
       >
-        <Container maxWidth="sm" maxHeight="sm">
+        <Container maxWidth="sm">
           <Typography
             variant="body1"
             textAlign="center"

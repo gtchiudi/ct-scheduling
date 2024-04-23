@@ -52,7 +52,6 @@ export function CustomViewer({ event, onClose }) {
 }
 
 export function CustomEditor({ event }) {
-  console.log(event);
   // create a new request. Automatically approved
   const [open, setOpen] = useState(true);
   const closeDialog = () => {
@@ -177,7 +176,6 @@ export default function Calendar() {
     const includeWarehouses = parsedWarehouseData.filter((warehouse) => {
       return warehouse.checked;
     });
-    console.log(allEvents, includeWarehouses);
     return allEvents.filter((event) => {
       for (const warehouse of includeWarehouses) {
         if (event.request.warehouse == warehouse.id) return true;
@@ -186,7 +184,6 @@ export default function Calendar() {
     });
   }, [allEvents, parsedWarehouseData]);
 
-  console.log("current events: ", events);
   result = useQuery({
     queryKey: key,
     queryFn: async () =>
@@ -223,7 +220,6 @@ export default function Calendar() {
       }
     },
     onSuccess: (data) => {
-      console.log("raw events: ", data.data);
       const newEvents = data.data.map((request) => ({
         // map requests to events on success
         event_id: request.id,
@@ -237,7 +233,6 @@ export default function Calendar() {
       }));
       // map each result row to an event
       setAllEvents(newEvents); // set events
-      console.log("Refreshed Events: ", newEvents);
     },
   });
 
@@ -300,7 +295,6 @@ export default function Calendar() {
           }}
           customEditor={(event) => <CustomEditor event={event} />}
           eventRenderer={({ event, ...props }) => {
-            console.log(event.request.check_in_time, dayjs(event.start));
             const isLate =
               (event.request.check_in_time === null &&
                 dayjs().isAfter(dayjs(event.start))) ||
