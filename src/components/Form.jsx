@@ -7,7 +7,6 @@ import {
   Checkbox,
   Box,
   FormControl,
-  FormLabel,
   MenuItem,
   Typography,
   Stack,
@@ -43,6 +42,23 @@ function Form({ request, closeModal, dateTime }) {
   const path = useLocation().pathname;
   const navigate = useNavigate();
 
+  const nextWorkDay = () => {
+    let now = dayjs();
+    if (now.day() === 5) {
+      // date is Friday
+      now = now.add(3, "day");
+    } else if (now.day() === 6) {
+      // date is Saturday
+      now = now.add(2, "day");
+    } else {
+      now = now.add(1, "day");
+    }
+    //day now is next work day.
+    //set to 8:00 am
+    now = now.set("hour", 8).set("minute", 0);
+    return now;
+  };
+
   React.useEffect(() => {
     updateWarehouseData();
   }, [updateWarehouseData]);
@@ -59,7 +75,7 @@ function Form({ request, closeModal, dateTime }) {
     container_drop: false,
     container_number: "",
     notes: "",
-    date_time: dayjs().add(1, "hour").startOf("hour"),
+    date_time: nextWorkDay(),
     delivery: false,
     trailer_number: null,
     driver_phone_number: null,
@@ -175,6 +191,7 @@ function Form({ request, closeModal, dateTime }) {
       requestData[name] = parseInt(
         document.getElementById("dock_number").value
       );
+      requestData["docked_time"] = dayjs().format("YYYY-MM-DD HH:mm:ss");
     } else {
       (requestData[name] = dayjs().format("YYYY-MM-DD HH:mm:ss")),
         name == "completed_time" ? (requestData.active = false) : true;
@@ -323,18 +340,6 @@ function Form({ request, closeModal, dateTime }) {
           {formEnd} {checkedContent} {formButton}
         </Box>
       );
-    } else if (requestData.docked_time == null) {
-      formButton = (
-        <Button name="docked_time" variant="contained" onClick={handleButton}>
-          Dock Truck
-        </Button>
-      );
-
-      formBottom = (
-        <Box>
-          {formEnd} {checkedContent} {formButton}
-        </Box>
-      );
     } else {
       formButton = (
         <Button
@@ -347,7 +352,7 @@ function Form({ request, closeModal, dateTime }) {
       );
       formBottom = (
         <Box>
-          {formEnd} {checkedContent} {formButton}
+          {formEnd} {checkedContent} {dockedContent} {formButton}
         </Box>
       );
     }

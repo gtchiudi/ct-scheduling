@@ -141,7 +141,7 @@ export default function Calendar() {
       warehouseData[0].map((warehouse) => ({
         id: warehouse.id,
         name: warehouse.name,
-        checked: warehouse.name == "Aurora" ? true : false, // Aurora is checked by default
+        checked: warehouse.name == "Bedford Heights" ? true : false, // Aurora is checked by default
       }))
     );
   }, [updateWarehouseData]);
