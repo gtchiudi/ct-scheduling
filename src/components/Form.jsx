@@ -188,11 +188,13 @@ function Form({ request, closeModal, dateTime }) {
     retry: 3,
     enabled: !pauseQuery,
     onSuccess: (data) => {
-      const extractHours = data.data.map((entry) => {
-        const hours = dayjs(entry.date_time).format("HH:mm");
-        return hours;
+      const extractTimes = data.data.map((entry) => {
+        return {
+          time: dayjs(entry.date_time).format("HH:mm"),
+          warehouse: entry.warehouse,
+        };
       });
-      setTimes(extractHours);
+      setTimes(extractTimes);
       setPause(true);
     },
     onError: (error) => {
@@ -203,19 +205,25 @@ function Form({ request, closeModal, dateTime }) {
 
   const getTimes = (value, view) => {
     // return true will disable the time
-    if (requestData["warehouse"] === "") {
+    if (requestData.warehouse === "") {
       return true;
     }
-    const formatted = dayjs(value).format("HH:mm");
-    const unavailableTimes = times.includes(formatted);
-    const time = dayjs(formatted, "HH:mm");
+    const formattedTime = dayjs(value).format("HH:mm");
+
+    const timesForSelectedWarehouse = times.filter(
+      (entry) => entry.warehouse === requestData.warehouse
+    );
+    const timeUnavailable = timesForSelectedWarehouse.some(
+      (entry) => entry.time === formattedTime
+    );
+    const time = dayjs(formattedTime, "HH:mm");
     let isOutsideWorkingHours =
       time.isBefore(dayjs("08:00", "HH:mm")) ||
       time.isAfter(dayjs("16:00", "HH:mm"));
     if (path != "/RequestForm") isOutsideWorkingHours = false;
 
     if (isOutsideWorkingHours) return true;
-    else if (view === "minutes") return unavailableTimes;
+    else if (view === "minutes") return timeUnavailable;
   };
 
   const handleChange = (e) => {
@@ -450,7 +458,7 @@ function Form({ request, closeModal, dateTime }) {
             value={requestData.company_name}
             onChange={handleChange}
             InputProps={{
-              readOnly: path === "/Calendar" ? true : false,
+              readOnly: request ? true : false,
             }}
           ></TextField>
 
@@ -461,7 +469,7 @@ function Form({ request, closeModal, dateTime }) {
             value={requestData.phone_number}
             onChange={handleChange}
             InputProps={{
-              readOnly: path === "/Calendar" ? true : false,
+              readOnly: request ? true : false,
             }}
           ></TextField>
 
@@ -472,7 +480,7 @@ function Form({ request, closeModal, dateTime }) {
             value={requestData.email}
             onChange={handleChange}
             InputProps={{
-              readOnly: path === "/Calendar" ? true : false,
+              readOnly: request ? true : false,
             }}
           ></TextField>
 
@@ -483,7 +491,7 @@ function Form({ request, closeModal, dateTime }) {
             value={requestData.po_number}
             onChange={handleChange}
             InputProps={{
-              readOnly: path === "/Calendar" ? true : false,
+              readOnly: request ? true : false,
             }}
           ></TextField>
 
@@ -496,7 +504,7 @@ function Form({ request, closeModal, dateTime }) {
             value={requestData.warehouse}
             onChange={handleChange}
             InputProps={{
-              readOnly: path === "/Calendar" ? true : false,
+              readOnly: request ? true : false,
             }}
           >
             {warehouseData.map((option) => (
@@ -516,7 +524,7 @@ function Form({ request, closeModal, dateTime }) {
             value={requestData.load_type}
             onChange={handleChange}
             InputProps={{
-              readOnly: path === "/Calendar" ? true : false,
+              readOnly: request ? true : false,
             }}
           >
             {load_types.map((option) => (
@@ -568,7 +576,7 @@ function Form({ request, closeModal, dateTime }) {
             onChange={handleChange}
           />
 
-          {path === "/Calendar" ? (
+          {request ? (
             <DateTimeField
               readOnly
               label="Select Appointment Date and Time"
