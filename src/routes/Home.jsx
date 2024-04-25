@@ -29,7 +29,7 @@ export default function Home() {
           bottom: 0,
           right: 0,
           left: 0,
-          backgroundColor: "rgba(0,0,0,.3)",
+          backgroundColor: "rgba(0,0,0,.1)",
         }}
       />
       <Grid container>
@@ -39,6 +39,7 @@ export default function Home() {
               position: "relative",
               p: { xs: 6, md: 12 },
               pr: { md: 0 },
+              filter: "drop-shadow(0px 0px 10px rgba(0,0,0,.6))",
             }}
           >
             <Typography
@@ -48,16 +49,21 @@ export default function Home() {
               color="inherit"
               gutterBottom
             >
-              Welcome to CT-Scheduling
+              Welcome to <br />
+              CT-Scheduling
             </Typography>
             <Typography variant="h5" color="inherit" paragraph>
               Experience seamless logistics management with CT-Scheduling. Our
               user-friendly platform connects Candor Logistics clients and
-              employees to streamline requests, manage warehouse operations, and
-              deliver top-notch service. <br /> <br />
+              employees to streamline appointments to deliver top-notch service.{" "}
+              <br /> <br />
               For more information about Candor Logistics and Candor
-              Transportation, visit our website:
+              Transportation, visit our website: <br />
+              <Link variant="subtitle1" href="www.candortransport.com/home">
+                {"Candor Transport Website"}
+              </Link>
             </Typography>
+
             <Button
               component={RouterLink}
               to="/RequestForm"
@@ -74,9 +80,6 @@ export default function Home() {
               Request Pickup/Delivery
             </Button>
             <br />
-            <Link variant="subtitle1" href="www.candortransport.com/home">
-              {"Candor Transport Website"}
-            </Link>
           </Box>
         </Grid>
       </Grid>
