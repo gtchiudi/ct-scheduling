@@ -34,7 +34,9 @@ const pagesAuth = [
   { text: "Calendar", href: "/Calendar" },
 ];
 
-const pagesNonAuth = [{ text: "Make A request", href: "/RequestForm" }];
+const pagesNonAuth = [
+  { text: "REQUEST PICKUP/DELIVERY", href: "/RequestForm" },
+];
 
 const settings = [{ text: "Login", href: "/Login" }];
 

@@ -109,7 +109,7 @@ const headCells = [
     id: "delivery",
     numeric: false,
     disablePadding: false,
-    label: "Delivery",
+    label: "Delivery/Pickup",
   },
 ];
 function EnhancedTableHead(props) {
@@ -389,7 +389,7 @@ export default function PendingRequests() {
                             {dayjs(row.date_time).format("MM/DD/YYYY hh:mm A")}
                           </TableCell>
                           <TableCell align="left">
-                            {row.delivery ? "Yes" : "No"}
+                            {row.delivery ? "Delivery" : "Pickup"}
                           </TableCell>
                         </TableRow>
                       );

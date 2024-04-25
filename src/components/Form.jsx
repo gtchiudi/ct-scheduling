@@ -233,7 +233,7 @@ function Form({ request, closeModal, dateTime }) {
     const { name, value } = e.target;
     if (name === "delivery") {
       setRequestData({ ...requestData, [name]: value === "delivery" });
-    } else setRequestData({ ...requestData, [name]: newValue });
+    } else setRequestData({ ...requestData, [name]: value });
 
     if (requiredFields.includes(name)) {
       setRequiredFieldsCompleted((prevCompleted) => ({
@@ -615,7 +615,7 @@ function Form({ request, closeModal, dateTime }) {
                 value={requestData.trailer_number}
                 onChange={handleChange}
                 InputProps={{
-                  readOnly: requestData.trailer_number != null ? true : false,
+                  readOnly: requestData.approved ? true : false,
                 }}
               />
             )}
