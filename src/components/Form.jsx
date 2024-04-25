@@ -13,6 +13,9 @@ import {
   Container,
   Alert,
   Dialog,
+  Radio,
+  RadioGroup,
+  FormLabel,
 } from "@mui/material";
 import axios from "axios";
 import { useAtom } from "jotai";
@@ -227,10 +230,9 @@ function Form({ request, closeModal, dateTime }) {
   };
 
   const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    const newValue = type === "checkbox" ? checked : value;
-    if (name === "pickup") {
-      setRequestData({ ...requestData, delivery: !newValue });
+    const { name, value } = e.target;
+    if (name === "delivery") {
+      setRequestData({ ...requestData, [name]: value === "delivery" });
     } else setRequestData({ ...requestData, [name]: newValue });
 
     if (requiredFields.includes(name)) {
@@ -552,20 +554,25 @@ function Form({ request, closeModal, dateTime }) {
             </Box>
           ) : null}
 
-          <FormControlLabel
-            control={<Checkbox />}
-            label="Delivery"
-            name="delivery"
-            checked={requestData.delivery}
-            onChange={handleChange}
-          />
-          <FormControlLabel
-            control={<Checkbox />}
-            label="Pickup"
-            name="pickup"
-            checked={!requestData.delivery}
-            onChange={handleChange}
-          />
+          <FormControl>
+            <RadioGroup
+              aria-labelledby="delivery-radio"
+              name="delivery"
+              value={requestData.delivery ? "delivery" : "pickup"}
+              onChange={handleChange}
+            >
+              <FormControlLabel
+                value="delivery"
+                control={<Radio />}
+                label="Delivery"
+              />
+              <FormControlLabel
+                value="pickup"
+                control={<Radio />}
+                label="Pickup"
+              />
+            </RadioGroup>
+          </FormControl>
 
           <TextField
             name="notes"
