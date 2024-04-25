@@ -12,7 +12,7 @@ import {
 } from "./atoms.jsx";
 import axios from "axios";
 import Footer from "./Footer.jsx";
-import { Box } from "@mui/material";
+import { Box, Stack } from "@mui/material";
 
 function Layout({ children }) {
   const [, isAuth] = useAtom(isAuthAtom);
@@ -24,9 +24,12 @@ function Layout({ children }) {
     updateWarehouseData();
   }, []);
   return (
-    <Box>
-      <HeaderBar />
-      <Box position="relative">{children}</Box>
+    <Box sx={{ height: "100%", margin: "0" }}>
+      <Box sx={{ minHeight: "100%", marginBottom: "-50px" }}>
+        <HeaderBar />
+        <Box sx={{ flex: "1" }}>{children}</Box>
+        <Box sx={{ height: "50px" }}></Box>
+      </Box>
       <Footer />
     </Box>
   );

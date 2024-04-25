@@ -9,51 +9,44 @@ function Footer() {
   if (!render) return;
   return (
     <Box
-      minHeight="100vh"
+      component="footer"
       width={"100%"}
-      paddingTop={1}
       sx={{
         display: "flex",
-        flexDirection: "column",
-        minHeight: "auto",
+        position: "fixed", // Position fixed to stick to the viewport
+        bottom: 0, // Stick to the bottom of the viewport
+        backgroundColor: (theme) =>
+          theme.palette.mode === "light"
+            ? theme.palette.grey[200]
+            : theme.palette.grey[800],
+        width: "100%",
+        py: 1,
+        px: 2,
+        mt: "auto",
+        zIndex: 1000,
       }}
     >
-      <Box
-        component="footer"
-        sx={{
-          py: 1,
-          px: 2,
-          mt: "auto",
-          backgroundColor: (theme) =>
-            theme.palette.mode === "light"
-              ? theme.palette.grey[200]
-              : theme.palette.grey[800],
-        }}
-      >
-        <Container maxWidth="sm">
-          <Typography
-            variant="body1"
-            textAlign="center"
-            sx={{ fontSize: "14px" }}
-          >
-            Candor Transport <br />
-            22801 Aurora Rd Suite 1 <br />
-            Bedford Hts, Ohio 44146 <br />
-            P:{" "}
-            <a href="tel:+18669419100" style={{ color: "blue" }}>
-              866.941.9100
-            </a>{" "}
-            &nbsp; P:{" "}
-            <a href="tel:+12163787100" style={{ color: "blue" }}>
-              216.378.7100
-            </a>{" "}
-            &nbsp; F:{" "}
-            <a href="tel:+12163789232" style={{ color: "blue" }}>
-              216.378.9232
-            </a>
-          </Typography>
-        </Container>
-      </Box>
+      <Container maxWidth="sm">
+        <Typography
+          variant="body1"
+          textAlign="center"
+          sx={{ fontSize: "14px" }}
+        >
+          Candor Logistics <br />
+          P:{" "}
+          <a href="tel:+18669419100" style={{ color: "blue" }}>
+            866.941.9100
+          </a>{" "}
+          &nbsp; P:{" "}
+          <a href="tel:+12163787100" style={{ color: "blue" }}>
+            216.378.7100
+          </a>{" "}
+          &nbsp; F:{" "}
+          <a href="tel:+12163789232" style={{ color: "blue" }}>
+            216.378.9232
+          </a>
+        </Typography>
+      </Container>
     </Box>
   );
 }

@@ -433,198 +433,198 @@ function Form({ request, closeModal, dateTime }) {
   }
 
   return (
-    <div>
+    <Box>
       <AlertDialog
         message={AlertMessage}
         open={alertOpen}
         onClose={closeAlert}
       />
-      <FormControl>
-        <Stack
-          spacing={2}
-          alignContent={"center"}
-          textAlign={"center"}
-          display={"flex"}
-          margine="normal"
-          sx={{
-            "& .MuiTextField-root": { m: 1, width: "60ch" },
-            "& > :not(style)": { m: 1, width: "60ch" },
-            maxHeight: "90vh",
-            maxWidth: "60vw",
-          }}
-        >
-          <TextField
-            required
-            label="Company Name"
-            name="company_name"
-            value={requestData.company_name}
-            onChange={handleChange}
-            InputProps={{
-              readOnly: request ? true : false,
-            }}
-          ></TextField>
-
-          <TextField
-            required
-            label="Phone Number"
-            name="phone_number"
-            value={requestData.phone_number}
-            onChange={handleChange}
-            InputProps={{
-              readOnly: request ? true : false,
-            }}
-          ></TextField>
-
-          <TextField
-            required
-            label="Email"
-            name="email"
-            value={requestData.email}
-            onChange={handleChange}
-            InputProps={{
-              readOnly: request ? true : false,
-            }}
-          ></TextField>
-
-          <TextField
-            required
-            label="Reference Number"
-            name="po_number"
-            value={requestData.po_number}
-            onChange={handleChange}
-            InputProps={{
-              readOnly: request ? true : false,
-            }}
-          ></TextField>
-
-          <TextField
-            required
-            select
-            label="Warehouse"
-            name="warehouse"
-            variant="filled"
-            value={requestData.warehouse}
-            onChange={handleChange}
-            InputProps={{
-              readOnly: request ? true : false,
+      <Box marginBottom={"30px"}>
+        <FormControl>
+          <Stack
+            spacing={2}
+            alignContent={"center"}
+            textAlign={"center"}
+            margine="normal"
+            sx={{
+              "& .MuiTextField-root": { m: 1, width: "60ch" },
+              "& > :not(style)": { m: 1, width: "60ch" },
+              maxWidth: "60vw",
             }}
           >
-            {warehouseData.map((option) => (
-              <MenuItem key={option.id} value={option.id}>
-                {option.name}
-              </MenuItem>
-            ))}
-          </TextField>
-
-          <TextField
-            required
-            select
-            id="load_type"
-            label="Load Type"
-            name="load_type"
-            variant="filled"
-            value={requestData.load_type}
-            onChange={handleChange}
-            InputProps={{
-              readOnly: request ? true : false,
-            }}
-          >
-            {load_types.map((option) => (
-              <MenuItem key={option.value} value={option.value}>
-                {option.value}
-              </MenuItem>
-            ))}
-          </TextField>
-
-          {requestData.load_type === "Container" ? (
-            <Box>
-              <FormControlLabel
-                control={<Checkbox />}
-                label="Select for Container Drop"
-                name="container_drop"
-                checked={requestData.container_drop}
-                onChange={handleChange}
-              />
-              <TextField
-                label="Container Number"
-                name="container_number"
-                value={requestData.container_number}
-                onChange={handleChange}
-              ></TextField>
-            </Box>
-          ) : null}
-
-          <FormControl>
-            <RadioGroup
-              aria-labelledby="delivery-radio"
-              name="delivery"
-              value={requestData.delivery ? "delivery" : "pickup"}
-              onChange={handleChange}
-            >
-              <FormControlLabel
-                value="delivery"
-                control={<Radio />}
-                label="Delivery"
-              />
-              <FormControlLabel
-                value="pickup"
-                control={<Radio />}
-                label="Pickup"
-              />
-            </RadioGroup>
-          </FormControl>
-
-          <TextField
-            name="notes"
-            label="Notes"
-            multiline
-            rows={4}
-            value={requestData.notes}
-            onChange={handleChange}
-          />
-
-          {request ? (
-            <DateTimeField
-              readOnly
-              label="Select Appointment Date and Time"
-              name="date_time"
-              value={requestData.date_time}
-            />
-          ) : (
-            <DateTimePicker
-              ampm={false}
-              thresholdToRenderTimeInASingleColumn={30}
-              skipDisabled={true}
-              label="Select Appointment Date and Time"
-              value={dayjs(requestData.date_time)}
-              shouldDisableTime={getTimes}
-              onChange={(date) => {
-                if (requestData["warehouse"] === "") {
-                  setAlertMessage("Please select a warehouse");
-                  setAlertOpen(true);
-                } else findTimes(date);
-              }}
-              onAccept={(newValue) => handleDateChange(newValue)}
-              timeSteps={{ minutes: 15 }}
-            />
-          )}
-
-          {path != "/RequestForm" && (
             <TextField
-              label="Trailer Number"
-              name="trailer_number"
-              value={requestData.trailer_number}
+              required
+              label="Company Name"
+              name="company_name"
+              value={requestData.company_name}
               onChange={handleChange}
               InputProps={{
-                readOnly: requestData.trailer_number != null ? true : false,
+                readOnly: request ? true : false,
               }}
-            />
-          )}
+            ></TextField>
 
-          {formBottom}
-        </Stack>
-      </FormControl>
-    </div>
+            <TextField
+              required
+              label="Phone Number"
+              name="phone_number"
+              value={requestData.phone_number}
+              onChange={handleChange}
+              InputProps={{
+                readOnly: request ? true : false,
+              }}
+            ></TextField>
+
+            <TextField
+              required
+              label="Email"
+              name="email"
+              value={requestData.email}
+              onChange={handleChange}
+              InputProps={{
+                readOnly: request ? true : false,
+              }}
+            ></TextField>
+
+            <TextField
+              required
+              label="Reference Number"
+              name="po_number"
+              value={requestData.po_number}
+              onChange={handleChange}
+              InputProps={{
+                readOnly: request ? true : false,
+              }}
+            ></TextField>
+
+            <TextField
+              required
+              select
+              label="Warehouse"
+              name="warehouse"
+              variant="filled"
+              value={requestData.warehouse}
+              onChange={handleChange}
+              InputProps={{
+                readOnly: request ? true : false,
+              }}
+            >
+              {warehouseData.map((option) => (
+                <MenuItem key={option.id} value={option.id}>
+                  {option.name}
+                </MenuItem>
+              ))}
+            </TextField>
+
+            <TextField
+              required
+              select
+              id="load_type"
+              label="Load Type"
+              name="load_type"
+              variant="filled"
+              value={requestData.load_type}
+              onChange={handleChange}
+              InputProps={{
+                readOnly: request ? true : false,
+              }}
+            >
+              {load_types.map((option) => (
+                <MenuItem key={option.value} value={option.value}>
+                  {option.value}
+                </MenuItem>
+              ))}
+            </TextField>
+
+            {requestData.load_type === "Container" ? (
+              <Box>
+                <FormControlLabel
+                  control={<Checkbox />}
+                  label="Select for Container Drop"
+                  name="container_drop"
+                  checked={requestData.container_drop}
+                  onChange={handleChange}
+                />
+                <TextField
+                  label="Container Number"
+                  name="container_number"
+                  value={requestData.container_number}
+                  onChange={handleChange}
+                ></TextField>
+              </Box>
+            ) : null}
+
+            <FormControl>
+              <RadioGroup
+                aria-labelledby="delivery-radio"
+                name="delivery"
+                value={requestData.delivery ? "delivery" : "pickup"}
+                onChange={handleChange}
+              >
+                <FormControlLabel
+                  value="delivery"
+                  control={<Radio />}
+                  label="Delivery"
+                />
+                <FormControlLabel
+                  value="pickup"
+                  control={<Radio />}
+                  label="Pickup"
+                />
+              </RadioGroup>
+            </FormControl>
+
+            <TextField
+              name="notes"
+              label="Notes"
+              multiline
+              rows={4}
+              value={requestData.notes}
+              onChange={handleChange}
+            />
+
+            {request ? (
+              <DateTimeField
+                readOnly
+                label="Select Appointment Date and Time"
+                name="date_time"
+                value={requestData.date_time}
+              />
+            ) : (
+              <DateTimePicker
+                ampm={false}
+                thresholdToRenderTimeInASingleColumn={30}
+                skipDisabled={true}
+                label="Select Appointment Date and Time"
+                value={dayjs(requestData.date_time)}
+                shouldDisableTime={getTimes}
+                onChange={(date) => {
+                  if (requestData["warehouse"] === "") {
+                    setAlertMessage("Please select a warehouse");
+                    setAlertOpen(true);
+                  } else findTimes(date);
+                }}
+                onAccept={(newValue) => handleDateChange(newValue)}
+                timeSteps={{ minutes: 15 }}
+              />
+            )}
+
+            {path != "/RequestForm" && (
+              <TextField
+                label="Trailer Number"
+                name="trailer_number"
+                value={requestData.trailer_number}
+                onChange={handleChange}
+                InputProps={{
+                  readOnly: requestData.trailer_number != null ? true : false,
+                }}
+              />
+            )}
+
+            {formBottom}
+          </Stack>
+        </FormControl>
+      </Box>
+    </Box>
   );
 }
 
