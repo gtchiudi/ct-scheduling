@@ -459,7 +459,7 @@ function Form({ request, closeModal, dateTime }) {
               value={requestData.company_name}
               onChange={handleChange}
               InputProps={{
-                readOnly: request ? true : false,
+                readOnly: request && path != "/PendingRequests" ? true : false,
               }}
             ></TextField>
 
@@ -470,7 +470,7 @@ function Form({ request, closeModal, dateTime }) {
               value={requestData.phone_number}
               onChange={handleChange}
               InputProps={{
-                readOnly: request ? true : false,
+                readOnly: request && path != "/PendingRequests" ? true : false,
               }}
             ></TextField>
 
@@ -481,7 +481,7 @@ function Form({ request, closeModal, dateTime }) {
               value={requestData.email}
               onChange={handleChange}
               InputProps={{
-                readOnly: request ? true : false,
+                readOnly: request && path != "/PendingRequests" ? true : false,
               }}
             ></TextField>
 
@@ -492,7 +492,7 @@ function Form({ request, closeModal, dateTime }) {
               value={requestData.po_number}
               onChange={handleChange}
               InputProps={{
-                readOnly: request ? true : false,
+                readOnly: request && path != "/PendingRequests" ? true : false,
               }}
             ></TextField>
 
@@ -505,7 +505,7 @@ function Form({ request, closeModal, dateTime }) {
               value={requestData.warehouse}
               onChange={handleChange}
               InputProps={{
-                readOnly: request ? true : false,
+                readOnly: request && path != "/PendingRequests" ? true : false,
               }}
             >
               {warehouseData.map((option) => (
@@ -525,7 +525,7 @@ function Form({ request, closeModal, dateTime }) {
               value={requestData.load_type}
               onChange={handleChange}
               InputProps={{
-                readOnly: request ? true : false,
+                readOnly: request && path != "/PendingRequests" ? true : false,
               }}
             >
               {load_types.map((option) => (

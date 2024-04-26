@@ -275,7 +275,7 @@ export default function Calendar() {
             endHour: 18,
           }}
           week={{
-            weekDays: [0, 1, 2, 3, 4, 5, 6],
+            weekDays: [1, 2, 3, 4, 5, 6, 0],
             weekStartOn: 6,
             startHour: 6,
             endHour: 18,
