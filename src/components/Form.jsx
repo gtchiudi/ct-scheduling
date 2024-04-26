@@ -208,9 +208,6 @@ function Form({ request, closeModal, dateTime }) {
 
   const getTimes = (value, view) => {
     // return true will disable the time
-    if (requestData.warehouse === "") {
-      return true;
-    }
     const formattedTime = dayjs(value).format("HH:mm");
 
     const timesForSelectedWarehouse = times.filter(
@@ -552,26 +549,28 @@ function Form({ request, closeModal, dateTime }) {
                 ></TextField>
               </Box>
             ) : null}
-
-            <FormControl>
-              <RadioGroup
-                aria-labelledby="delivery-radio"
-                name="delivery"
-                value={requestData.delivery ? "delivery" : "pickup"}
-                onChange={handleChange}
-              >
-                <FormControlLabel
-                  value="delivery"
-                  control={<Radio />}
-                  label="Delivery"
-                />
-                <FormControlLabel
-                  value="pickup"
-                  control={<Radio />}
-                  label="Pickup"
-                />
-              </RadioGroup>
-            </FormControl>
+            <TextField
+              required
+              select
+              id="delivery"
+              label="Select Pickup or Delivery"
+              name="delivery"
+              variant="filled"
+              value={
+                request ? (requestData.delivery ? "delivery" : "pickup") : ""
+              }
+              onChange={handleChange}
+              InputProps={{
+                readOnly: request && path != "/PendingRequests" ? true : false,
+              }}
+            >
+              <MenuItem key={"delivery"} value={"delivery"}>
+                Delivery
+              </MenuItem>
+              <MenuItem key={"pickup"} value={"pickup"}>
+                Pickup
+              </MenuItem>
+            </TextField>
 
             <TextField
               name="notes"
@@ -585,7 +584,7 @@ function Form({ request, closeModal, dateTime }) {
             {request ? (
               <DateTimeField
                 readOnly
-                label="Select Appointment Date and Time"
+                label="Appointment Date and Time"
                 name="date_time"
                 value={requestData.date_time}
               />
@@ -595,7 +594,8 @@ function Form({ request, closeModal, dateTime }) {
                 thresholdToRenderTimeInASingleColumn={30}
                 skipDisabled={true}
                 label="Select Appointment Date and Time"
-                value={dayjs(requestData.date_time)}
+                value={dateTime}
+                referenceDate={dayjs(requestData.date_time)}
                 shouldDisableTime={getTimes}
                 onChange={(date) => {
                   if (requestData["warehouse"] === "") {

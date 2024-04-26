@@ -13,6 +13,7 @@ import {
   DialogTitle,
   FormControlLabel,
   Typography,
+  Paper,
 } from "@mui/material";
 import { useAtom } from "jotai";
 import {
@@ -184,6 +185,14 @@ export default function Calendar() {
     });
   }, [allEvents, parsedWarehouseData]);
 
+  const isLate = (request) => {
+    return (
+      (request.check_in_time === null &&
+        dayjs().isAfter(dayjs(request.date_time))) ||
+      (request.check_in_time !== null &&
+        dayjs(request.check_in_time).isAfter(dayjs(request.date_time)))
+    );
+  };
   result = useQuery({
     queryKey: key,
     queryFn: async () =>
@@ -225,11 +234,12 @@ export default function Calendar() {
         event_id: request.id,
         title: `Ref #: ${request.po_number}`, // set title to po number
         start: new Date(request.date_time), // start and end are same
-        end: new Date(request.date_time),
+        end: new Date(dayjs(request.date_time).add(9, "minutes")),
         request: request, // store request in event
         editable: false,
         deletable: false,
         draggable: false,
+        color: isLate(request) ? "#FF0000" : "#00FF00",
       }));
       // map each result row to an event
       setAllEvents(newEvents); // set events
@@ -269,13 +279,13 @@ export default function Calendar() {
           hourFormat="24"
           events={events}
           month={{
-            weekDays: [0, 1, 2, 3, 4, 5, 6],
+            weekDays: [1, 2, 3, 4, 5, 6, 0],
             weekStartOn: 6,
             startHour: 6,
             endHour: 18,
           }}
           week={{
-            weekDays: [1, 2, 3, 4, 5, 6, 0],
+            weekDays: [2, 3, 4, 5, 6],
             weekStartOn: 6,
             startHour: 6,
             endHour: 18,
@@ -294,36 +304,6 @@ export default function Calendar() {
             return <CustomViewer event={event} onClose={closeViewer} />;
           }}
           customEditor={(event) => <CustomEditor event={event} />}
-          eventRenderer={({ event, ...props }) => {
-            const isLate =
-              (event.request.check_in_time === null &&
-                dayjs().isAfter(dayjs(event.start))) ||
-              (event.request.check_in_time !== null &&
-                dayjs(event.request.check_in_time).isAfter(dayjs(event.start)));
-            const background = isLate ? "#FF0000" : "#00FF00";
-            return (
-              <Box
-                display="flex"
-                flexDirection="column"
-                justifyContent="space-between"
-                bgcolor={background}
-                height="100%"
-                {...props}
-                sx={{
-                  fontSize: 12,
-                }}
-              >
-                <Typography sx={{ fontSize: 12 }}>{event.title}</Typography>
-                <Typography sx={{ fontSize: 12 }}>
-                  {`Start Time: ${event.start.getHours()}:${
-                    event.start.getMinutes() == 0
-                      ? "00"
-                      : event.start.getMinutes()
-                  }`}
-                </Typography>
-              </Box>
-            );
-          }}
         />
       </Box>
     </Box>
