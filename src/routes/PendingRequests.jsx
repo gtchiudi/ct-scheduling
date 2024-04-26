@@ -82,10 +82,10 @@ const headCells = [
     label: "Email",
   },
   {
-    id: "po_number",
+    id: "ref_number",
     numeric: true,
     disablePadding: false,
-    label: "PO Number",
+    label: "Reference Number",
   },
   {
     id: "warehouse",
@@ -380,7 +380,7 @@ export default function PendingRequests() {
                             {row.company_name}
                           </TableCell>
                           <TableCell align="left">{row.email}</TableCell>
-                          <TableCell align="left">{row.po_number}</TableCell>
+                          <TableCell align="left">{row.ref_number}</TableCell>
                           <TableCell align="left">
                             {getWarehouseNameById(row.warehouse)}
                           </TableCell>

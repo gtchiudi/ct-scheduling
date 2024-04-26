@@ -90,13 +90,13 @@ function Form({ request, closeModal, dateTime }) {
     phone_number: "",
     email: "",
     warehouse: "",
-    po_number: "",
+    ref_number: "",
     load_type: "",
     container_drop: false,
     container_number: "",
     notes: "",
     date_time: nextWorkDay(),
-    delivery: false,
+    delivery: "",
     trailer_number: null,
     driver_phone_number: null,
     dock_number: null,
@@ -111,7 +111,7 @@ function Form({ request, closeModal, dateTime }) {
     "phone_number",
     "email",
     "warehouse",
-    "po_number",
+    "ref_number",
     "load_type",
   ];
   const [requiredFieldsCompleted, setRequiredFieldsCompleted] = useState(
@@ -227,9 +227,11 @@ function Form({ request, closeModal, dateTime }) {
   };
 
   const handleChange = (e) => {
-    const { name, value } = e.target;
+    const { name, value, checked } = e.target;
     if (name === "delivery") {
       setRequestData({ ...requestData, [name]: value === "delivery" });
+    } else if (name === "container_drop") {
+      setRequestData({ ...requestData, [name]: checked });
     } else setRequestData({ ...requestData, [name]: value });
 
     if (requiredFields.includes(name)) {
@@ -485,8 +487,8 @@ function Form({ request, closeModal, dateTime }) {
             <TextField
               required
               label="Reference Number"
-              name="po_number"
-              value={requestData.po_number}
+              name="ref_number"
+              value={requestData.ref_number}
               onChange={handleChange}
               InputProps={{
                 readOnly: request && path != "/PendingRequests" ? true : false,
@@ -557,7 +559,11 @@ function Form({ request, closeModal, dateTime }) {
               name="delivery"
               variant="filled"
               value={
-                request ? (requestData.delivery ? "delivery" : "pickup") : ""
+                requestData.delivery === ""
+                  ? ""
+                  : requestData.delivery
+                  ? "delivery"
+                  : "pickup"
               }
               onChange={handleChange}
               InputProps={{
@@ -580,8 +586,11 @@ function Form({ request, closeModal, dateTime }) {
               value={requestData.notes}
               onChange={handleChange}
             />
-
-            {request ? (
+            {requestData.warehouse === "" ? (
+              <Typography maxWidth={480} color="error">
+                Please select a warehouse
+              </Typography>
+            ) : request && path != "/PendingRequests" ? (
               <DateTimeField
                 readOnly
                 label="Appointment Date and Time"
@@ -590,6 +599,7 @@ function Form({ request, closeModal, dateTime }) {
               />
             ) : (
               <DateTimePicker
+                disabled={requestData.warehouse === ""}
                 ampm={false}
                 thresholdToRenderTimeInASingleColumn={30}
                 skipDisabled={true}
@@ -607,7 +617,6 @@ function Form({ request, closeModal, dateTime }) {
                 timeSteps={{ minutes: 15 }}
               />
             )}
-
             {path != "/RequestForm" && (
               <TextField
                 label="Trailer Number"

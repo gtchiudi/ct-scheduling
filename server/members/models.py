@@ -48,7 +48,8 @@ class Request(BaseModel):
     warehouse = models.ForeignKey(
         Warehouse, on_delete=models.CASCADE)  # changeable via emp
     # warehouse = models.CharField(foreign_key=True, Warehouse, on_delete=models.Cascade)
-    po_number = models.IntegerField(default=0)  # changable via emp
+    ref_number = models.CharField(
+        default=0, max_length=20)  # changable via emp
     load_type = models.CharField(
         max_length=32, choices=LOAD_CHOICES, default='Full')  # changable via emp
     container_drop = models.BooleanField(

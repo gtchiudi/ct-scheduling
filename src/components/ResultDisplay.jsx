@@ -102,7 +102,7 @@ function ResultDisplay({ startDate, endDate }) {
                     <TableCell>{request.company_name}</TableCell>
                     <TableCell>{request.phone_number}</TableCell>
                     <TableCell>{request.email}</TableCell>
-                    <TableCell>{request.po_number}</TableCell>
+                    <TableCell>{request.ref_number}</TableCell>
                     <TableCell>{request.load_type}</TableCell>
                     <TableCell>{request.container_number}</TableCell>
                     <TableCell>{request.note_section}</TableCell>

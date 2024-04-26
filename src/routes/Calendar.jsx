@@ -38,7 +38,7 @@ export function CustomViewer({ event, onClose }) {
       {open && (
         <Dialog open={open} onClose={closeDialog}>
           <DialogTitle textAlign={"center"}>
-            Ref #: {event.request.po_number}
+            Ref #: {event.request.ref_number}
           </DialogTitle>
           <DialogContent>
             <Form request={event.request} closeModal={closeDialog} />
@@ -232,7 +232,7 @@ export default function Calendar() {
       const newEvents = data.data.map((request) => ({
         // map requests to events on success
         event_id: request.id,
-        title: `Ref #: ${request.po_number}`, // set title to po number
+        title: `Ref #: ${request.ref_number}`, // set title to po number
         start: new Date(request.date_time), // start and end are same
         end: new Date(dayjs(request.date_time).add(9, "minutes")),
         request: request, // store request in event
