@@ -232,6 +232,8 @@ function Form({ request, closeModal, dateTime }) {
       setRequestData({ ...requestData, [name]: value === "delivery" });
     } else if (name === "container_drop") {
       setRequestData({ ...requestData, [name]: checked });
+    } else if (name === "container_number") {
+      setRequestData({ ...requestData, [name]: value, ref_number: value });
     } else setRequestData({ ...requestData, [name]: value });
 
     if (requiredFields.includes(name)) {
@@ -491,7 +493,11 @@ function Form({ request, closeModal, dateTime }) {
               value={requestData.ref_number}
               onChange={handleChange}
               InputProps={{
-                readOnly: request && path != "/PendingRequests" ? true : false,
+                readOnly:
+                  (request && path != "/PendingRequests") ||
+                  requestData.load_type == "Container"
+                    ? true
+                    : false,
               }}
             ></TextField>
 
@@ -509,7 +515,7 @@ function Form({ request, closeModal, dateTime }) {
             >
               {warehouseData.map((option) => (
                 <MenuItem key={option.id} value={option.id}>
-                  {option.name}
+                  {path === "/RequestForm" ? option.address : option.name}
                 </MenuItem>
               ))}
             </TextField>
@@ -544,7 +550,7 @@ function Form({ request, closeModal, dateTime }) {
                   onChange={handleChange}
                 />
                 <TextField
-                  label="Container Number"
+                  label="Intermodal Container Number"
                   name="container_number"
                   value={requestData.container_number}
                   onChange={handleChange}
@@ -604,8 +610,7 @@ function Form({ request, closeModal, dateTime }) {
                 thresholdToRenderTimeInASingleColumn={30}
                 skipDisabled={true}
                 label="Select Appointment Date and Time"
-                value={dateTime}
-                referenceDate={dayjs(requestData.date_time)}
+                value={requestData.date_time}
                 shouldDisableTime={getTimes}
                 onChange={(date) => {
                   if (requestData["warehouse"] === "") {

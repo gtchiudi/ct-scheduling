@@ -234,7 +234,7 @@ export default function Calendar() {
         event_id: request.id,
         title: `Ref #: ${request.ref_number}`, // set title to po number
         start: new Date(request.date_time), // start and end are same
-        end: new Date(dayjs(request.date_time).add(9, "minutes")),
+        end: new Date(dayjs(request.date_time).add(15, "minutes")),
         request: request, // store request in event
         editable: false,
         deletable: false,
