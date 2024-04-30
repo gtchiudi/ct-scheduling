@@ -13,6 +13,9 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework import status, permissions
 
 from rest_framework.parsers import JSONParser
+from django.forms.models import model_to_dict
+from datetime import datetime
+import pytz
 
 
 class IsAuthenticatedOrPostOnly(permissions.BasePermission):
@@ -46,17 +49,44 @@ class RequestView(viewsets.ModelViewSet):
 
         return queryset
 
-    def put(self, request, pk, format=None):
+    def update(self, request, pk, format=None):
+        print('put request')
         try:
-            requestUpdate = self.get_object(pk)
+            requestUpdate = self.get_object()
         except Request.DoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND)
 
-        data = JSONParser().parse(request)
-
-        serializer = RequestSerializer(requestUpdate, data=data)
+        original_data = model_to_dict(requestUpdate)
+        print('original data: ', original_data)
+        serializer = RequestSerializer(requestUpdate, data=request.data)
         if serializer.is_valid():
             serializer.save()
+            updated_data = serializer.data
+            print('updated data: ', updated_data)
+            altered_fields = [
+                field for field in original_data if original_data[field] != updated_data[field]]
+            print(altered_fields)
+            if 'approved' in altered_fields and updated_data['approved']:
+                date_time = datetime.fromisoformat(
+                    updated_data["date_time"].replace('Z', '+00:00'))
+                date_time = date_time.astimezone(
+                    pytz.timezone('America/New_York'))
+                send_email(
+                    'candor.scheduling@gmail.com',
+                    'Appointment Request Approved',
+                    F'''
+<pre>Please do not reply to this email.
+
+Your appointment request has been approved. Please review details below.
+
+Appointement Details:
+    Reference Number: {updated_data["ref_number"]}
+    Date Time: {date_time.strftime('%Y-%m-%d %H:%M:%S')}
+
+Please email sales@candortransport.com with any questions or concerns.
+
+Thank you for choosing Candor Logistics.
+</pre>''')
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -64,6 +94,10 @@ class RequestView(viewsets.ModelViewSet):
     def create(self, request, *args, **kwargs):
         response = super().create(request, *args, **kwargs)
         if request.data['approved']:  # created from the calendar page
+            date_time = datetime.fromisoformat(
+                request.data["date_time"].replace('Z', '+00:00'))
+            date_time = date_time.astimezone(
+                pytz.timezone('America/New_York'))
             send_email(
                 'candor.scheduling@gmail.com',
                 'New Calendar Event Confirmation',
@@ -74,11 +108,15 @@ A new appointment has been created. Please review.
 
 Event Details:
     Reference Number: {request.data["ref_number"]}
-    Custome: {request.data["company_name"]}
-    Date Time: {request.data["date_time"].split('T')[0]} {request.data["date_time"].split('T')[1].split('.')[0]}
+    Customer: {request.data["company_name"]}
+    Date Time: {date_time.strftime('%Y-%m-%d %H:%M:%S')}
 </pre>''')
 
         else:  # created from the request page
+            date_time = datetime.fromisoformat(
+                request.data["date_time"].replace('Z', '+00:00'))
+            date_time = date_time.astimezone(
+                pytz.timezone('America/New_York'))
             send_email(  # to sales team
                 'candor.scheduling@gmail.com',
                 'New Pending Request',
@@ -90,7 +128,7 @@ A new request is now pending. Please review.
 Event Details:
     Reference Number: {request.data["ref_number"]}
     Custome: {request.data["company_name"]}
-    Date Time: {request.data["date_time"].split('T')[0]} {request.data["date_time"].split('T')[1].split('.')[0]}
+    Date Time: {date_time.strftime('%Y-%m-%d %H:%M:%S')}
 </pre>''')
 
             send_email(  # to customer
@@ -104,7 +142,7 @@ Your appointment request has been received. Please allow 24 hours for approval.
 
 Request Details:
     Reference Number: {request.data["ref_number"]}
-    DateTime: {request.data["date_time"].split('T')[0]} {request.data["date_time"].split('T')[1].split('.')[0]}
+    DateTime: {date_time.strftime('%Y-%m-%d %H:%M:%S')}
 
 Thank you for choosing Candor Logistics.</pre>'''
             )
