@@ -4,6 +4,7 @@ from .serializers import *
 from .models import *
 from django.contrib.auth.models import User, Group
 
+from .emails import send_email
 
 from datetime import datetime
 
@@ -58,6 +59,56 @@ class RequestView(viewsets.ModelViewSet):
             serializer.save()
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    # eventually send emails to sales@candortransport.com
+    def create(self, request, *args, **kwargs):
+        response = super().create(request, *args, **kwargs)
+        if request.data['approved']:  # created from the calendar page
+            send_email(
+                'gtchiudi20@gmail.com',
+                'New Calendar Event Confirmation',
+                F'''
+<pre>DO NOT REPLY.
+
+A new appointment has been created. Please review.
+
+Event Details:
+    Reference Number: {request.data["ref_number"]}
+    Custome: {request.data["company_name"]}
+    Date Time: {request.data["date_time"].split('T')[0]} {request.data["date_time"].split('T')[1].split('.')[0]}
+</pre>''')
+
+        else:  # created from the request page
+            send_email(  # to sales team
+                'solonwarehouse@candortransport.com',
+                'New Pending Request',
+                F'''
+<pre>DO NOT REPLY.
+
+A new request is now pending. Please review.
+
+Event Details:
+    Reference Number: {request.data["ref_number"]}
+    Custome: {request.data["company_name"]}
+    Date Time: {request.data["date_time"].split('T')[0]} {request.data["date_time"].split('T')[1].split('.')[0]}
+</pre>''')
+
+            send_email(  # to customer
+                'gtchiudi20@gmail.com',
+                'Appointment Request Confirmation',
+                F'''
+<pre>DO NOT REPLY.
+
+Your appointment request has been received. Please allow 24 hours for approval.
+
+Request Details:
+    Reference Number: {request.data["ref_number"]}
+    DateTime: {request.data["date_time"].split('T')[0]} {request.data["date_time"].split('T')[1].split('.')[0]}
+
+Thank you for choosing Candor Logistics.</pre>'''
+            )
+
+        return response
 
 
 class WarehouseView(viewsets.ModelViewSet):
