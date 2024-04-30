@@ -65,7 +65,7 @@ class RequestView(viewsets.ModelViewSet):
         response = super().create(request, *args, **kwargs)
         if request.data['approved']:  # created from the calendar page
             send_email(
-                'gtchiudi20@gmail.com',
+                'candor.scheduling@gmail.com',
                 'New Calendar Event Confirmation',
                 F'''
 <pre>Please do not reply to this email.
@@ -80,7 +80,7 @@ Event Details:
 
         else:  # created from the request page
             send_email(  # to sales team
-                'solonwarehouse@candortransport.com',
+                'candor.scheduling@gmail.com',
                 'New Pending Request',
                 F'''
 <pre>Please do not reply to this email.
@@ -94,7 +94,7 @@ Event Details:
 </pre>''')
 
             send_email(  # to customer
-                'gtchiudi20@gmail.com',
+                'candor.scheduling@gmail.com',
                 'Appointment Request Confirmation',
                 F'''
 <pre>Please do not reply to this email.

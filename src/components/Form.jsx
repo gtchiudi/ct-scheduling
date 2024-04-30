@@ -55,15 +55,25 @@ function Form({ request, closeModal, dateTime }) {
   const path = useLocation().pathname;
   const navigate = useNavigate();
 
+  const [pauseQuery, setPause] = useState(false);
+  const [times, setTimes] = useState([]);
+
+  const [getInitialTime, setGetInitialTime] = useState(false);
+  React.useMemo(() => {
+    updateWarehouseData();
+  }, []);
+
+  // alert dialog
   const [alertOpen, setAlertOpen] = useState(false);
   const closeAlert = () => {
     setAlertOpen(false);
   };
   const [AlertMessage, setAlertMessage] = useState("");
 
-  const nextWorkDay = () => {
+  // gets work day following provided date
+  const nextWorkDay = (date) => {
     // gets the next work day at 8:00 am
-    let now = dayjs();
+    let now = date ? dayjs(date) : dayjs();
     if (now.day() === 5) {
       // date is Friday
       now = now.add(3, "day");
@@ -75,14 +85,19 @@ function Form({ request, closeModal, dateTime }) {
     }
     //day now is next work day.
     //set to 8:00 am
-    now = now.set("hour", 8).set("minute", 0);
+    now = now.set("hour", 8).set("minute", 0).set("second", 0);
     return now;
   };
 
-  React.useEffect(() => {
-    updateWarehouseData();
-  }, [updateWarehouseData]);
+  const [selectedDate, setDate] = useState(nextWorkDay());
+  const { key } = React.useMemo(
+    () => ({
+      key: ["requests", selectedDate],
+    }),
+    [selectedDate, pauseQuery]
+  );
 
+  // default request data
   const [requestData, setRequestData] = useState({
     id: "",
     approved: false,
@@ -106,6 +121,7 @@ function Form({ request, closeModal, dateTime }) {
     active: true,
   });
 
+  // fields required for form completion
   const requiredFields = [
     "company_name",
     "phone_number",
@@ -114,6 +130,8 @@ function Form({ request, closeModal, dateTime }) {
     "ref_number",
     "load_type",
   ];
+
+  // Form Completion:
   const [requiredFieldsCompleted, setRequiredFieldsCompleted] = useState(
     requiredFields.reduce((acc, field) => {
       acc[field] = false;
@@ -127,6 +145,7 @@ function Form({ request, closeModal, dateTime }) {
   };
   const submitButtonDisabled = !isFormCompleted();
 
+  // Load type selections
   const load_types = [
     {
       value: "Full",
@@ -139,7 +158,7 @@ function Form({ request, closeModal, dateTime }) {
     },
   ];
 
-  React.useEffect(() => {
+  React.useMemo(() => {
     if (request) {
       // Convert date_time to dayjs object
       const convertedRequestData = {
@@ -158,22 +177,11 @@ function Form({ request, closeModal, dateTime }) {
     if (dateTime) {
       setRequestData({ ...requestData, date_time: dayjs(dateTime) });
     }
-  }, [request, dateTime]);
+  }, []);
 
-  const [pauseQuery, setPause] = useState(false);
-  const [times, setTimes] = useState([]);
-  const [selectedDate, setDate] = useState(new dayjs());
-  const { key } = React.useMemo(
-    () => ({
-      key: ["requests", selectedDate],
-    }),
-    [selectedDate, pauseQuery]
-  );
-
+  // update times based on selected date
   const findTimes = (date) => {
-    console.log("Selected Date: ", date);
     const _date = dayjs(date).format("YYYY-MM-DD");
-    console.log("Formatted Date: ", _date);
     setDate(_date);
     setPause(false);
   };
@@ -206,6 +214,7 @@ function Form({ request, closeModal, dateTime }) {
     },
   });
 
+  // find times to be disabled
   const getTimes = (value, view) => {
     // return true will disable the time
     const formattedTime = dayjs(value).format("HH:mm");
@@ -223,7 +232,9 @@ function Form({ request, closeModal, dateTime }) {
     if (path != "/RequestForm") isOutsideWorkingHours = false;
 
     if (isOutsideWorkingHours) return true;
-    else if (view === "minutes") return timeUnavailable;
+    else if (view === "minutes") {
+      return timeUnavailable;
+    }
   };
 
   const handleChange = (e) => {
@@ -241,6 +252,9 @@ function Form({ request, closeModal, dateTime }) {
         ...prevCompleted,
         [name]: !!value,
       }));
+    }
+    if (name === "warehouse" && path === "/RequestForm") {
+      setGetInitialTime(true);
     }
   };
 
@@ -311,6 +325,26 @@ function Form({ request, closeModal, dateTime }) {
       closeModal();
     }
   };
+
+  // gets the first available time following
+  const getFirstAvailableTime = (date) => {
+    if (!getInitialTime) return;
+    let beginNextDay = nextWorkDay();
+    findTimes(beginNextDay);
+    while (true) {
+      if (!getTimes(beginNextDay, "minutes")) break;
+      beginNextDay = beginNextDay.add(15, "minutes");
+      if (beginNextDay.hour() === 16) {
+        beginNextDay = nextWorkDay(beginNextDay);
+      }
+    }
+    handleDateChange(beginNextDay);
+  };
+
+  React.useMemo(() => {
+    if (getInitialTime) getFirstAvailableTime();
+    setGetInitialTime(false);
+  }, [getInitialTime]);
 
   // This controls the dyanmic display of buttons based on the state of the request
   let formButton;
@@ -613,10 +647,7 @@ function Form({ request, closeModal, dateTime }) {
                 value={requestData.date_time}
                 shouldDisableTime={getTimes}
                 onChange={(date) => {
-                  if (requestData["warehouse"] === "") {
-                    setAlertMessage("Please select a warehouse");
-                    setAlertOpen(true);
-                  } else findTimes(date);
+                  findTimes(date);
                 }}
                 onAccept={(newValue) => handleDateChange(newValue)}
                 timeSteps={{ minutes: 15 }}
