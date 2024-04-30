@@ -68,7 +68,7 @@ class RequestView(viewsets.ModelViewSet):
                 'gtchiudi20@gmail.com',
                 'New Calendar Event Confirmation',
                 F'''
-<pre>DO NOT REPLY.
+<pre>Please do not reply to this email.
 
 A new appointment has been created. Please review.
 
@@ -83,7 +83,7 @@ Event Details:
                 'solonwarehouse@candortransport.com',
                 'New Pending Request',
                 F'''
-<pre>DO NOT REPLY.
+<pre>Please do not reply to this email.
 
 A new request is now pending. Please review.
 
@@ -97,7 +97,8 @@ Event Details:
                 'gtchiudi20@gmail.com',
                 'Appointment Request Confirmation',
                 F'''
-<pre>DO NOT REPLY.
+<pre>Please do not reply to this email.
+Email sales@candortransport.com for any issues.
 
 Your appointment request has been received. Please allow 24 hours for approval.
 
