@@ -4,7 +4,7 @@ from .serializers import *
 from .models import *
 from django.contrib.auth.models import User, Group
 
-from .emails import send_email
+from .messages import send_email, send_text
 
 from datetime import datetime
 
@@ -16,6 +16,8 @@ from rest_framework.parsers import JSONParser
 from django.forms.models import model_to_dict
 from datetime import datetime
 import pytz
+
+TEST_NUMBER = '+14406655140'
 
 
 class IsAuthenticatedOrPostOnly(permissions.BasePermission):
@@ -50,29 +52,25 @@ class RequestView(viewsets.ModelViewSet):
         return queryset
 
     def update(self, request, pk, format=None):
-        print('put request')
         try:
             requestUpdate = self.get_object()
         except Request.DoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND)
 
         original_data = model_to_dict(requestUpdate)
-        print('original data: ', original_data)
         serializer = RequestSerializer(requestUpdate, data=request.data)
         if serializer.is_valid():
             serializer.save()
             updated_data = serializer.data
-            print('updated data: ', updated_data)
             altered_fields = [
                 field for field in original_data if original_data[field] != updated_data[field]]
-            print(altered_fields)
             if 'approved' in altered_fields and updated_data['approved']:
                 date_time = datetime.fromisoformat(
                     updated_data["date_time"].replace('Z', '+00:00'))
                 date_time = date_time.astimezone(
                     pytz.timezone('America/New_York'))
                 send_email(
-                    'candor.scheduling@gmail.com',
+                    updated_data['email'],
                     'Appointment Request Approved',
                     F'''
 <pre>Please do not reply to this email.
@@ -87,6 +85,25 @@ Please email sales@candortransport.com with any questions or concerns.
 
 Thank you for choosing Candor Logistics.
 </pre>''')
+
+            elif 'dock_number' in altered_fields:
+                send_text(updated_data['driver_phone_number'],
+                          F'''Thank you for choosing Candor Logistics.
+Please slide tandems back.
+Proceed to dock door {updated_data['dock_number']}.
+Candor Logistics does not send marketing messages.
+
+Reply 'STOP' to opt out of future notifications.
+                ''')
+
+            elif 'driver_phone_number' in altered_fields:
+                send_text(updated_data['driver_phone_number'],
+                          F'''Thank you for choosing Candor Logistics.
+You have subscribed to receive notifications about your appointment.
+Candor Logistics will not sent marketing messages.
+Please wait for further instructions.
+
+Reply 'STOP' to opt out of future notifications.''')
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -132,7 +149,7 @@ Event Details:
 </pre>''')
 
             send_email(  # to customer
-                'candor.scheduling@gmail.com',
+                request.data['email'],
                 'Appointment Request Confirmation',
                 F'''
 <pre>Please do not reply to this email.

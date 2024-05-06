@@ -114,6 +114,7 @@ function Form({ request, closeModal, dateTime }) {
     delivery: "",
     trailer_number: null,
     driver_phone_number: null,
+    sms_consent: false,
     dock_number: null,
     check_in_time: null,
     docked_time: null,
@@ -122,14 +123,23 @@ function Form({ request, closeModal, dateTime }) {
   });
 
   // fields required for form completion
-  const requiredFields = [
-    "company_name",
-    "phone_number",
-    "email",
-    "warehouse",
-    "ref_number",
-    "load_type",
-  ];
+  const requiredFields = React.useMemo(() => {
+    let fields = [
+      "company_name",
+      "phone_number",
+      "email",
+      "warehouse",
+      "ref_number",
+      "load_type",
+      "delivery",
+    ];
+    if (path === "/Calendar") {
+      fields.push("trailer_number");
+      if (requestData.approved) fields.push("driver_phone_number");
+      if (requestData.driver_phone_number !== null) fields.push("dock_number");
+    }
+    return fields;
+  }, [path]);
 
   // Form Completion:
   const [requiredFieldsCompleted, setRequiredFieldsCompleted] = useState(
@@ -238,20 +248,27 @@ function Form({ request, closeModal, dateTime }) {
   };
 
   const handleChange = (e) => {
-    const { name, value, checked } = e.target;
+    const { name, value, checked, type } = e.target;
+    console.log("HandleChange Function Call", { name, value, checked });
     if (name === "delivery") {
       setRequestData({ ...requestData, [name]: value === "delivery" });
-    } else if (name === "container_drop") {
+    } else if (type === "checkbox") {
       setRequestData({ ...requestData, [name]: checked });
     } else if (name === "container_number") {
       setRequestData({ ...requestData, [name]: value, ref_number: value });
     } else setRequestData({ ...requestData, [name]: value });
 
     if (requiredFields.includes(name)) {
-      setRequiredFieldsCompleted((prevCompleted) => ({
-        ...prevCompleted,
-        [name]: !!value,
-      }));
+      if (type === "checkbox")
+        setRequiredFieldsCompleted((prevCompleted) => ({
+          ...prevCompleted,
+          [name]: true,
+        }));
+      else
+        setRequiredFieldsCompleted((prevCompleted) => ({
+          ...prevCompleted,
+          [name]: !!value,
+        }));
     }
     if (name === "warehouse" && path === "/RequestForm") {
       setGetInitialTime(true);
@@ -350,16 +367,30 @@ function Form({ request, closeModal, dateTime }) {
   let formButton;
   let formBottom;
   let formEnd = (
-    <TextField
-      required
-      label="Driver Phone Number"
-      name="driver_phone_number"
-      value={requestData.driver_phone_number}
-      onChange={handleChange}
-      InputProps={{
-        readOnly: requestData.check_in_time != null ? true : false,
-      }}
-    />
+    <Box>
+      <TextField
+        required
+        label="Driver Phone Number"
+        name="driver_phone_number"
+        value={requestData.driver_phone_number}
+        onChange={handleChange}
+        InputProps={{
+          readOnly: requestData.check_in_time != null ? true : false,
+        }}
+      />
+      <Typography>
+        Read to Driver: Do you consent to receive recurring appointment updates
+        via SMS from Candor Logistics? Msg and data rates may apply.
+      </Typography>
+      <FormControlLabel
+        required
+        label="SMS Consent"
+        name="sms_consent"
+        control={<Checkbox />}
+        value={requestData.sms_consent}
+        onChange={handleChange}
+      />
+    </Box>
   );
   let checkedContent = // Content for checked in appointments
     (
@@ -412,7 +443,12 @@ function Form({ request, closeModal, dateTime }) {
   } else if (path == "/Calendar" && requestData.approved) {
     if (requestData.check_in_time == null) {
       formButton = (
-        <Button name="check_in_time" variant="contained" onClick={handleButton}>
+        <Button
+          name="check_in_time"
+          variant="contained"
+          onClick={handleButton}
+          disabled={submitButtonDisabled}
+        >
           Check-In
         </Button>
       );
@@ -424,7 +460,12 @@ function Form({ request, closeModal, dateTime }) {
       );
     } else if (requestData.dock_number == null) {
       formButton = (
-        <Button name="dock_number" variant="contained" onClick={handleButton}>
+        <Button
+          name="dock_number"
+          variant="contained"
+          onClick={handleButton}
+          disabled={submitButtonDisabled}
+        >
           Send To Dock
         </Button>
       );
@@ -474,7 +515,7 @@ function Form({ request, closeModal, dateTime }) {
         open={alertOpen}
         onClose={closeAlert}
       />
-      <Box marginBottom={"30px"}>
+      <Box marginBottom={"20px"}>
         <FormControl>
           <Stack
             spacing={2}
@@ -484,7 +525,7 @@ function Form({ request, closeModal, dateTime }) {
             sx={{
               "& .MuiTextField-root": { m: 1, width: "60ch" },
               "& > :not(style)": { m: 1, width: "60ch" },
-              maxWidth: "60vw",
+              maxWidth: "70vw",
             }}
           >
             <TextField

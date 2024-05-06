@@ -9,7 +9,7 @@ class RequestSerializer(serializers.ModelSerializer):
         fields = ('id', 'approved', 'company_name', 'phone_number',
                   'email', 'warehouse', 'ref_number', 'load_type', 'container_drop', 'container_number',
                   'note_section', 'date_time', 'delivery', 'trailer_number',
-                  'driver_phone_number', 'dock_number', 'check_in_time', 'docked_time',
+                  'driver_phone_number', 'sms_consent', 'dock_number', 'check_in_time', 'docked_time',
                   'completed_time', 'active')
 
 

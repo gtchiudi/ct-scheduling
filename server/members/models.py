@@ -66,6 +66,7 @@ class Request(BaseModel):
     # For aprroving Requests (Trailer is nor req.)
     driver_phone_number = models.CharField(
         max_length=12, null=True, blank=True)  # emp use only
+    sms_consent = models.BooleanField(default=False)  # emp use only
     # Once truck arrives
     dock_number = models.IntegerField(null=True, blank=True)  # emp use only
     check_in_time = models.DateTimeField(
