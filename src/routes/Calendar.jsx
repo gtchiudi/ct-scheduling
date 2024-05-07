@@ -188,9 +188,11 @@ export default function Calendar() {
   const isLate = (request) => {
     return (
       (request.check_in_time === null &&
-        dayjs().isAfter(dayjs(request.date_time))) ||
+        dayjs().isAfter(dayjs(request.date_time).add(10, "minutes"))) ||
       (request.check_in_time !== null &&
-        dayjs(request.check_in_time).isAfter(dayjs(request.date_time)))
+        dayjs(request.check_in_time).isAfter(
+          dayjs(request.date_time).add(10, "minutes")
+        ))
     );
   };
   result = useQuery({
