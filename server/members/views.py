@@ -93,13 +93,13 @@ Please slide tandems back.
 Proceed to dock door {updated_data['dock_number']}.
 Candor Logistics does not send marketing messages.
 
-Reply 'STOP' to opt out of future notifications.
-                ''')
+Reply 'STOP' to opt out of future notifications.''')
 
             elif 'driver_phone_number' in altered_fields:
                 send_text(updated_data['driver_phone_number'],
                           F'''Thank you for choosing Candor Logistics.
-You have subscribed to receive notifications about your appointment.
+You have subscribed to receive recurring appointment notifications via SMS.
+Message and data rates may apply.
 Candor Logistics will not sent marketing messages.
 Please wait for further instructions.
 
