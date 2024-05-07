@@ -52,6 +52,8 @@ class RequestView(viewsets.ModelViewSet):
         return queryset
 
     def update(self, request, pk, format=None):
+        if not request.user.is_authenticated:
+            return Response({'detail': 'Authentication credentials were not provided.'}, status=status.HTTP_401_UNAUTHORIZED)
         try:
             requestUpdate = self.get_object()
         except Request.DoesNotExist:
@@ -65,6 +67,11 @@ class RequestView(viewsets.ModelViewSet):
             altered_fields = [
                 field for field in original_data if original_data[field] != updated_data[field]]
             if 'approved' in altered_fields and updated_data['approved']:
+                # add to approval log
+                approval_log = ApprovalLog(
+                    approver=request.user, request=requestUpdate)
+                approval_log.save()
+
                 date_time = datetime.fromisoformat(
                     updated_data["date_time"].replace('Z', '+00:00'))
                 date_time = date_time.astimezone(

@@ -12,7 +12,7 @@ const RequestList = () => {
   const [startDate, setStartDate] = React.useState(dayjs());
   const [endDate, setEndDate] = React.useState(dayjs());
   const [submitted, setSubmitted] = React.useState(false);
-  const [, isAuth] = useAtom(isAuthAtom);
+  const [authenticated, isAuth] = useAtom(isAuthAtom);
 
   const handleDateChange = (start, end) => {
     setStartDate(start);
@@ -20,7 +20,7 @@ const RequestList = () => {
     setSubmitted(false);
   };
   React.useEffect(() => {
-    if (isAuth() === false) {
+    if (authenticated === false) {
       navigate("/login");
     }
   });

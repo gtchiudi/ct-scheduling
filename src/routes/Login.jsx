@@ -14,6 +14,7 @@ import {
   refreshTokenAtom,
   lastLoginDatetimeAtom,
   isAuthAtom,
+  authenticatedAtom,
 } from "../components/atoms.jsx";
 import { useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
@@ -32,6 +33,7 @@ export default function Login() {
   const [refreshToken, setRefreshToken] = useAtom(refreshTokenAtom);
   const [, setLastLoginDatetime] = useAtom(lastLoginDatetimeAtom);
   const [, isAuth] = useAtom(isAuthAtom);
+  const [authenticated] = useAtom(authenticatedAtom);
 
   const submitUserDataMutation = useMutation(submitUserData, {
     onSuccess: (data) => {
@@ -47,7 +49,7 @@ export default function Login() {
   });
 
   React.useEffect(() => {
-    if (isAuth()) {
+    if (authenticated) {
       navigate("/Calendar");
     }
   }, []);
@@ -105,10 +107,6 @@ export default function Login() {
           type="password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-        />
-        <FormControlLabel
-          control={<Checkbox value="remember" color="primary" />}
-          label="Remember me"
         />
         <Button
           type="submit"

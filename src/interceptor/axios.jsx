@@ -1,41 +1,20 @@
 import axios from "axios";
 import { useAtom } from "jotai";
-import { accessTokenAtom, refreshTokenAtom } from "../components/atoms.jsx";
+import { isAuthAtom, refreshTokenAtom } from "../components/atoms.jsx";
+import { setRef } from "@mui/material";
 
-let refresh = false;
+const [refresh, setRefresh] = useAtom(refreshAtom);
+const [, isAuth] = useAtom(isAuthAtom);
+
 axios.interceptors.response.use(
   (resp) => resp,
-  async (error) => {
-    const [accessToken, setAccessToken] = useAtom(accessTokenAtom);
-    const [refreshToken, setRefreshToken] = useAtom(refreshTokenAtom);
-
+  (error) => {
     if (error.response.status === 401 && !refresh) {
-      refresh = true;
+      setRefresh(true);
       console.log("refresh token");
-
-      const response = await axios.post(
-        "/token/refresh/",
-        {
-          refresh: refreshToken,
-        },
-        {
-          headers: {
-            "content-Type": "application/json",
-          },
-          withCredentials: true,
-        }
-      );
-      console.log("refresh_token response", response);
-      if (response.status === 200) {
-        setAccessToken(response.data.access);
-        setRefreshToken(response.data.refresh);
-        axios.defaults.headers.common[
-          "Authorization"
-        ] = `Bearer ${response.data.access}`;
-        return axios(error.config);
-      }
+      isAuth();
     }
-    refresh = false;
+    setRefresh(false);
     console.log("interceptor: ", error);
     return Promise.reject(error);
   }

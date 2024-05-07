@@ -17,6 +17,7 @@ import {
 } from "@mui/material";
 import { useAtom } from "jotai";
 import {
+  authenticatedAtom,
   isAuthAtom,
   refreshAtom,
   warehouseDataAtom,
@@ -83,6 +84,7 @@ export function CustomEditor({ event }) {
 export default function Calendar() {
   const navigate = useNavigate();
   const [, isAuth] = useAtom(isAuthAtom);
+  const [authenticated] = useAtom(authenticatedAtom);
   // set start date to be previous month and set end date to be 3 months from start date
   const [startDate, setStartDate] = React.useState(
     dayjs().startOf("month").subtract(1, "month")
@@ -95,10 +97,9 @@ export default function Calendar() {
   const [refresh, setRefresh] = useAtom(refreshAtom); // is refreshing
   const [allEvents, setAllEvents] = useState([]); // calendar event storage of all events
   let result = useState(null); // query result storage
-  let authorized = useState(null); // authorized boolean storage
 
-  const [, updateWarehouseData] = useAtom(updateWarehouseDataAtom);
   const warehouseData = useAtom(warehouseDataAtom);
+  const [, updateWarehouseData] = useAtom(updateWarehouseDataAtom);
 
   const [parsedWarehouseData, setParsedWarehouseData] = useState([]); // parsed warehouse data storage
 
@@ -114,21 +115,22 @@ export default function Calendar() {
   const ref = React.useRef(null);
   // check authentication
   useEffect(() => {
+    updateWarehouseData();
     pauseQuery = true; // pause query
-    authorized = isAuth(); // check authorization
-    if (!authorized) {
+
+    if (!authenticated) {
       // nav to login if not authorized
       navigate("/Login");
     }
     const intervalId = setInterval(() => {
-      // set interval to check auth every 30 seconds
+      // set interval to check auth every 3 minutes
       pauseQuery = true;
-      authorized = isAuth();
-      if (!authorized) {
+      isAuth();
+      if (!authenticated) {
         navigate("/Login");
       }
       pauseQuery = false;
-    }, 30000);
+    }, 300000);
     pauseQuery = false;
     // Clean up the interval when the component unmounts
     return () => {
@@ -136,7 +138,6 @@ export default function Calendar() {
     };
   }, []);
   React.useEffect(() => {
-    updateWarehouseData();
     setParsedWarehouseData(
       warehouseData[0].map((warehouse) => ({
         id: warehouse.id,
@@ -144,7 +145,7 @@ export default function Calendar() {
         checked: warehouse.name == "Bedford Heights" ? true : false, // Aurora is checked by default
       }))
     );
-  }, [updateWarehouseData]);
+  }, []);
   const updateRange = (date) => {
     const newDate = dayjs(date); // store date as dayjs object
     if (newDate.isBefore(startDate) || newDate.isAfter(endDate)) {
@@ -218,9 +219,9 @@ export default function Calendar() {
         if (!refresh) {
           // check if already refreshing
           setRefresh(true); // set refresh to true
-          authorized = isAuth(); // check auth (handles refreshing token)
+          isAuth(); // check auth (handles refreshing token)
 
-          if (!authorized) {
+          if (!authenticated) {
             // refresh failed
             queryClient.cancelQueries(["requests", "date"]); // cancel query
             navigate("/logout"); // logout

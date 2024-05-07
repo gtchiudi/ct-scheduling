@@ -5,7 +5,7 @@ import {
   isAuthAtom,
   refreshAtom,
   warehouseDataAtom,
-  updateWarehouseDataAtom,
+  authenticatedAtom,
 } from "../components/atoms.jsx";
 import { useQuery } from "@tanstack/react-query";
 import { PropTypes } from "prop-types";
@@ -156,19 +156,14 @@ EnhancedTableHead.propTypes = {
 
 export default function PendingRequests() {
   const navigate = useNavigate(); // used to navigate to other pages
+  const [authenticated] = useAtom(authenticatedAtom); // used to check if user is authenticated
   const [, isAuth] = useAtom(isAuthAtom); // used to check if user is authenticated
-  const [authorized, setAuthorized] = React.useState(isAuth()); // store if user is authorized
   const queryClient = useQueryClient(); // used to get query client
   const [refresh, setRefresh] = useAtom(refreshAtom); // used as refresh token tag for error 401 handling
   const [pauseQuery, setPause] = useState(false); // used to pause query
   const [warehouseData] = useAtom(warehouseDataAtom);
-  const [, updateWarehouseData] = useAtom(updateWarehouseDataAtom);
 
   let rows = useState([]); // store rows of table
-  React.useEffect(() => {
-    updateWarehouseData();
-    console.log(warehouseData);
-  }, []);
 
   function getWarehouseNameById(id) {
     const warehouse = warehouseData.find((warehouse) => warehouse.id === id);
@@ -179,14 +174,14 @@ export default function PendingRequests() {
     // check authentication then set interval to check authentication every 30 seconds
 
     setPause(true);
-    setAuthorized(isAuth());
-    if (!authorized) {
+    isAuth();
+    if (!authenticated) {
       navigate("/Login");
     }
     const intervalId = setInterval(() => {
       setPause(true);
-      setAuthorized(isAuth());
-      if (!authorized) {
+      isAuth();
+      if (!authenticated) {
         navigate("/Login");
       }
       setPause(false);
@@ -220,9 +215,9 @@ export default function PendingRequests() {
         if (!refresh) {
           // run if not already refreshing
           setRefresh(true); // set refresh to true
-          setAuthorized(isAuth()); // check if user is authorized
+          isAuth(); // check if user is authorized
 
-          if (!authorized) {
+          if (!authenticated) {
             queryClient.cancelQueries(["pendingRequests"]); // cancel query
             navigate("/logout"); // navigate to logout
           }

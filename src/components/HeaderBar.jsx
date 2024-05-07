@@ -15,7 +15,7 @@ import {
 } from "@mui/material";
 import MenuIcon from "@mui/icons-material/Menu";
 import { useAtom } from "jotai";
-import { isAuthAtom } from "../components/atoms.jsx";
+import { authenticatedAtom } from "../components/atoms.jsx";
 
 // Add Links to header here using same format as Request List
 // This is the only part that needs modified to change the header links
@@ -43,14 +43,14 @@ const settings = [{ text: "Login", href: "/Login" }];
 function HeaderBar() {
   const [anchorElNav, setAnchorElNav] = React.useState(null);
   const [anchorElUser, setAnchorElUser] = React.useState(null);
-  const [, isAuth] = useAtom(isAuthAtom);
+  const [authenticated] = useAtom(authenticatedAtom);
   const location = useLocation();
-  let pagesToRender = isAuth() ? pagesAuth : pagesNonAuth;
-  if (location.pathname === "/Calendar" && isAuth()) {
+  let pagesToRender = authenticated ? pagesAuth : pagesNonAuth;
+  if (location.pathname === "/Calendar" && authenticated) {
     pagesToRender = [{ text: "Pending Requests", href: "/PendingRequests" }];
-  } else if (location.pathname === "/PendingRequests" && isAuth()) {
+  } else if (location.pathname === "/PendingRequests" && authenticated) {
     pagesToRender = [{ text: "Calendar", href: "/Calendar" }];
-  } else if (isAuth()) {
+  } else if (authenticated) {
     //to fix bug when rendering when first logging in
     pagesToRender = pagesAuth;
   }
@@ -171,7 +171,7 @@ function HeaderBar() {
               {settings.map((setting) => (
                 <MenuItem key={setting} onClick={handleCloseUserMenu}>
                   <Typography textAlign="center">
-                    {isAuth() ? (
+                    {authenticated ? (
                       <Button
                         onClick={handleCloseNavMenu}
                         component={RouterLink}

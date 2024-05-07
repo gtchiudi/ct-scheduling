@@ -13,6 +13,8 @@ import {
   Typography,
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
+import { isAuthAtom } from "./atoms.jsx";
+import { useAtom } from "jotai";
 
 function ResultDisplay({ startDate, endDate }) {
   if (!dayjs.isDayjs(startDate) || !dayjs.isDayjs(endDate)) {
@@ -24,6 +26,7 @@ function ResultDisplay({ startDate, endDate }) {
   const queryClient = useQueryClient();
   let pauseQuery = true;
   const navigate = useNavigate();
+  const [authenticated] = useAtom(isAuthAtom);
 
   const result = useQuery({
     queryKey: ["requests", "date", startDate, endDate, "active"],
@@ -35,7 +38,7 @@ function ResultDisplay({ startDate, endDate }) {
         pauseQuery = true;
         if (!refresh) {
           setRefresh(true);
-          authorized = isAuth();
+          authorized = authenticated;
 
           if (!authorized) {
             queryClient.cancelQueries(["requests", "date", startDate, endDate]);

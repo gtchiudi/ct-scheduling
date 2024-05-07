@@ -11,9 +11,6 @@ import {
   Typography,
   Stack,
   Container,
-  Dialog,
-  Radio,
-  RadioGroup,
   FormLabel,
 } from "@mui/material";
 import axios from "axios";
@@ -24,13 +21,10 @@ import FormGroup from "@mui/material/FormGroup";
 import { DateTimePicker, DateTimeField } from "@mui/x-date-pickers";
 import dayjs from "dayjs";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { accessTokenAtom } from "./atoms.jsx";
 
 function Form({ request, closeModal, dateTime }) {
   const queryClient = useQueryClient();
   const [warehouseData] = useAtom(warehouseDataAtom);
-  const [, updateWarehouseData] = useAtom(updateWarehouseDataAtom);
-  const [accessToken] = useAtom(accessTokenAtom);
   const path = useLocation().pathname;
   const navigate = useNavigate();
 
@@ -38,10 +32,10 @@ function Form({ request, closeModal, dateTime }) {
   const [times, setTimes] = useState([]);
 
   const [getInitialTime, setGetInitialTime] = useState(false);
-  React.useMemo(() => {
+  const [, updateWarehouseData] = useAtom(updateWarehouseDataAtom);
+  React.useEffect(() => {
     updateWarehouseData();
   }, []);
-
   // gets work day following provided date
   const nextWorkDay = (date) => {
     // gets the next work day at 8:00 am
