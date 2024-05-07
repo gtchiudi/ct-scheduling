@@ -19,9 +19,9 @@ class WarehouseSerializer(serializers.ModelSerializer):
         fields = ('id', 'name', 'address', 'phone_number')
 
 
-class ScheduleSerializer(serializers.ModelSerializer):
+class ApprovalLog(serializers.ModelSerializer):
     class Meta:
-        model = Schedule
+        model = ApprovalLog
         fields = ('approver', 'request')
 
 

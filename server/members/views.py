@@ -174,9 +174,9 @@ class WarehouseView(viewsets.ModelViewSet):
     search_fields = ['name']
 
 
-class ScheduleView(viewsets.ModelViewSet):
-    serializer_class = ScheduleSerializer
-    queryset = Schedule.objects.all()
+class ApprovalLogView(viewsets.ModelViewSet):
+    serializer_class = ApprovalLog
+    queryset = ApprovalLog.objects.all()
 
 
 class UserView(viewsets.ModelViewSet):

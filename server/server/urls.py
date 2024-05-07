@@ -23,7 +23,7 @@ from rest_framework_simplejwt import views as jwt_views
 router = routers.DefaultRouter()
 router.register(r'request', views.RequestView, 'request')
 router.register(r'warehouse', views.WarehouseView, 'warehouse')
-router.register(r'schedule', views.ScheduleView, 'schedule')
+router.register(r'schedule', views.ApprovalLogView, 'schedule')
 router.register(r'user', views.UserView, 'user')
 router.register(r'group', views.GroupView, 'group')
 

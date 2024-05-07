@@ -81,7 +81,7 @@ class Request(BaseModel):
     # BEcomes false after completed delivery
 
 
-class Schedule(BaseModel):
+class ApprovalLog(BaseModel):
     approver = models.ForeignKey(
         User, null=True, on_delete=models.SET_NULL)
     request = models.ForeignKey(
