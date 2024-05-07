@@ -112,7 +112,7 @@ function Form({ request, closeModal, dateTime }) {
     notes: "",
     date_time: nextWorkDay(),
     delivery: "",
-    trailer_number: null,
+    trailer_number: "",
     driver_phone_number: null,
     sms_consent: false,
     dock_number: null,
@@ -132,12 +132,8 @@ function Form({ request, closeModal, dateTime }) {
       "ref_number",
       "load_type",
       "delivery",
+      "trailer_number",
     ];
-    if (path === "/Calendar") {
-      fields.push("trailer_number");
-      if (requestData.approved) fields.push("driver_phone_number");
-      if (requestData.driver_phone_number !== null) fields.push("dock_number");
-    }
     return fields;
   }, [path]);
 
@@ -279,7 +275,11 @@ function Form({ request, closeModal, dateTime }) {
     const { name } = e.target;
     console.log("HandleButton Function Call", { name });
     if (name == "dock_number") {
-      console.log(document.getElementById("dock_number").value);
+      if (!requestData.sms_consent) {
+        window.alert(
+          "Driver did not consent to SMS notifications.\nPlease inform them of dock number."
+        );
+      }
       requestData[name] = parseInt(
         document.getElementById("dock_number").value
       );
@@ -650,6 +650,14 @@ function Form({ request, closeModal, dateTime }) {
             </TextField>
 
             <TextField
+              required
+              label="Trailer Number"
+              name="trailer_number"
+              value={requestData.trailer_number}
+              onChange={handleChange}
+            />
+
+            <TextField
               name="notes"
               label="Notes"
               multiline
@@ -682,17 +690,6 @@ function Form({ request, closeModal, dateTime }) {
                 }}
                 onAccept={(newValue) => handleDateChange(newValue)}
                 timeSteps={{ minutes: 15 }}
-              />
-            )}
-            {path != "/RequestForm" && (
-              <TextField
-                label="Trailer Number"
-                name="trailer_number"
-                value={requestData.trailer_number}
-                onChange={handleChange}
-                InputProps={{
-                  readOnly: requestData.approved ? true : false,
-                }}
               />
             )}
 
