@@ -86,7 +86,7 @@ Please email sales@candortransport.com with any questions or concerns.
 Thank you for choosing Candor Logistics.
 </pre>''')
 
-            elif 'dock_number' in altered_fields:
+            elif 'dock_number' in altered_fields and updated_data['sms_consent']:
                 send_text(updated_data['driver_phone_number'],
                           F'''Thank you for choosing Candor Logistics.
 Please slide tandems back.
@@ -95,7 +95,7 @@ Candor Logistics does not send marketing messages.
 
 Reply 'STOP' to opt out of future notifications.''')
 
-            elif 'driver_phone_number' in altered_fields:
+            elif 'driver_phone_number' in altered_fields and updated_data['sms_consent']:
                 send_text(updated_data['driver_phone_number'],
                           F'''Thank you for choosing Candor Logistics.
 You have subscribed to receive recurring appointment notifications via SMS.

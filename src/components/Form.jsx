@@ -443,12 +443,7 @@ function Form({ request, closeModal, dateTime }) {
   } else if (path == "/Calendar" && requestData.approved) {
     if (requestData.check_in_time == null) {
       formButton = (
-        <Button
-          name="check_in_time"
-          variant="contained"
-          onClick={handleButton}
-          disabled={submitButtonDisabled}
-        >
+        <Button name="check_in_time" variant="contained" onClick={handleButton}>
           Check-In
         </Button>
       );
@@ -460,12 +455,7 @@ function Form({ request, closeModal, dateTime }) {
       );
     } else if (requestData.dock_number == null) {
       formButton = (
-        <Button
-          name="dock_number"
-          variant="contained"
-          onClick={handleButton}
-          disabled={submitButtonDisabled}
-        >
+        <Button name="dock_number" variant="contained" onClick={handleButton}>
           Send To Dock
         </Button>
       );
