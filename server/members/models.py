@@ -88,3 +88,10 @@ class ApprovalLog(BaseModel):
     request = models.ForeignKey(
         Request, on_delete=models.CASCADE)
     active = models.BooleanField(default=True)
+
+
+class SmsNumberLog(BaseModel):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    sms_number = models.CharField(max_length=12)
+    consent = models.BooleanField(default=False)
+    active = models.BooleanField(default=True)

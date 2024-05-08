@@ -27,3 +27,4 @@ class ApprovalLogListView(admin.ModelAdmin):
 admin.site.register(Request, requestListView)
 admin.site.register(Warehouse)
 admin.site.register(ApprovalLog, ApprovalLogListView)
+admin.site.register(SmsNumberLog)
