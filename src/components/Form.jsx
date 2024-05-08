@@ -211,20 +211,54 @@ function Form({ request, closeModal, dateTime }) {
 
   const handleChange = (e) => {
     const { name, value, checked, type } = e.target;
-    console.log("HandleChange Function Call", { name, value, checked });
+    console.log(e);
+    console.log("HandleChange Function Call", { name, value, checked, type });
     if (name === "delivery") {
       setRequestData({ ...requestData, [name]: value === "delivery" });
     } else if (type === "checkbox") {
       setRequestData({ ...requestData, [name]: checked });
     } else if (name === "container_number") {
-      setRequestData({ ...requestData, [name]: value, ref_number: value });
+      setRequestData({
+        ...requestData,
+        [name]: value,
+        ref_number: value,
+        trailer_number: value,
+      });
+    } else if (
+      name === "load_type" &&
+      value != "Container" &&
+      (requestData.container_drop || requestData.container_number)
+    ) {
+      // if the value of load type is not container, but the container drop is true or container number is not empty,
+      // reset the container drop, container number, ref number, trailer number
+      setRequestData({
+        ...requestData,
+        [name]: value,
+        container_drop: false,
+        container_number: "",
+        trailer_number: "",
+        ref_number: "",
+      });
+      setRequiredFieldsCompleted((prevCompleted) => ({
+        // reset required fields that we erased.
+        ...prevCompleted,
+        trailer_number: false,
+        ref_number: false,
+      }));
     } else setRequestData({ ...requestData, [name]: value });
 
-    if (requiredFields.includes(name)) {
+    if (requiredFields.includes(name) || name === "container_number") {
       if (type === "checkbox")
         setRequiredFieldsCompleted((prevCompleted) => ({
           ...prevCompleted,
           [name]: true,
+        }));
+      else if (name === "container_number")
+        setRequiredFieldsCompleted((prevCompleted) => ({
+          ...prevCompleted,
+          ref_number: !!value,
+          trailer_number: !!value,
+          [name]: !!value,
         }));
       else
         setRequiredFieldsCompleted((prevCompleted) => ({
@@ -350,9 +384,9 @@ function Form({ request, closeModal, dateTime }) {
       </Typography>
       <FormControlLabel
         required
+        control={<Checkbox />}
         label="SMS Consent"
         name="sms_consent"
-        control={<Checkbox />}
         value={requestData.sms_consent}
         onChange={handleChange}
       />
@@ -579,7 +613,7 @@ function Form({ request, closeModal, dateTime }) {
                 name="container_number"
                 value={requestData.container_number}
                 onChange={handleChange}
-              ></TextField>
+              />
             </Box>
           ) : null}
           <TextField
@@ -609,13 +643,15 @@ function Form({ request, closeModal, dateTime }) {
             </MenuItem>
           </TextField>
 
-          <TextField
-            required
-            label="Trailer Number"
-            name="trailer_number"
-            value={requestData.trailer_number}
-            onChange={handleChange}
-          />
+          {requestData.load_type !== "Container" && (
+            <TextField
+              required
+              label="Trailer Number"
+              name="trailer_number"
+              value={requestData.trailer_number}
+              onChange={handleChange}
+            />
+          )}
 
           <TextField
             name="notes"
