@@ -68,9 +68,9 @@ class RequestView(viewsets.ModelViewSet):
                 field for field in original_data if original_data[field] != updated_data[field]]
             if 'approved' in altered_fields and updated_data['approved']:
                 # add to approval log
-                approval_log = ApprovalLog(
-                    approver=request.user, request=requestUpdate)
-                approval_log.save()
+                # approval_log = ApprovalLog(
+                #     approver=request.user, request=requestUpdate)
+                # approval_log.save()
 
                 date_time = datetime.fromisoformat(
                     updated_data["date_time"].replace('Z', '+00:00'))
@@ -181,9 +181,9 @@ class WarehouseView(viewsets.ModelViewSet):
     search_fields = ['name']
 
 
-class ApprovalLogView(viewsets.ModelViewSet):
-    serializer_class = ApprovalLog
-    queryset = ApprovalLog.objects.all()
+# class ApprovalLogView(viewsets.ModelViewSet):
+#     serializer_class = ApprovalLog
+#     queryset = ApprovalLog.objects.all()
 
 
 class UserView(viewsets.ModelViewSet):

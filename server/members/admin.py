@@ -9,4 +9,4 @@ class requestListView(admin.ModelAdmin):
 
 admin.site.register(Request, requestListView)
 admin.site.register(Warehouse)
-admin.site.register(ApprovalLog)
+# admin.site.register(ApprovalLog)

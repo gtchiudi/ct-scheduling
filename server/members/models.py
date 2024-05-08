@@ -81,9 +81,9 @@ class Request(BaseModel):
     # BEcomes false after completed delivery
 
 
-class ApprovalLog(BaseModel):
-    approver = models.ForeignKey(
-        User, null=True, on_delete=models.SET_NULL)
-    request = models.ForeignKey(
-        Request, on_delete=models.CASCADE)
-    active = models.BooleanField(default=True)
+# class ApprovalLog(BaseModel):
+#     approver = models.ForeignKey(
+#         User, null=True, on_delete=models.SET_NULL)
+#     request = models.ForeignKey(
+#         Request, on_delete=models.CASCADE)
+#     active = models.BooleanField(default=True)
