@@ -17,8 +17,6 @@ from django.forms.models import model_to_dict
 from datetime import datetime
 import pytz
 
-TEST_NUMBER = '+14406655140'
-
 
 class IsAuthenticatedOrPostOnly(permissions.BasePermission):
     def has_permission(self, request, view):
@@ -199,15 +197,18 @@ class WarehouseView(viewsets.ModelViewSet):
 
 
 class ApprovalLogView(viewsets.ModelViewSet):
+    permission_classes = (IsAuthenticated, )
     serializer_class = ApprovalLog
     queryset = ApprovalLog.objects.all()
 
 
 class UserView(viewsets.ModelViewSet):
+    permission_classes = (IsAuthenticated, )
     serializer_class = UserSerializer
     queryset = User.objects.all()
 
 
 class GroupView(viewsets.ModelViewSet):
+    permission_classes = (IsAuthenticated, )
     serializer_class = GroupSerializer
     queryset = Group.objects.all()
