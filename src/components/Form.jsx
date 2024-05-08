@@ -211,7 +211,6 @@ function Form({ request, closeModal, dateTime }) {
 
   const handleChange = (e) => {
     const { name, value, checked, type } = e.target;
-    console.log(e);
     console.log("HandleChange Function Call", { name, value, checked, type });
     if (name === "delivery") {
       setRequestData({ ...requestData, [name]: value === "delivery" });
@@ -224,6 +223,11 @@ function Form({ request, closeModal, dateTime }) {
         ref_number: value,
         trailer_number: value,
       });
+      setRequiredFieldsCompleted((prevCompleted) => ({
+        ...prevCompleted,
+        ref_number: !!value,
+        trailer_number: !!value,
+      }));
     } else if (
       name === "load_type" &&
       value != "Container" &&
@@ -247,7 +251,7 @@ function Form({ request, closeModal, dateTime }) {
       }));
     } else setRequestData({ ...requestData, [name]: value });
 
-    if (requiredFields.includes(name) || name === "container_number") {
+    if (requiredFields.includes(name)) {
       if (type === "checkbox")
         setRequiredFieldsCompleted((prevCompleted) => ({
           ...prevCompleted,
@@ -387,7 +391,7 @@ function Form({ request, closeModal, dateTime }) {
         control={<Checkbox />}
         label="SMS Consent"
         name="sms_consent"
-        value={requestData.sms_consent}
+        checked={requestData.sms_consent}
         onChange={handleChange}
       />
     </Box>
