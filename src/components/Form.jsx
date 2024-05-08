@@ -211,7 +211,6 @@ function Form({ request, closeModal, dateTime }) {
 
   const handleChange = (e) => {
     const { name, value, checked, type } = e.target;
-    console.log("HandleChange Function Call", { name, value, checked, type });
     if (name === "delivery") {
       setRequestData({ ...requestData, [name]: value === "delivery" });
     } else if (type === "checkbox") {
@@ -277,7 +276,6 @@ function Form({ request, closeModal, dateTime }) {
 
   const handleButton = (e) => {
     const { name } = e.target;
-    console.log("HandleButton Function Call", { name });
     if (name == "dock_number") {
       if (!requestData.sms_consent) {
         window.alert(
@@ -307,8 +305,7 @@ function Form({ request, closeModal, dateTime }) {
     (requestData.date_time = requestData.date_time.format(
       "YYYY-MM-DD HH:mm:ss"
     )),
-      console.log("Approved: ", requestData);
-    updateRequest();
+      updateRequest();
   };
 
   const handleNewRequest = async () => {
@@ -336,9 +333,6 @@ function Form({ request, closeModal, dateTime }) {
         `/api/request/${requestData.id}/`,
         requestData
       );
-      console.log("Request Updated........");
-      console.log(response);
-
       queryClient.invalidateQueries("pendingRequests");
       closeModal();
     } catch (error) {

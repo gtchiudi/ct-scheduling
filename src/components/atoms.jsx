@@ -1,8 +1,7 @@
-import { atom, useAtom } from "jotai";
+import { atom } from "jotai";
 import axios from "axios";
 import { atomWithStorage } from "jotai/utils";
 import dayjs from "dayjs";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 export const warehouseDataAtom = atom([]);
 export const accessTokenAtom = atomWithStorage("accessToken", null);
@@ -18,8 +17,6 @@ authenticatedAtom.onMount = (set) => {
 };
 
 const refreshTokens = async (get, set) => {
-  console.log("Refreshing Tokens");
-
   try {
     const response = await axios.post(
       //  try to refresh tokens, passing in refresh token
@@ -67,11 +64,7 @@ export const isAuthAtom = atom(
     const accessExp = dayjs().subtract(14, "minutes");
     const lastLoginDatetime = dayjs(get(lastLoginDatetimeAtom));
 
-    console.log("Checking Auth");
-    console.log("Access Token: ", accessToken);
-
     if (get(refreshAtom) === true) {
-      console.log("Refreshing Tokens");
       // received error 401. refresh?
       set(refreshAtom, false);
       if (accessExp.isAfter(lastLoginDatetime)) {
@@ -105,7 +98,6 @@ export const isAuthAtom = atom(
       axios.defaults.headers.common["Authorization"] = `Bearer ${accessToken}`;
       set(authenticatedAtom, true); // authenticated
     }
-    console.log("Authenticated: ", get(authenticatedAtom));
   }
 );
 

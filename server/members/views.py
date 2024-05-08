@@ -92,18 +92,36 @@ Please email sales@candortransport.com with any questions or concerns.
 Thank you for choosing Candor Logistics.
 </pre>''')
 
-            elif 'dock_number' in altered_fields and updated_data['sms_consent']:
-                send_text(updated_data['driver_phone_number'],
-                          F'''Thank you for choosing Candor Logistics.
+            elif 'dock_number' in altered_fields:
+                number_log = SmsNumberLog.objects.filter(
+                    sms_number=updated_data['driver_phone_number'])
+                if number_log.exists() and number_log[0].consent:
+                    send_text(updated_data['driver_phone_number'],
+                              F'''Thank you for choosing Candor Logistics.
 Please slide tandems back.
 Proceed to dock door {updated_data['dock_number']}.
 Candor Logistics does not send marketing messages.
 
 Reply 'STOP' to opt out of future notifications.''')
 
-            elif 'driver_phone_number' in altered_fields and updated_data['sms_consent']:
-                send_text(updated_data['driver_phone_number'],
-                          F'''Thank you for choosing Candor Logistics.
+            elif 'driver_phone_number' in altered_fields:
+                number_log = SmsNumberLog.objects.filter(
+                    sms_number=updated_data['driver_phone_number'])
+                consent = updated_data['sms_consent']
+                if number_log.exists() and not number_log[0].consent and consent:
+                    SmsNumberLog.objects.filter(
+                        sms_number=updated_data['driver_phone_number']).update(consent=True)
+
+                elif not number_log.exists():
+                    SmsNumberLog.objects.create(
+                        sms_number=updated_data['driver_phone_number'], consent=updated_data['sms_consent'])
+
+                number_log = SmsNumberLog.objects.filter(
+                    sms_number=updated_data['driver_phone_number'])
+
+                if number_log.exists() and number_log[0].consent:
+                    send_text(updated_data['driver_phone_number'],
+                              F'''Thank you for choosing Candor Logistics.
 You have subscribed to receive recurring appointment notifications via SMS.
 Message and data rates may apply.
 Candor Logistics will not sent marketing messages.
