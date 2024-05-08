@@ -11,7 +11,6 @@ import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import Login from "./routes/Login.jsx";
 import Logout from "./routes/Logout.jsx";
 import Home from "./routes/Home.jsx";
-import RequestList from "./routes/RequestList.jsx";
 import RequestForm from "./routes/RequestForm.jsx";
 import PendingRequests from "./routes/PendingRequests.jsx";
 import Layout from "./components/layout.jsx";
@@ -28,15 +27,6 @@ const router = createBrowserRouter([
         <Home />
       </Layout>
     ), // Wrap Home with Layout
-    errorElement: <ErrorPage />,
-  },
-  {
-    path: "RequestList",
-    element: (
-      <Layout>
-        <RequestList />
-      </Layout>
-    ), // Wrap RequestList with Layout
     errorElement: <ErrorPage />,
   },
   {

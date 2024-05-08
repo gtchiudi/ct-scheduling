@@ -19,10 +19,10 @@ class WarehouseSerializer(serializers.ModelSerializer):
         fields = ('id', 'name', 'address', 'phone_number')
 
 
-# class ApprovalLog(serializers.ModelSerializer):
-#     class Meta:
-#         model = ApprovalLog
-#         fields = ('approver', 'request')
+class ApprovalLog(serializers.ModelSerializer):
+    class Meta:
+        model = ApprovalLog
+        fields = ('id', 'approver', 'request')
 
 
 class UserSerializer(serializers.ModelSerializer):
