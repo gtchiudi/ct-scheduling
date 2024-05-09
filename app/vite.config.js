@@ -8,6 +8,10 @@ const url = localURL;
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react()],
+  preview: {
+    port: 8080,
+    strictPort: true,
+  },
   
   build: {
     manifest: true,

@@ -2,7 +2,7 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import ErrorPage from "./routes/error-page.jsx";
 import "./index.css";
-import "./app.css";
+import "./App.css";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import { LocalizationProvider } from "@mui/x-date-pickers";
@@ -13,7 +13,7 @@ import Logout from "./routes/Logout.jsx";
 import Home from "./routes/Home.jsx";
 import RequestForm from "./routes/RequestForm.jsx";
 import PendingRequests from "./routes/PendingRequests.jsx";
-import Layout from "./components/layout.jsx";
+import Layout from "./components/Layout.jsx";
 import Calendar from "./routes/Calendar.jsx";
 
 const queryClient = new QueryClient();

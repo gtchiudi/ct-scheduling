@@ -34,7 +34,7 @@ DEBUG = False
 #     '127.0.0.1',
 #     'localhost',
 # ]
-ALLOWED_HOSTS = ['0.0.0.0']
+ALLOWED_HOSTS = ['*']
 
 # Application definition
 
@@ -154,5 +154,3 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 CORS_ORIGIN_WHITELIST = [
     'http://localhost:3000'
 ]
-
-# Email settings
