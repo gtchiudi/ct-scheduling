@@ -2,7 +2,7 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
 const webURL = 'https://gtchiudi.pythonanywhere.com/';
-const localURL = 'http://localhost:8000/';
+const localURL = process.env.LOCAL_URL || 'http://localhost:8000/';
 const url = localURL;
 
 // https://vitejs.dev/config/
@@ -12,14 +12,14 @@ export default defineConfig({
     port: 8080,
     strictPort: true,
   },
-  
+
   build: {
     manifest: true,
     rollupOptions: {
-      input: './src/main.jsx',
+      input: './app/src/main.jsx',
     },
   },
-  
+
   server: {
     proxy: {
       '/api': {

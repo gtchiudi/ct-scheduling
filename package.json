@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "vite --host",
     "build": "vite build",
     "lint": "eslint src --ext js,jsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview"
@@ -19,7 +19,7 @@
     "@tanstack/react-query": "^4.32.0",
     "atom": "^1.4.1",
     "axios": "^1.5.0",
-    "date-fns": "^2.30.0",
+    "date-fns": "^3.2.0",
     "dayjs": "^1.11.9",
     "jotai": "^2.5.0",
     "react": "^18.2.0",
