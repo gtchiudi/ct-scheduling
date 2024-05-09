@@ -16,13 +16,13 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy the requirements file to the container
-COPY ./server/requirements.txt .
+COPY ./backend/requirements.txt .
 
 # Install the Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy the rest of the application code to the container
-COPY ./server .
+COPY ./backend .
 
 RUN python manage.py migrate
 RUN python manage.py collectstatic --noinput
