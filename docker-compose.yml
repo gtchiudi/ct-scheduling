@@ -1,18 +1,34 @@
 services:
   backend:
     build:
-      context: ./server
-      dockerfile: Dockerfile
+      context: .
+    command: python ./server/manage.py runserver 0.0.0.0:8000
     ports:
       - "8000:8000"
 
-  frontend:
+  frontend-dev:
     build:
-      context: ./app
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: Dockerfile.node
+      target: development
+    command: npm run dev
+    environment:
+      - LOCAL_URL='backend:8000/';
     ports:
-      - 3000:3000
+      - 3004:5173
     volumes:
-      - ./app:/app
+      - ./app:/app/app
+    depends_on:
+      - backend
+  
+  frontend-prod:
+    build:
+      context: .
+      dockerfile: Dockerfile.node
+      target: production
+    ports:
+      - 3004:80
+    volumes:
+      - ./app:/app/app
     depends_on:
       - backend

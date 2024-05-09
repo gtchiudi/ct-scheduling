@@ -5,7 +5,7 @@ ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONBUFFERED 1
 
 # Set the working directory in the container
-WORKDIR /server
+WORKDIR /app
 
 
 # Install system dependencies
@@ -16,13 +16,13 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy the requirements file to the container
-COPY requirements.txt .
+COPY ./server/requirements.txt .
 
 # Install the Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy the rest of the application code to the container
-COPY . .
+COPY ./server .
 
 RUN python manage.py migrate
 RUN python manage.py collectstatic --noinput
