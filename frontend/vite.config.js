@@ -2,7 +2,7 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
 const webURL = 'https://gtchiudi.pythonanywhere.com/';
-const localURL = 'http://localhost:8000/';
+const localURL = 'http://backend:8000/';
 const url = localURL;
 
 // https://vitejs.dev/config/
