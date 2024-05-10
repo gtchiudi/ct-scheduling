@@ -1,39 +1,52 @@
 services:
+  # backend-dev:
+  #   build:
+  #     context: .
+  #   container_name: backend_c_dev
+  #   command: python manage.py runserver 0.0.0.0:8000
+  #   ports:
+  #     - "8000:8000"
+  #   volumes:
+  #     - ./backend:/app
+
   backend:
     build:
       context: .
     container_name: backend_c
-    command: python manage.py runserver 0.0.0.0:8000
+    command: gunicorn server.wsgi:application --bind 0.0.0.0:8000
     ports:
       - "8000:8000"
     volumes:
-      - ./backend:/app
+      - backend_static:/app/static
 
-  frontend-dev:
-    build:
-      context: .
-      dockerfile: Dockerfile.node
-      # target: development
-    container_name: frontend_c_dev
-    command: npm run dev -- --host
-    ports:
-      - 3004:5173
-    volumes:
-      - ./frontend:/app
-      - /app/node_modules
-    depends_on:
-      - backend
-    stdin_open: true
-    tty: true
-  
-  # frontend-prod:
+  # frontend-dev:
   #   build:
   #     context: .
   #     dockerfile: Dockerfile.node
-  #     target: production
+  #     target: development
+  #   container_name: frontend_c_dev
+  #   command: npm run dev -- --host
   #   ports:
-  #     - 3004:80
+  #     - 3004:5173
   #   volumes:
-  #     - ./app:/app/frontend
+  #     - ./frontend:/app
+  #     - /app/node_modules
   #   depends_on:
-  #     - backend
+  #     - backend-dev
+  #   stdin_open: true
+  #   tty: true
+  
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.node
+    container_name: frontend_c
+    ports: 
+      - 80:8080
+    volumes:
+      - backend_static:/app/static
+    depends_on:
+      - backend
+
+volumes:
+  backend_static:

@@ -7,7 +7,8 @@ import Link from "@mui/material/Link";
 import { Link as RouterLink } from "react-router-dom";
 
 export default function Home() {
-  let image = "../truckBackground.png";
+  let image =
+    "https://img1.wsimg.com/isteam/ip/f69d92aa-cce5-4851-89e5-56380f14d8f1/blob.png";
   return (
     <Paper
       sx={{

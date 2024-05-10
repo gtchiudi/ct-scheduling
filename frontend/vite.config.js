@@ -1,44 +1,43 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+import path from 'path'
 
-const webURL = 'https://gtchiudi.pythonanywhere.com/';
-const localURL = 'http://backend:8000/';
-const url = localURL;
+const proxyURL = '';
 
 // https://vitejs.dev/config/
-export default defineConfig({
-
-  plugins: [react()],
-  preview: {
-    port: 8080,
-    strictPort: true,
-  },
-  
-  build: {
-    manifest: true,
-    rollupOptions: {
-      input: './src/main.jsx',
+export default defineConfig(() => {
+  return {  
+    plugins: [react()],
+    build: {
+      outDir: 'build',
+      assetsDir: 'assets',
+      emptyOutDir: true,
     },
-  },
-  
-  server: {
-    proxy: {
-      '/api': {
-          target: url,
-          changeOrigin: true,
-          secure: false,
+
+    resolve: {
+      alias: {
+        '@': path.resolve(__dirname, './src'),
       },
-      '/token/': {
-          target: url,
-          changeOrigin: true,
-          secure: false,
-      },
-      '/logout/': {
-          target: url,
-          changeOrigin: true,
-          secure: false,
+    },
+    
+    server: {
+      proxy: {
+        '/api': {
+            target: process.env.proxyURL,
+            changeOrigin: true,
+            secure: false,
+        },
+        '/token/': {
+            target: process.env.proxyURL,
+            changeOrigin: true,
+            secure: false,
+        },
+        '/logout/': {
+            target: process.env.proxyURL,
+            changeOrigin: true,
+            secure: false,
+        }
       }
     }
-  }
-})
+}})
 
