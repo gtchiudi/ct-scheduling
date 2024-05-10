@@ -13,14 +13,15 @@ export default defineConfig({
     port: 8080,
     strictPort: true,
   },
-  
+
   build: {
     manifest: true,
-    rollupOptions: {
-      input: './src/main.jsx',
-    },
+    // this should be an html file
+    // rollupOptions: {
+    //   input: './src/main.jsx',
+    // },
   },
-  
+
   server: {
     proxy: {
       '/api': {

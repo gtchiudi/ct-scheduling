@@ -13,7 +13,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.node
-      # target: development
+      target: development
     container_name: frontend_c_dev
     command: npm run dev -- --host
     ports:
@@ -21,19 +21,17 @@ services:
     volumes:
       - ./frontend:/app
       - /app/node_modules
-    depends_on:
-      - backend
     stdin_open: true
     tty: true
-  
-  # frontend-prod:
-  #   build:
-  #     context: .
-  #     dockerfile: Dockerfile.node
-  #     target: production
-  #   ports:
-  #     - 3004:80
-  #   volumes:
-  #     - ./app:/app/frontend
-  #   depends_on:
-  #     - backend
+
+  frontend-prod:
+    build:
+      context: .
+      dockerfile: Dockerfile.node
+      target: production
+    ports:
+      - 8080:80
+    # volumes:
+    #   - ./app:/app/frontend
+    # depends_on:
+    #   - backend

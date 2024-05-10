@@ -1,5 +1,5 @@
 # Use an official Node.js runtime as the base image
-FROM node:22-alpine
+FROM node:22-alpine as development
 
 # Set the working directory in the container
 WORKDIR /app
@@ -12,23 +12,18 @@ RUN npm install
 # Copy the rest of the application code to the working directory
 COPY ./frontend .
 
-RUN npm run build
-
 EXPOSE 5173
 
+FROM development as build
 
-CMD ["npm", "run", "dev"]
+RUN npm run build
 
-# FROM nginx:alpine as production
+FROM nginx:alpine as production
 
-# WORKDIR /app
+WORKDIR /app
 
-# COPY ./app/package.json ./app/package-lock.json ./
+COPY --from=build /app/dist /usr/share/nginx/html
 
-# RUN npm install --frozen-lockfile
+EXPOSE 80
 
-# COPY --from=build /app/dist /usr/shar/nginx/html
-
-# EXPOSE 80
-
-# CMD ["nginx", "-g", "daemon off;"]
+CMD ["nginx", "-g", "daemon off;"]
