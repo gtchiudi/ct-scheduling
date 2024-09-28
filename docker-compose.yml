@@ -13,11 +13,14 @@ services:
     build:
       context: .
     container_name: backend_c
-    command: gunicorn server.wsgi:application --bind 0.0.0.0:8000
+    command: >
+      sh -c "python manage.py collectstatic --noinput && 
+        gunicorn server.wsgi:application --bind 0.0.0.0:8000"
     ports:
       - "8000:8000"
     volumes:
-      - backend_static:/app/static
+      - ./backend:/app
+      - ./backend/static:/app/static
 
   # frontend-dev:
   #   build:
@@ -31,7 +34,7 @@ services:
   #   volumes:
   #     - ./frontend:/app
   #     - /app/node_modules
-  #   depends_on:
+  #   depends_on: 
   #     - backend-dev
   #   stdin_open: true
   #   tty: true

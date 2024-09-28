@@ -21,7 +21,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY ./backend .
 
 RUN python manage.py collectstatic --noinput
-RUN python manage.py collectstatic --noinput
 # Copy the rest of the application code to the container
 
 EXPOSE 8000
