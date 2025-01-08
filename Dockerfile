@@ -2,8 +2,8 @@
 FROM python:alpine
 
 # Environment variables to optimize Python
-ENV PYTHONDONTWRITEBYTECODE 1
-ENV PYTHONBUFFERED 1
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONBUFFERED=1
 
 # Set the working directory in the container
 WORKDIR /app
