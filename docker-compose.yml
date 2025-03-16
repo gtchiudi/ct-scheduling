@@ -10,17 +10,23 @@ services:
   #     - ./backend:/app
 
   backend:
-    build:
+    build: 
       context: .
-    container_name: backend_c
-    command: >
-      sh -c "python manage.py collectstatic --noinput && 
-        gunicorn server.wsgi:application --bind 0.0.0.0:8000"
+      dockerfile: Dockerfile
+    container_name: django_backend
+    restart: always
+    environment:
+      - DB_NAME=ctschedulingeast_high
+      - DB_USER=ctschedulingapp
+      - DB_PASSWORD=cSfwQE3Nf2*_qd#
+      - DB_HOST=adb.us-ashburn-1.oraclecloud.com
+      - TNS_ADMIN=/opt/oracle/Wallet_ctschedulingeast
     ports:
       - "8000:8000"
     volumes:
       - ./backend:/app
       - ./backend/static:/app/static
+      - ./wallet:/opt/oracle/Wallet_ctschedulingeast
 
   # frontend-dev:
   #   build:
@@ -43,11 +49,13 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.node
-    container_name: frontend_c
+    container_name: react_frontend
+    restart: always
     ports: 
-      - 80:8080
+      - 3000:80
     volumes:
       - backend_static:/app/static
+      - ./frontend:/app
     depends_on:
       - backend
 

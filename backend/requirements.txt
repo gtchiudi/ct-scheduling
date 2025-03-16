@@ -10,3 +10,6 @@ gunicorn==23.0.0
 uvicorn==0.34.0
 whitenoise==6.7.0
 setuptools==67.6.1
+mysqlclient==2.2.7
+environ==1.0
+django-environ==0.12.0

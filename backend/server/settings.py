@@ -14,12 +14,17 @@ from pathlib import Path
 from datetime import timedelta
 import os
 from dotenv import load_dotenv
+import sys
+import environ
+
 
 load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+env = environ.Env()
+environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
@@ -98,6 +103,7 @@ WSGI_APPLICATION = 'server.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
+# Dev DB
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
@@ -105,6 +111,20 @@ DATABASES = {
     }
 }
 
+#Prod DB
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.mysql',
+#         'NAME': env('ORACLE_DB_NAME'),
+#         'USER': env('ORACLE_DB_USER'),
+#         'PASSWORD': env('ORACLE_DB_PWD'),
+#         'HOST': env('ORACLE_DB_HOST'),
+#         'PORT': env('ORACLE_DB_PORT', default='3306'),
+#         'OPTIONS': {
+#             'ssl': {'ssl-ca': '/path/to/ssl-ca.pem'} if env.bool('DB_USE_SSL', default=False) else {},
+#         }
+#     }
+# }
 
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
@@ -142,7 +162,9 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 
-STATIC_ROOT = os.path.join(BASE_DIR, 'static')
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
+TEMPLATES[0]['DIRS'] = [os.path.join(BASE_DIR, 'static/frontend')]
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
