@@ -1,1 +1,0 @@
-.candorLogo{height:50px;width:calc(50 / 165 * 640px);background-size:contain;background-repeat:no-repeat}body{margin:0;padding:0}#calendar>div[data-testid=rs-wrapper]>:first-child{top:112.29px;position:fixed;display:flex;justify-content:space-between;width:100%;z-index:1000}#calendar div[data-testid=grid]>:first-child{position:fixed;top:152.77px;z-index:1000;width:100%}
