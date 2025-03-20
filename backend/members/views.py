@@ -16,10 +16,6 @@ from rest_framework.parsers import JSONParser
 from django.forms.models import model_to_dict
 from datetime import datetime
 import pytz
-from django.shortcuts import render
-
-def serve_react_frontend(request, path=""):
-    return render(request, "index.html")
 
 class IsAuthenticatedOrPostOnly(permissions.BasePermission):
     def has_permission(self, request, view):

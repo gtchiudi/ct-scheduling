@@ -15,18 +15,11 @@ services:
       dockerfile: Dockerfile
     container_name: django_backend
     restart: always
-    environment:
-      - DB_NAME=ctschedulingeast_high
-      - DB_USER=ctschedulingapp
-      - DB_PASSWORD=cSfwQE3Nf2*_qd#
-      - DB_HOST=adb.us-ashburn-1.oraclecloud.com
-      - TNS_ADMIN=/opt/oracle/Wallet_ctschedulingeast
     ports:
       - "8000:8000"
     volumes:
       - ./backend:/app
       - ./backend/static:/app/static
-      - ./wallet:/opt/oracle/Wallet_ctschedulingeast
 
   # frontend-dev:
   #   build:

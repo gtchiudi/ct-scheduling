@@ -15,16 +15,12 @@ from datetime import timedelta
 import os
 from dotenv import load_dotenv
 import sys
-import environ
 
 
 load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-
-env = environ.Env()
-environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
@@ -50,12 +46,16 @@ INSTALLED_APPS = [
     'corsheaders',
     'rest_framework',
     'rest_framework_simplejwt.token_blacklist',
+    # 'react'
 ]
 
 CORS_ORIGIN_ALLOW_ALL = True
 
+REACT_APP_BUILD_PATH="../frontend/build"
+
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -63,7 +63,6 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'corsheaders.middleware.CorsMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware',
 ]
 
 REST_FRAMEWORK = {
@@ -81,10 +80,12 @@ SIMPLE_JWT = {
 
 ROOT_URLCONF = 'server.urls'
 
+WHITENOISE_KEEP_ALIVE = True
+
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [os.path.join(BASE_DIR, 'templates')],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -115,13 +116,13 @@ DATABASES = {
 # DATABASES = {
 #     'default': {
 #         'ENGINE': 'django.db.backends.mysql',
-#         'NAME': env('ORACLE_DB_NAME'),
-#         'USER': env('ORACLE_DB_USER'),
-#         'PASSWORD': env('ORACLE_DB_PWD'),
-#         'HOST': env('ORACLE_DB_HOST'),
-#         'PORT': env('ORACLE_DB_PORT', default='3306'),
+#         'NAME': os.getenv('ORACLE_DB_NAME'),
+#         'USER': os.getenv('ORACLE_DB_USER'),
+#         'PASSWORD': os.getenv('ORACLE_DB_PWD'),
+#         'HOST': os.getenv('ORACLE_DB_HOST'),
+#         'PORT': os.getenv('ORACLE_DB_PORT', default='3306'),
 #         'OPTIONS': {
-#             'ssl': {'ssl-ca': '/path/to/ssl-ca.pem'} if env.bool('DB_USE_SSL', default=False) else {},
+#             'ssl': {'ssl-ca': '/path/to/ssl-ca.pem'} if os.getenv.bool('DB_USE_SSL', default=False) else {},
 #         }
 #     }
 # }
@@ -162,9 +163,9 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 
-STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
-TEMPLATES[0]['DIRS'] = [os.path.join(BASE_DIR, 'static/frontend')]
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+# TEMPLATES[0]['DIRS'] = [os.path.join(BASE_DIR, 'static/frontend')]
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 

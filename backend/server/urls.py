@@ -15,10 +15,13 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.contrib import admin
-from django.urls import path, include
+from django.urls import path, include, re_path
 from rest_framework import routers
 from members import views
 from rest_framework_simplejwt import views as jwt_views
+from django.views.generic import TemplateView
+from django.conf.urls.static import static
+from django.conf import settings
 
 router = routers.DefaultRouter()
 router.register(r'request', views.RequestView, 'request')
@@ -37,5 +40,16 @@ urlpatterns = [
          jwt_views.TokenRefreshView.as_view(),
          name='token_refresh'),
     path('', include('members.urls')),
-    path('api-auth/', include('rest_framework.urls'))
+    path('api-auth/', include('rest_framework.urls')),
+    path('', TemplateView.as_view(template_name='index.html')),
+    path('login', TemplateView.as_view(template_name='index.html')),
+    path('Calendar', TemplateView.as_view(template_name='index.html')),
+    path('logout', TemplateView.as_view(template_name='index.html')),
+    path('RequestForm', TemplateView.as_view(template_name='index.html')),
+    path('PendingRequests', TemplateView.as_view(template_name='index.html')),
 ]
+# if settings.DEBUG:
+#     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+# else:
+#     from whitenoise import WhiteNoise
+#     application = WhiteNoise(application, root=settings.STATIC_ROOT)
