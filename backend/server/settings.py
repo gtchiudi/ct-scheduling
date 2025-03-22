@@ -178,6 +178,9 @@ CORS_ORIGIN_WHITELIST = [
     'http://frontend_c:80'
 ]
 
+if os.getenv("CSRF_TRUSTED_ORIGIN"):
+    CSRF_TRUSTED_ORIGINS = [os.getenv("CSRF_TRUSTED_ORIGIN")]
+
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
