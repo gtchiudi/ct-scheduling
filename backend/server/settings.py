@@ -16,7 +16,6 @@ import os
 from dotenv import load_dotenv
 import sys
 
-
 load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -111,21 +110,22 @@ DATABASES = {
         'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
+if os.getenv('ENABLE_MYSQL'):
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.mysql',
+            'NAME': os.getenv('MYSQL_DATABASE'),
+            'USER': os.getenv('MYSQL_USER'),
+            'PASSWORD': os.getenv('MYSQL_PASSWORD'),
+            'HOST': os.getenv('MYSQL_HOST'),
+            'PORT': os.getenv('MYSQL_PORT', default='3306'),
+            # 'OPTIONS': {
+            #     'ssl': {'ssl-ca': '/path/to/ssl-ca.pem'} if os.getenv.bool('DB_USE_SSL', default=False) else {},
+            # }
+        }
+    }
 
-#Prod DB
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.mysql',
-#         'NAME': os.getenv('ORACLE_DB_NAME'),
-#         'USER': os.getenv('ORACLE_DB_USER'),
-#         'PASSWORD': os.getenv('ORACLE_DB_PWD'),
-#         'HOST': os.getenv('ORACLE_DB_HOST'),
-#         'PORT': os.getenv('ORACLE_DB_PORT', default='3306'),
-#         'OPTIONS': {
-#             'ssl': {'ssl-ca': '/path/to/ssl-ca.pem'} if os.getenv.bool('DB_USE_SSL', default=False) else {},
-#         }
-#     }
-# }
+# django_logger.info("SET DATABASES", DATABASES)
 
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators

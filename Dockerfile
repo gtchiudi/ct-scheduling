@@ -26,5 +26,7 @@ COPY ./backend .
 # Collect static files (for Django projects)
 RUN python manage.py collectstatic --noinput
 
+EXPOSE 8000
+
 # Use Gunicorn with Uvicorn workers to serve the application
 CMD ["gunicorn", "server.wsgi:application", "--bind", "0.0.0.0:8000", "--workers=4"]
