@@ -29,3 +29,7 @@ __pycache__
 build
 static
 staticfiles
+
+**/.env
+**/.replacements
+**/*.private.json

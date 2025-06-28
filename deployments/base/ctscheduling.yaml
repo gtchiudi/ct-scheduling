@@ -1,0 +1,36 @@
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ctscheduling
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ctscheduling
+  template:
+    metadata:
+      labels:
+        app: ctscheduling
+    spec:
+      containers:
+      - name: ctscheduling
+        image: localhost:5000/ctscheduling:latest
+        ports:
+        - containerPort: 8000
+      imagePullSecrets:
+        - name: oracle-docker-registry
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ctscheduling
+spec:
+  type: ClusterIP
+  selector:
+    app: ctscheduling
+  ports:
+    - protocol: TCP
+      port: 8000
+      targetPort: 8000

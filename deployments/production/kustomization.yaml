@@ -1,0 +1,53 @@
+namespace: ctscheduling
+
+resources:
+- ../base
+- ./ctscheduling/ctscheduling.yaml
+
+patches:
+- path: ctscheduling/ctscheduling-patch.yaml
+- target:
+    kind: Ingress
+    name: ctscheduling
+  path: ctscheduling/ctscheduling-patch-tls.private.json
+
+secretGenerator:
+  - name: ctscheduling-env-secret
+    env: ctscheduling/.env
+    type: Opaque
+
+configMapGenerator:
+  - name: env-replacements
+    env: .replacements
+
+replacements:
+- source:
+    kind: ConfigMap
+    name: env-replacements
+    fieldPath: data.CERTIFICATE_EMAIL
+  targets:
+  - select:
+      kind: ClusterIssuer
+      name: letsencrypt-prod
+    fieldPaths:
+    - spec.acme.email
+- source:
+    kind: ConfigMap
+    name: env-replacements
+    fieldPath: data.CERTIFICATE_SERVER
+  targets:
+  - select:
+      kind: ClusterIssuer
+      name: letsencrypt-prod
+    fieldPaths:
+    - spec.acme.server
+- source:
+    kind: ConfigMap
+    name: env-replacements
+    fieldPath: data.CTSCHEDULING_IMAGE
+  targets:
+  - select:
+      kind: Deployment
+      name: ctscheduling
+    fieldPaths:
+    - spec.template.spec.containers.0.image
