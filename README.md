@@ -74,3 +74,19 @@ $ pip install -r /ct-scheduling/server/requirements.txt
 To activate the server, run
 $ cd server
 $ python3 manage.py runserver
+
+To build, first bump version in frontend/package.json
+$ ./build.sh
+
+To deploy, first update the image tag in deployments/base/.replacements
+$ kubectl diff -k deployments/production # show what changes will be applied
+$ kubectl apply -k deployments/production
+
+To initialize kubenetes cluster
+$ kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.11.2/deploy/static/provider/cloud/deploy.yaml
+$ kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.16.0/cert-manager.yaml
+$ kubectl create secret docker-registry oracle-docker-registry \
+    --docker-server=$(DOCKER_SERVER) \
+    --docker-username=$(DOCKER_USERNAME) \
+    --docker-password=$(DOCKER_PASSWORD) \
+    --docker-email=$(DOCKER_EMAIL)
