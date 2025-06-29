@@ -12,14 +12,30 @@ export const lastLoginDatetimeAtom = atomWithStorage(
 );
 export const refreshAtom = atom(false);
 export const authenticatedAtom = atom(false);
+export const userGroupsAtom = atomWithStorage("userGroups", []); // already present
+
 authenticatedAtom.onMount = (set) => {
   set(isAuthAtom);
 };
 
+// --- NEW: Fetch user groups and set atom ---
+const fetchAndSetUserGroups = async (set) => {
+  try {
+    const response = await axios.get("/api/user-groups/");
+    if (response.status === 200) {
+      set(userGroupsAtom, response.data.groups);
+    } else {
+      set(userGroupsAtom, []);
+    }
+  } catch (error) {
+    set(userGroupsAtom, []);
+  }
+};
+// -------------------------------------------
+
 const refreshTokens = async (get, set) => {
   try {
     const response = await axios.post(
-      //  try to refresh tokens, passing in refresh token
       "/token/refresh/",
       {
         refresh: get(refreshTokenAtom),
@@ -31,24 +47,25 @@ const refreshTokens = async (get, set) => {
       }
     );
     if (response.status === 200) {
-      // ok response
-      axios.defaults.headers.common[ // set authorization header
+      axios.defaults.headers.common[
         "Authorization"
       ] = `Bearer ${response.data.access}`;
-      set(accessTokenAtom, response.data.access); // set tokens
+      set(accessTokenAtom, response.data.access);
       set(refreshTokenAtom, response.data.refresh);
-      set(lastLoginDatetimeAtom, dayjs()); // set last login datetime
-      return true; // successful refresh
+      set(lastLoginDatetimeAtom, dayjs());
+
+      // --- NEW: Fetch user groups after successful token refresh ---
+      await fetchAndSetUserGroups(set);
+
+      return true;
     } else {
-      // not successful refresh
-      set(removeTokensAtom); // remove tokens
-      return false; // unsuccessful refresh
+      set(removeTokensAtom);
+      return false;
     }
   } catch (error) {
-    // refresh error
     console.log("Error refreshing tokens: ", error);
-    set(removeTokensAtom); // remove tokens after error
-    return false; // unsuccessful refresh
+    set(removeTokensAtom);
+    return false;
   }
 };
 
@@ -58,53 +75,71 @@ export const isAuthAtom = atom(
     get(refreshTokenAtom);
     get(lastLoginDatetimeAtom);
   },
-  (get, set) => {
+  async (get, set) => {
     const accessToken = get(accessTokenAtom);
     const refreshToken = get(refreshTokenAtom);
     const accessExp = dayjs().subtract(14, "minutes");
     const lastLoginDatetime = dayjs(get(lastLoginDatetimeAtom));
 
     if (get(refreshAtom) === true) {
-      // received error 401. refresh?
       set(refreshAtom, false);
       if (accessExp.isAfter(lastLoginDatetime)) {
-        // access token expired
-        if (refreshTokens(get, set)) {
-          // try to refresh tokens
-          set(authenticatedAtom, true); // authenticated
-        } else set(authenticatedAtom, false); // refresh failed
+        if (await refreshTokens(get, set)) {
+          set(authenticatedAtom, true);
+
+          // --- NEW: Fetch user groups after refresh ---
+          await fetchAndSetUserGroups(set);
+
+        } else set(authenticatedAtom, false);
       } else if (accessToken !== null) {
-        // possible page refreshed. access token is still valid.
         axios.defaults.headers.common[
           "Authorization"
         ] = `Bearer ${accessToken}`;
         set(authenticatedAtom, true);
+
+        // --- NEW: Fetch user groups after access token is valid ---
+        await fetchAndSetUserGroups(set);
+
       } else set(authenticatedAtom, false);
     } else if (accessToken === null || refreshToken === null) {
-      // no tokens: not authenticated
       set(authenticatedAtom, false);
+
+      // --- NEW: Clear user groups on logout ---
+      set(userGroupsAtom, []);
+
     } else if (accessExp.isAfter(lastLoginDatetime)) {
-      // access token is expired
-      set(refreshAtom, true); // refreshing tokens
-      if (refreshTokens(get, set)) {
-        // if refresh success
-        set(refreshAtom, false); // not refreshing tokens
-        set(authenticatedAtom, true); // authenticated
+      set(refreshAtom, true);
+      if (await refreshTokens(get, set)) {
+        set(refreshAtom, false);
+        set(authenticatedAtom, true);
+
+        // --- NEW: Fetch user groups after refresh ---
+        await fetchAndSetUserGroups(set);
+
       } else {
-        set(refreshAtom, false); // not refreshing tokens
-        set(authenticatedAtom, false); // not authenticated
+        set(refreshAtom, false);
+        set(authenticatedAtom, false);
+
+        // --- NEW: Clear user groups on logout ---
+        set(userGroupsAtom, []);
       }
     } else {
       axios.defaults.headers.common["Authorization"] = `Bearer ${accessToken}`;
-      set(authenticatedAtom, true); // authenticated
+      set(authenticatedAtom, true);
+
+      // --- NEW: Fetch user groups after access token is valid ---
+      await fetchAndSetUserGroups(set);
+
     }
   }
 );
 
+// --- MODIFIED: Clear user groups on logout ---
 export const removeTokensAtom = atom(null, (get, set) => {
   set(accessTokenAtom, null);
   set(refreshTokenAtom, null);
   set(isAuthAtom, false);
+  set(userGroupsAtom, []); // clear user groups
 });
 
 export const updateWarehouseDataAtom = atom(null, async (get, set, updated) => {
@@ -116,7 +151,7 @@ export const updateWarehouseDataAtom = atom(null, async (get, set, updated) => {
       set(refreshAtom, true);
       set(isAuthAtom);
     } else {
-      console.log("Error updating warehouse data: ", error);
+      console.log("Error updating warehouse  ", error);
     }
   }
 });

@@ -2,6 +2,5 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
-    # path('members/', views.models, name='members'),
-
+    path('api/user-groups/', views.UserGroupsView.as_view(), name='user-groups'),
 ]
