@@ -40,6 +40,26 @@ spec:
               secretKeyRef:
                 name: ctscheduling-env-secret
                 key: CSRF_TRUSTED_ORIGIN
+          - name: SENDGRID_API_KEY
+            valueFrom:
+              secretKeyRef:
+                name: ctscheduling-env-secret
+                key: SENDGRID_API_KEY
+          - name: TWILIO_ACCOUNT_SID
+            valueFrom:
+              secretKeyRef:
+                name: ctscheduling-env-secret
+                key: TWILIO_ACCOUNT_SID
+          - name: TWILIO_AUTH_TOKEN
+            valueFrom:
+              secretKeyRef:
+                name: ctscheduling-env-secret
+                key: TWILIO_AUTH_TOKEN
+          - name: TWILIO_PHONE_NUMBER
+            valueFrom:
+              secretKeyRef:
+                name: ctscheduling-env-secret
+                key: TWILIO_PHONE_NUMBER
       imagePullSecrets:
         - name: oracle-docker-registry
       
