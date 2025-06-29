@@ -12,11 +12,6 @@ build:
 	@echo "Running build script..."
 	./build.sh
 
-update-replacement:
-	$(eval NEW_VERSION := $(shell cd frontend && node -p "require('./package.json').version"))
-	@echo "Updating CTSCHEDULING_IMAGE version in $(REPLACEMENTS_FILE) to $(NEW_VERSION)"
-	sed -i.bak -E 's|(CTSCHEDULING_IMAGE=//ctscheduling/ctscheduling:)[^[:space:]]+|\1$(NEW_VERSION)|' $(REPLACEMENTS_FILE)
-
 # Diff target: Updates image tag and shows deployment diff
 diff:
 	@echo "Updating tag in deployments/base/.replacements..."
