@@ -1,8 +1,9 @@
 {
   "name": "candor-scheduling",
   "private": true,
-  "version": "0.0.0",
+  "version": "0.0.4",
   "type": "module",
+  "homepage": "/static",
   "scripts": {
     "dev": "vite",
     "build": "vite build",

@@ -17,7 +17,6 @@ from django.forms.models import model_to_dict
 from datetime import datetime
 import pytz
 
-
 class IsAuthenticatedOrPostOnly(permissions.BasePermission):
     def has_permission(self, request, view):
         if request.method == 'POST':

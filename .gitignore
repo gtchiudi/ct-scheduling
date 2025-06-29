@@ -6,7 +6,8 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
-
+bin
+lib
 node_modules
 dist
 dist-ssr
@@ -25,3 +26,10 @@ __pycache__
 *.sln
 *.sw?
 .env
+build
+static
+staticfiles
+
+**/.env
+**/.replacements
+**/*.private.json

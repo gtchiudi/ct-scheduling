@@ -8,19 +8,27 @@ services:
   #     - "8000:8000"
   #   volumes:
   #     - ./backend:/app
+  # deploy:
+  #   build:
+  #     context: .
+  #   ports:
+  #     - "8000:8000"
 
   backend:
-    build:
+    build: 
       context: .
-    container_name: backend_c
-    command: >
-      sh -c "python manage.py collectstatic --noinput && 
-        gunicorn server.wsgi:application --bind 0.0.0.0:8000"
+      dockerfile: Dockerfile
+    env_file:
+      - .env
+    container_name: django_backend
+    command: sleep infinity
+    # command: python manage.py runserver 0.0.0.0:8000
+    restart: always
     ports:
       - "8000:8000"
     volumes:
-      - ./backend:/app
-      - ./backend/static:/app/static
+      - ./backend:/ct-scheduling/backend
+      - ./backend/static:/ct-scheduling/static
 
   # frontend-dev:
   #   build:
@@ -42,14 +50,30 @@ services:
   frontend:
     build:
       context: .
-      dockerfile: Dockerfile.node
-    container_name: frontend_c
+      dockerfile: Dockerfile
+      target: dev
+    container_name: react_frontend
+    command: npm run dev -- --host
+    restart: always
     ports: 
-      - 80:8080
+      - 3000:5173
     volumes:
       - backend_static:/app/static
+      - ./frontend:/app
     depends_on:
       - backend
 
+  mysql:
+    image: mysql:8.0
+    container_name: mysql_db
+    restart: always
+    env_file:
+      - .env
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+
 volumes:
   backend_static:
+  mysql_data:
