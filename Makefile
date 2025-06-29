@@ -1,26 +1,34 @@
 LABEL_SELECTOR = deploy/ctscheduling
 NAMESPACE = ctscheduling
 DEPLOYMENT_NAME = production
+REPLACEMENTS_FILE = deployments/production/.replacements
+
 
 # Build target: Increments version and runs build script
 build:
 	@echo "Incrementing version in frontend/package.json..."
 	cd frontend && npm version patch
+	cd ..
 	@echo "Running build script..."
 	./build.sh
 
+update-replacement:
+	$(eval NEW_VERSION := $(shell cd frontend && node -p "require('./package.json').version"))
+	@echo "Updating CTSCHEDULING_IMAGE version in $(REPLACEMENTS_FILE) to $(NEW_VERSION)"
+	sed -i.bak -E 's|(CTSCHEDULING_IMAGE=//ctscheduling/ctscheduling:)[^[:space:]]+|\1$(NEW_VERSION)|' $(REPLACEMENTS_FILE)
+
 # Diff target: Updates image tag and shows deployment diff
 diff:
-	@echo "Updating tag in deployments/production/.replacements..."
+	@echo "Updating tag in deployments/base/.replacements..."
 	$(eval NEW_VERSION := $(shell cd frontend && node -p "require('./package.json').version"))
-	sed -i.bak "s|newTag: .*|newTag: $(NEW_VERSION)|" deployments/production/.replacements
+	sed -i.bak -E 's|(/ctscheduling/ctscheduling:)[^[:space:]]+|\1$(NEW_VERSION)|' $(REPLACEMENTS_FILE)	
 	@echo "Showing Kubernetes deployment diff..."
-	kubectl diff -k deployments/production
+	kubectl diff -k deployments/$(DEPLOYMENT_NAME)
 
 # Deploy target: Applies production configuration
 deploy:
 	@echo "Applying production deployment..."
-	kubectl apply -k deployments/production
+	kubectl apply -k deployments/$(DEPLOYMENT_NAME)
 
 rollback:
 	@echo "Rolling back deployment $(DEPLOYMENT_NAME) in namespace $(NAMESPACE)..."
@@ -29,7 +37,7 @@ rollback:
 	kubectl rollout status deployment/$(DEPLOYMENT_NAME) -n $(NAMESPACE)
 
 clean:
-	rm -f deployments/base/.replacements.bak
+	rm -f deployments/production/.replacements.bak
 
 .PHONY: build diff deploy rollback clean
 
