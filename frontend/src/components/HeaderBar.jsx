@@ -12,10 +12,11 @@ import {
   Button,
   Tooltip,
   MenuItem,
+  Experimental_CssVarsProvider,
 } from "@mui/material";
 import MenuIcon from "@mui/icons-material/Menu";
 import { useAtom } from "jotai";
-import { authenticatedAtom } from "../components/atoms.jsx";
+import { authenticatedAtom, userGroupsAtom } from "../components/atoms.jsx";
 
 // Add Links to header here using same format as Request List
 // This is the only part that needs modified to change the header links
@@ -23,11 +24,6 @@ import { authenticatedAtom } from "../components/atoms.jsx";
 // href: <== This changes what the header button links to
 // All of this is the same for the 'Settings' menu
 
-//old
-// const pages = [
-//   { text: "Pending Requests", href: "/PendingRequests" },
-//   { text: "Make A request", href: "/RequestForm" },
-// ];
 
 const pagesAuth = [
   { text: "Pending Requests", href: "/PendingRequests" },
@@ -44,15 +40,25 @@ function HeaderBar() {
   const [anchorElNav, setAnchorElNav] = React.useState(null);
   const [anchorElUser, setAnchorElUser] = React.useState(null);
   const [authenticated] = useAtom(authenticatedAtom);
+  const [userGroups] = useAtom(userGroupsAtom);
   const location = useLocation();
-  let pagesToRender = authenticated ? pagesAuth : pagesNonAuth;
-  if (location.pathname === "/Calendar" && authenticated) {
-    pagesToRender = [{ text: "Pending Requests", href: "/PendingRequests" }];
-  } else if (location.pathname === "/PendingRequests" && authenticated) {
+  let pagesToRender = pagesNonAuth;
+  console.log(location.pathname)
+  console.log(userGroups)
+  if (location.pathname == "/Calendar" && authenticated) {
+    if ('Dock' in userGroups){
+      console.log("Dock");
+      pagesToRender = [];
+    }
+    else
+      pagesToRender = [{ text: "Pending Requests", href: "/PendingRequests" }];
+  } else if (location.pathname == "/PendingRequests" && authenticated) {
     pagesToRender = [{ text: "Calendar", href: "/Calendar" }];
   } else if (authenticated) {
     //to fix bug when rendering when first logging in
     pagesToRender = pagesAuth;
+  } else {
+    pagesToRender = pagesNonAuth;
   }
   const handleOpenNavMenu = (event) => {
     setAnchorElNav(event.currentTarget);
