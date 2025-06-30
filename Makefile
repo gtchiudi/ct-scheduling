@@ -1,6 +1,6 @@
 LABEL_SELECTOR = deploy/ctscheduling
 NAMESPACE = ctscheduling
-DEPLOYMENT_NAME = production
+DEPLOYMENT_NAME = ctscheduling
 REPLACEMENTS_FILE = deployments/production/.replacements
 
 
@@ -18,18 +18,28 @@ diff:
 	$(eval NEW_VERSION := $(shell cd frontend && node -p "require('./package.json').version"))
 	sed -i.bak -E 's|(/ctscheduling/ctscheduling:)[^[:space:]]+|\1$(NEW_VERSION)|' $(REPLACEMENTS_FILE)	
 	@echo "Showing Kubernetes deployment diff..."
-	kubectl diff -k deployments/$(DEPLOYMENT_NAME)
+	kubectl diff -k deployments/production || true
 
 # Deploy target: Applies production configuration
 deploy:
 	@echo "Applying production deployment..."
-	kubectl apply -k deployments/$(DEPLOYMENT_NAME)
+	kubectl apply -k deployments/production
 
 rollback:
-	@echo "Rolling back deployment $(DEPLOYMENT_NAME) in namespace $(NAMESPACE)..."
-	kubectl rollout undo deployment -n $(NAMESPACE)
+	@if [ -n "$(REVISION)" ]; then \
+		echo "Rolling back deployment $(DEPLOYMENT_NAME) in namespace $(NAMESPACE) to revision $(REVISION)..."; \
+		kubectl rollout undo deployment/$(DEPLOYMENT_NAME) -n $(NAMESPACE) --to-revision=$(REVISION); \
+	else \
+		echo "Rolling back deployment $(DEPLOYMENT_NAME) in namespace $(NAMESPACE) to previous revision..."; \
+		kubectl rollout undo deployment/$(DEPLOYMENT_NAME) -n $(NAMESPACE); \
+	fi
 	@echo "Rollback complete. Current rollout status:"
-	kubectl rollout status delpoyment -n $(NAMESPACE)
+	kubectl rollout status deployment/$(DEPLOYMENT_NAME) -n $(NAMESPACE)
+
+rollback-history:
+	@echo "Getting rollback history for deployment $(DEPLOYMENT_NAME) in namespace $(NAMESPACE)..."
+	kubectl rollout history deployment/$(DEPLOYMENT_NAME) -n $(NAMESPACE)
+
 
 clean:
 	rm -f deployments/production/.replacements.bak
