@@ -137,7 +137,7 @@ Reply 'STOP' to opt out of future notifications.''')
             date_time = date_time.astimezone(
                 pytz.timezone('America/New_York'))
             send_email(
-                'candor.scheduling@gmail.com',
+                'sales@candortransport.com',
                 'New Calendar Event Confirmation',
                 F'''
 <pre>Please do not reply to this email.
@@ -156,7 +156,7 @@ Event Details:
             date_time = date_time.astimezone(
                 pytz.timezone('America/New_York'))
             send_email(  # to sales team
-                'candor.scheduling@gmail.com',
+                'sales@candortransport.com',
                 'New Pending Request',
                 F'''
 <pre>Please do not reply to this email.
