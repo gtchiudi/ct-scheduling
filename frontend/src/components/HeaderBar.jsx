@@ -24,42 +24,51 @@ import { authenticatedAtom, userGroupsAtom } from "../components/atoms.jsx";
 // href: <== This changes what the header button links to
 // All of this is the same for the 'Settings' menu
 
-
-const pagesAuth = [
-  { text: "Pending Requests", href: "/PendingRequests" },
-  { text: "Calendar", href: "/Calendar" },
-];
-
 const pagesNonAuth = [
   { text: "REQUEST PICKUP/DELIVERY", href: "/RequestForm" },
 ];
 
-const settings = [{ text: "Login", href: "/Login" }];
 
 function HeaderBar() {
   const [anchorElNav, setAnchorElNav] = React.useState(null);
   const [anchorElUser, setAnchorElUser] = React.useState(null);
   const [authenticated] = useAtom(authenticatedAtom);
-  const [userGroups] = useAtom(userGroupsAtom);
+  const userGroups = useAtom(userGroupsAtom)[0];
   const location = useLocation();
   let pagesToRender = pagesNonAuth;
+  let settings = [{ text: "Login", href: "/Login" }];
   console.log(location.pathname)
   console.log(userGroups)
-  if (location.pathname == "/Calendar" && authenticated) {
-    if ('Dock' in userGroups){
-      console.log("Dock");
-      pagesToRender = [];
+
+  if (authenticated){
+    if (location.pathname === '/'){
+      if (userGroups.includes('Dock'))
+        pagesToRender = [{ text: "Calendar", href: "/Calendar" },];
+      else
+        pagesToRender = [
+          { text: "Pending Requests", href: "/PendingRequests" },
+          { text: "Calendar", href: "/Calendar" },
+        ];
+      }
+    else if (location.pathname === '/Calendar'){
+      if (userGroups.includes('Dock'))
+        pagesToRender = [{text: 'Home', href: '/'}];
+      else
+        pagesToRender = [{text: 'Pending Requests', href: '/PendingRequests'}];
     }
+    else if (location.pathname === '/PendingRequests')
+      pagesToRender = [{text: 'Calendar', href: '/Calendar'}];
+
+    if (userGroups.includes('Admin'))
+      settings = [
+        {text: 'Logout', href: '/logout'},
+        {text: 'Admin Page', href: '/Admin'}
+      ];
     else
-      pagesToRender = [{ text: "Pending Requests", href: "/PendingRequests" }];
-  } else if (location.pathname == "/PendingRequests" && authenticated) {
-    pagesToRender = [{ text: "Calendar", href: "/Calendar" }];
-  } else if (authenticated) {
-    //to fix bug when rendering when first logging in
-    pagesToRender = pagesAuth;
-  } else {
-    pagesToRender = pagesNonAuth;
+      settings = [{text: 'Logout', href: '/logout'}];
+
   }
+
   const handleOpenNavMenu = (event) => {
     setAnchorElNav(event.currentTarget);
   };
@@ -175,26 +184,16 @@ function HeaderBar() {
               onClose={handleCloseUserMenu}
             >
               {settings.map((setting) => (
-                <MenuItem key={setting} onClick={handleCloseUserMenu}>
+                <MenuItem key={setting.text} onClick={handleCloseUserMenu}>
                   <Typography textAlign="center">
-                    {authenticated ? (
-                      <Button
-                        onClick={handleCloseNavMenu}
-                        component={RouterLink}
-                        to="/logout"
-                      >
-                        Logout
-                      </Button>
-                    ) : (
-                      <Button
-                        key={setting.text}
-                        onClick={handleCloseNavMenu}
-                        component={RouterLink}
-                        to={setting.href}
-                      >
-                        {setting.text}
-                      </Button>
-                    )}
+                    <Button
+                      key={setting.href}
+                      onClick={handleCloseNavMenu}
+                      component={RouterLink}
+                      to={setting.href}
+                    >
+                      {setting.text}
+                    </Button>
                   </Typography>
                 </MenuItem>
               ))}
