@@ -18,6 +18,9 @@ from django.forms.models import model_to_dict
 from datetime import datetime
 import pytz
 
+candorEmailRecipient = 'candor.scheduling@gmail.com'
+# candorEmailRecipient = 'sales@candortransport.com'
+
 class IsAuthenticatedOrPostOnly(permissions.BasePermission):
     def has_permission(self, request, view):
         if request.method == 'POST':
@@ -138,7 +141,7 @@ Reply 'STOP' to opt out of future notifications.''')
             date_time = date_time.astimezone(
                 pytz.timezone('America/New_York'))
             send_email(
-                'candor.scheduling@gmail.com',
+                candorEmailRecipient,
                 'New Calendar Event Confirmation',
                 F'''
 <pre>Please do not reply to this email.
@@ -157,7 +160,7 @@ Event Details:
             date_time = date_time.astimezone(
                 pytz.timezone('America/New_York'))
             send_email(  # to sales team
-                'candor.scheduling@gmail.com',
+                candorEmailRecipient,
                 'New Pending Request',
                 F'''
 <pre>Please do not reply to this email.
