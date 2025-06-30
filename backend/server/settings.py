@@ -28,7 +28,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-q*+(03o^)&zw-)ve8a441iw-tnura(^qj#j&wgy8580*01a(6r'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
 ALLOWED_HOSTS = ['*']
 
@@ -110,20 +110,20 @@ DATABASES = {
         'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
-if os.getenv('ENABLE_MYSQL'):
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.mysql',
-            'NAME': os.getenv('MYSQL_DATABASE'),
-            'USER': os.getenv('MYSQL_USER'),
-            'PASSWORD': os.getenv('MYSQL_PASSWORD'),
-            'HOST': os.getenv('MYSQL_HOST'),
-            'PORT': os.getenv('MYSQL_PORT', default='3306'),
-            # 'OPTIONS': {
-            #     'ssl': {'ssl-ca': '/path/to/ssl-ca.pem'} if os.getenv.bool('DB_USE_SSL', default=False) else {},
-            # }
-        }
-    }
+# if os.getenv('ENABLE_MYSQL'):
+#     DATABASES = {
+#         'default': {
+#             'ENGINE': 'django.db.backends.mysql',
+#             'NAME': os.getenv('MYSQL_DATABASE'),
+#             'USER': os.getenv('MYSQL_USER'),
+#             'PASSWORD': os.getenv('MYSQL_PASSWORD'),
+#             'HOST': os.getenv('MYSQL_HOST'),
+#             'PORT': os.getenv('MYSQL_PORT', default='3306'),
+#             # 'OPTIONS': {
+#             #     'ssl': {'ssl-ca': '/path/to/ssl-ca.pem'} if os.getenv.bool('DB_USE_SSL', default=False) else {},
+#             # }
+#         }
+#     }
 
 # django_logger.info("SET DATABASES", DATABASES)
 
@@ -176,6 +176,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 CORS_ORIGIN_WHITELIST = [
     'http://frontend_c_dev:3004',
     'http://frontend_c:80'
+    ,'http://localhost:5173'
 ]
 
 if os.getenv("CSRF_TRUSTED_ORIGIN"):

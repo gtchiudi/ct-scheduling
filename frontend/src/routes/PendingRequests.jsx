@@ -6,6 +6,7 @@ import {
   refreshAtom,
   warehouseDataAtom,
   authenticatedAtom,
+  userGroupsAtom,
 } from "../components/atoms.jsx";
 import { useQuery } from "@tanstack/react-query";
 import { PropTypes } from "prop-types";
@@ -162,6 +163,7 @@ export default function PendingRequests() {
   const [refresh, setRefresh] = useAtom(refreshAtom); // used as refresh token tag for error 401 handling
   const [pauseQuery, setPause] = useState(false); // used to pause query
   const [warehouseData] = useAtom(warehouseDataAtom);
+  const userGroups = useAtom(userGroupsAtom);
 
   let rows = useState([]); // store rows of table
 
@@ -178,6 +180,10 @@ export default function PendingRequests() {
     if (!authenticated) {
       navigate("/Login");
     }
+    else if (userGroups.includes('Dock')){
+      navigate('/Calendar');
+    }
+
     const intervalId = setInterval(() => {
       setPause(true);
       isAuth();

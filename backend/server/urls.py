@@ -30,6 +30,7 @@ router.register(r'schedule', views.ApprovalLogView, 'schedule')
 router.register(r'user', views.UserView, 'user')
 router.register(r'group', views.GroupView, 'group')
 
+
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include(router.urls)),
