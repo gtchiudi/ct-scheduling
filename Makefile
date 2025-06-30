@@ -27,9 +27,9 @@ deploy:
 
 rollback:
 	@echo "Rolling back deployment $(DEPLOYMENT_NAME) in namespace $(NAMESPACE)..."
-	kubectl rollout undo deployment/$(DEPLOYMENT_NAME) -n $(NAMESPACE)
+	kubectl rollout undo deployment -n $(NAMESPACE)
 	@echo "Rollback complete. Current rollout status:"
-	kubectl rollout status deployment/$(DEPLOYMENT_NAME) -n $(NAMESPACE)
+	kubectl rollout status delpoyment -n $(NAMESPACE)
 
 clean:
 	rm -f deployments/production/.replacements.bak

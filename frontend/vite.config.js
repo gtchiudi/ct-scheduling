@@ -2,8 +2,8 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import path from 'path'
 
-const proxyURL = 'http://localhost:8000';
-// const proxyURL = process.env.proxyURL;
+// const proxyURL = 'http://localhost:8000';
+const proxyURL = process.env.proxyURL;
 
 // https://vitejs.dev/config/
 export default defineConfig(() => {
