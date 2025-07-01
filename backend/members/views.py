@@ -88,7 +88,7 @@ Appointement Details:
     Reference Number: {updated_data["ref_number"]}
     Date Time: {date_time.strftime('%Y-%m-%d %H:%M:%S')}
 
-Please email sales@candortransport.com with any questions or concerns.
+Please email appointments@candortransport.com with any questions or concerns.
 
 Thank you for choosing Candor Logistics.
 </pre>''')
@@ -178,7 +178,7 @@ Event Details:
                 'Appointment Request Confirmation',
                 F'''
 <pre>Please do not reply to this email.
-Email sales@candortransport.com for any issues.
+Email appointments@candortransport.com for any issues.
 
 Your appointment request has been received. Please allow 24 hours for approval.
 
