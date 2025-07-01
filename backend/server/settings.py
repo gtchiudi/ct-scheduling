@@ -176,6 +176,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 CORS_ORIGIN_WHITELIST = [
     'http://frontend_c_dev:3004',
     'http://frontend_c:80'
+    # ,'http://localhost:5173'
 ]
 
 if os.getenv("CSRF_TRUSTED_ORIGIN"):

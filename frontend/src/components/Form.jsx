@@ -98,7 +98,7 @@ function Form({ request, closeModal, dateTime }) {
       "ref_number",
       "load_type",
       "delivery",
-      "trailer_number",
+      // "trailer_number",
     ];
     return fields;
   }, [path]);
@@ -643,7 +643,7 @@ function Form({ request, closeModal, dateTime }) {
 
           {requestData.load_type !== "Container" && (
             <TextField
-              required
+              // required
               label="Trailer Number"
               name="trailer_number"
               value={requestData.trailer_number}

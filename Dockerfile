@@ -23,6 +23,8 @@ COPY --from=dev /ct-scheduling/frontend/build ./static
 
 COPY ./backend .
 
+RUN cp ./static/index.html ./templates/
+
 # Collect static files (for Django projects)
 RUN python manage.py collectstatic --noinput
 

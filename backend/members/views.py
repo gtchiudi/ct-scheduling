@@ -3,6 +3,7 @@ from rest_framework import viewsets, filters, status
 from .serializers import *
 from .models import *
 from django.contrib.auth.models import User, Group
+from rest_framework.views import APIView
 
 from .messages import send_email, send_text
 
@@ -16,6 +17,9 @@ from rest_framework.parsers import JSONParser
 from django.forms.models import model_to_dict
 from datetime import datetime
 import pytz
+
+# candorEmailRecipient = 'candor.scheduling@gmail.com'
+candorEmailRecipient = 'sales@candortransport.com'
 
 class IsAuthenticatedOrPostOnly(permissions.BasePermission):
     def has_permission(self, request, view):
@@ -137,7 +141,7 @@ Reply 'STOP' to opt out of future notifications.''')
             date_time = date_time.astimezone(
                 pytz.timezone('America/New_York'))
             send_email(
-                'candor.scheduling@gmail.com',
+                candorEmailRecipient,
                 'New Calendar Event Confirmation',
                 F'''
 <pre>Please do not reply to this email.
@@ -156,7 +160,7 @@ Event Details:
             date_time = date_time.astimezone(
                 pytz.timezone('America/New_York'))
             send_email(  # to sales team
-                'candor.scheduling@gmail.com',
+                candorEmailRecipient,
                 'New Pending Request',
                 F'''
 <pre>Please do not reply to this email.
@@ -165,7 +169,7 @@ A new request is now pending. Please review.
 
 Event Details:
     Reference Number: {request.data["ref_number"]}
-    Custome: {request.data["company_name"]}
+    Customer: {request.data["company_name"]}
     Date Time: {date_time.strftime('%Y-%m-%d %H:%M:%S')}
 </pre>''')
 
@@ -211,3 +215,11 @@ class GroupView(viewsets.ModelViewSet):
     permission_classes = (IsAuthenticated, )
     serializer_class = GroupSerializer
     queryset = Group.objects.all()
+
+
+class UserGroupsView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        groups = list(request.user.groups.values_list('name', flat=True))
+        return Response({'groups': groups})

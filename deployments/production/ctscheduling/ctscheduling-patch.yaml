@@ -40,6 +40,70 @@ spec:
               secretKeyRef:
                 name: ctscheduling-env-secret
                 key: CSRF_TRUSTED_ORIGIN
+          - name: SENDGRID_API_KEY
+            valueFrom:
+              secretKeyRef:
+                name: ctscheduling-env-secret
+                key: SENDGRID_API_KEY
+          - name: TWILIO_ACCOUNT_SID
+            valueFrom:
+              secretKeyRef:
+                name: ctscheduling-env-secret
+                key: TWILIO_ACCOUNT_SID
+          - name: TWILIO_AUTH_TOKEN
+            valueFrom:
+              secretKeyRef:
+                name: ctscheduling-env-secret
+                key: TWILIO_AUTH_TOKEN
+          - name: TWILIO_PHONE_NUMBER
+            valueFrom:
+              secretKeyRef:
+                name: ctscheduling-env-secret
+                key: TWILIO_PHONE_NUMBER
+      imagePullSecrets:
+        - name: oracle-docker-registry
+      ---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ctscheduling
+spec:
+  template:
+    spec:
+      containers:
+      - name: ctscheduling
+        image: $(CTSCHEDULING_IMAGE)
+        env:
+          - name: MYSQL_DATABASE
+            valueFrom:
+              secretKeyRef:
+                name: ctscheduling-env-secret
+                key: MYSQL_DATABASE
+          - name: MYSQL_USER
+            valueFrom:
+              secretKeyRef:
+                name: ctscheduling-env-secret
+                key: MYSQL_USER
+          - name: MYSQL_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: ctscheduling-env-secret
+                key: MYSQL_PASSWORD
+          - name: MYSQL_HOST
+            valueFrom:
+              secretKeyRef:
+                name: ctscheduling-env-secret
+                key: MYSQL_HOST
+          - name: ENABLE_MYSQL
+            valueFrom:
+              secretKeyRef:
+                name: ctscheduling-env-secret
+                key: ENABLE_MYSQL
+          - name: CSRF_TRUSTED_ORIGIN
+            valueFrom:
+              secretKeyRef:
+                name: ctscheduling-env-secret
+                key: CSRF_TRUSTED_ORIGIN
       imagePullSecrets:
         - name: oracle-docker-registry
       
