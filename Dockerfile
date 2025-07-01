@@ -6,7 +6,7 @@ COPY frontend/ .
 RUN npm run build
 
 # Use the official Python image as the base image
-FROM python:3.11-alpine
+FROM python:3.13-alpine3.22
 
 # Environment variables to optimize Python
 ENV PYTHONDONTWRITEBYTECODE=1
