@@ -4,6 +4,7 @@ import { atomWithStorage } from "jotai/utils";
 import dayjs from "dayjs";
 
 export const warehouseDataAtom = atomWithStorage("warehouseData", []);
+export const warehouseCheckedAtom = atomWithStorage("warehouseChecked", []);
 export const accessTokenAtom = atomWithStorage("accessToken", null);
 export const refreshTokenAtom = atomWithStorage("refreshToken", null);
 export const lastLoginDatetimeAtom = atomWithStorage(

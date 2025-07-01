@@ -22,9 +22,17 @@ import {
   refreshAtom,
   warehouseDataAtom,
   updateWarehouseDataAtom,
+  warehouseCheckedAtom,
 } from "../components/atoms.jsx";
 import axios from "axios";
 import Form from "../components/Form.jsx";
+
+function isWarehouseChecked(id, warehousesChecked, allWarehouses) {
+  if (!warehousesChecked || warehousesChecked.length === 0) {
+    return true;
+  }
+  return warehousesChecked.includes(id);
+}
 
 export function CustomViewer({ event, onClose }) {
   // view/edit a request
@@ -99,19 +107,11 @@ export default function Calendar() {
   let result = useState(null); // query result storage
 
   const warehouseData = useAtom(warehouseDataAtom);
+  const [warehousesChecked, setWarehousesChecked] = useAtom(warehouseCheckedAtom);
   const [, updateWarehouseData] = useAtom(updateWarehouseDataAtom);
 
   const [parsedWarehouseData, setParsedWarehouseData] = useState([]); // parsed warehouse data storage
 
-  const handleCheckboxChange = (id) => (event) => {
-    setParsedWarehouseData(
-      parsedWarehouseData.map((warehouse) =>
-        warehouse.id === id
-          ? { ...warehouse, checked: event.target.checked }
-          : warehouse
-      )
-    );
-  };
   const ref = React.useRef(null);
   // check authentication
   useEffect(() => {
@@ -137,15 +137,48 @@ export default function Calendar() {
       clearInterval(intervalId);
     };
   }, []);
-  React.useEffect(() => {
+
+  // Map warehouses to checkboxes
+  useEffect(() => {
+    const allWarehouses = warehouseData[0] || [];
+    const checkedList = warehousesChecked || [];
+
     setParsedWarehouseData(
-      warehouseData[0].map((warehouse) => ({
+      allWarehouses.map((warehouse) => ({
         id: warehouse.id,
         name: warehouse.name,
-        checked: warehouse.name == "Bedford Heights" ? true : false, // Aurora is checked by default
+        checked: isWarehouseChecked(warehouse.id, checkedList),
       }))
     );
+
+    if (checkedList == []){
+      setWarehousesChecked(allWarehouses.map(warehouse => warehouse.id))
+    }
   }, []);
+
+  const handleCheckboxChange = (id) => (event) => {
+    setParsedWarehouseData(
+      parsedWarehouseData.map((warehouse) =>
+        warehouse.id === id
+          ? { ...warehouse, checked: event.target.checked }
+          : warehouse
+      )
+    );
+
+    setWarehousesChecked((prev = []) => {
+      if (event.target.checked) {
+        if (!prev || prev.length === 0) {
+          return parsedWarehouseData
+            .filter(w => w.id !== id && w.checked)
+            .map(w => w.id)
+            .concat(id);
+        }
+        return [...prev, id];
+      } else {
+        return prev.filter((warehouseId) => warehouseId !== id);
+      }
+    });
+  };
   const updateRange = (date) => {
     const newDate = dayjs(date); // store date as dayjs object
     if (newDate.isBefore(startDate) || newDate.isAfter(endDate)) {
