@@ -19,7 +19,7 @@ from datetime import datetime
 import pytz
 
 # candorEmailRecipient = 'candor.scheduling@gmail.com'
-candorEmailRecipient = 'sales@candortransport.com'
+candorEmailRecipient = 'appointments@candortransport.com'
 
 class IsAuthenticatedOrPostOnly(permissions.BasePermission):
     def has_permission(self, request, view):
