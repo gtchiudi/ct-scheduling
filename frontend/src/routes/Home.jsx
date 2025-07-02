@@ -60,8 +60,14 @@ export default function Home() {
               <br /> <br />
               For more information about Candor Logistics and Candor
               Transportation, visit our website: <br />
-              <Link variant="subtitle1" href="www.candorlogistics.com/home">
-                {"Candor Logistics Website"}
+              <Link
+                variant="subtitle1"
+                href="https://www.candorlogistics.com/"
+                component="a"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Candor Logistics Website
               </Link>
             </Typography>
 
