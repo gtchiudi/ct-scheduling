@@ -37,11 +37,9 @@ function HeaderBar() {
   const location = useLocation();
   let pagesToRender = pagesNonAuth;
   let settings = [{ text: "Login", href: "/Login" }];
-  console.log(location.pathname)
-  console.log(userGroups)
 
   if (authenticated){
-    if (location.pathname === '/'){
+    if (location.pathname === '/' || location.pathname === '/RequestForm'){
       if (userGroups.includes('Dock'))
         pagesToRender = [{ text: "Calendar", href: "/Calendar" },];
       else
@@ -58,7 +56,7 @@ function HeaderBar() {
     }
     else if (location.pathname === '/PendingRequests')
       pagesToRender = [{text: 'Calendar', href: '/Calendar'}];
-    // Add handling for RequestPage when logged in.
+
 
     if (userGroups.includes('Admin'))
       settings = [
