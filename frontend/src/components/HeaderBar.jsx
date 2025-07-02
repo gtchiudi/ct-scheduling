@@ -61,7 +61,7 @@ function HeaderBar() {
     if (userGroups.includes('Admin'))
       settings = [
         {text: 'Logout', href: '/logout'},
-        {text: 'Admin Page', href: '/admin/'}
+        {text: 'Admin Page', href: '/admin/', component: 'a'}
       ];
     else
       settings = [{text: 'Logout', href: '/logout'}];
@@ -188,8 +188,8 @@ function HeaderBar() {
                     <Button
                       key={setting.href}
                       onClick={handleCloseNavMenu}
-                      component={RouterLink}
-                      to={setting.href}
+                      component={setting.component ? setting.component : RouterLink}
+                      {...(setting.component === 'a' ? { href: setting.href } : { to: setting.href })}
                     >
                       {setting.text}
                     </Button>
