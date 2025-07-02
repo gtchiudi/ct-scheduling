@@ -61,7 +61,7 @@ function HeaderBar() {
     if (userGroups.includes('Admin'))
       settings = [
         {text: 'Logout', href: '/logout'},
-        {text: 'Admin Page', href: '/Admin'}
+        {text: 'Admin Page', href: '/admin'}
       ];
     else
       settings = [{text: 'Logout', href: '/logout'}];
