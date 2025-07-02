@@ -18,8 +18,8 @@ from django.forms.models import model_to_dict
 from datetime import datetime
 import pytz
 
-candorEmailRecipient = 'candor.scheduling@gmail.com'
-# candorEmailRecipient = 'appointments@candortransport.com'
+# candorEmailRecipient = 'candor.scheduling@gmail.com'
+candorEmailRecipient = 'appointments@candortransport.com'
 
 class IsAuthenticatedOrPostOnly(permissions.BasePermission):
     def has_permission(self, request, view):
@@ -132,7 +132,6 @@ Reply 'STOP' to opt out of future notifications.''')
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    # eventually send emails to sales@candortransport.com
     def create(self, request, *args, **kwargs):
         response = super().create(request, *args, **kwargs)
         if request.data['approved']:  # created from the calendar page
