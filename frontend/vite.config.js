@@ -38,6 +38,12 @@ export default defineConfig({
           // target: proxyURL,
           changeOrigin: true,
           secure: false,
+      },
+      '/admin/': {
+        target: process.env.proxyURL,
+        // target: proxyURL,
+        changeOrigin: true,
+        secure: false,
       }
     }
   }
