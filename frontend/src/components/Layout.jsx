@@ -6,18 +6,15 @@ import { Box, Stack } from "@mui/material";
 import { useAtom } from "jotai";
 import {
   isAuthAtom,
-  updateWarehouseDataAtom,
   authenticatedAtom,
 } from "./atoms.jsx";
 
 function Layout({ children }) {
   const authenticated = useAtom(authenticatedAtom);
   const [, isAuth] = useAtom(isAuthAtom);
-  const [, updateWarehouseData] = useAtom(updateWarehouseDataAtom);
 
   React.useEffect(() => {
     isAuth();
-    updateWarehouseData();
   }, [authenticated]);
   return (
     <Box sx={{ height: "100%", margin: "0" }}>

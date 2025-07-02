@@ -4,7 +4,7 @@ import { useAtom } from "jotai";
 import {
   isAuthAtom,
   refreshAtom,
-  warehouseDataAtom,
+  warehouseDataEffectAtom,
   authenticatedAtom,
   userGroupsAtom,
 } from "../components/atoms.jsx";
@@ -162,7 +162,7 @@ export default function PendingRequests() {
   const queryClient = useQueryClient(); // used to get query client
   const [refresh, setRefresh] = useAtom(refreshAtom); // used as refresh token tag for error 401 handling
   const [pauseQuery, setPause] = useState(false); // used to pause query
-  const [warehouseData] = useAtom(warehouseDataAtom);
+  const [warehouseData, refreshWarehouseData] = useAtom(warehouseDataEffectAtom);
   const userGroups = useAtom(userGroupsAtom);
 
   let rows = useState([]); // store rows of table
@@ -173,8 +173,11 @@ export default function PendingRequests() {
   }
 
   React.useEffect(() => {
-    // check authentication then set interval to check authentication every 30 seconds
+    refreshWarehouseData();
+  }, []);
 
+  React.useEffect(() => {
+    // check authentication then set interval to check authentication every 30 seconds
     setPause(true);
     isAuth();
     if (!authenticated) {

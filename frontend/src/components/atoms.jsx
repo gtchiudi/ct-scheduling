@@ -1,19 +1,17 @@
 import { atom } from "jotai";
 import axios from "axios";
-import { atomWithStorage } from "jotai/utils";
+import { atomWithStorage} from "jotai/utils";
 import dayjs from "dayjs";
 
-export const warehouseDataAtom = atomWithStorage("warehouseData", []);
-export const warehouseCheckedAtom = atomWithStorage("warehouseChecked", []);
-export const accessTokenAtom = atomWithStorage("accessToken", null);
-export const refreshTokenAtom = atomWithStorage("refreshToken", null);
-export const lastLoginDatetimeAtom = atomWithStorage(
-  "lastLoginDatetime",
-  dayjs()
-);
+export const warehouseDataAtom = atomWithStorage("warehouseData", [], undefined, {getOnInit: true});
+export const warehouseCheckedAtom = atomWithStorage("warehouseChecked", [], undefined, {getOnInit: true});
+export const accessTokenAtom = atomWithStorage("accessToken", null, undefined, {getOnInit: true});
+export const refreshTokenAtom = atomWithStorage("refreshToken", null, undefined, {getOnInit: true});
+export const lastLoginDatetimeAtom = atomWithStorage("lastLoginDatetime", dayjs(), undefined, {getOnInit: true});
+export const lastWarehouseRefreshAtom = atomWithStorage("lastWarehouseRefresh", null, undefined, {getOnInit: true});
 export const refreshAtom = atom(false);
 export const authenticatedAtom = atom(false);
-export const userGroupsAtom = atomWithStorage("userGroups", []); // already present
+export const userGroupsAtom = atomWithStorage("userGroups", [], undefined, {getOnInit: true}); // already present
 
 authenticatedAtom.onMount = (set) => {
   set(isAuthAtom);
@@ -147,12 +145,27 @@ export const updateWarehouseDataAtom = atom(null, async (get, set, updated) => {
   try {
     const data = await axios.get("/api/warehouse");
     set(warehouseDataAtom, data.data);
+    set(lastWarehouseRefreshAtom, dayjs().toISOString());
   } catch (error) {
     if (error.response && error.response.status === 401) {
       set(refreshAtom, true);
       set(isAuthAtom);
     } else {
       console.log("Error updating warehouse  ", error);
+      set(lastWarehouseRefreshAtom, null);
     }
   }
 });
+
+export const warehouseDataEffectAtom = atom(
+  (get) => get(warehouseDataAtom),
+  async (get, set, _arg) => {
+    const warehouses = get(warehouseDataAtom);
+    const now = dayjs();
+    let lastRefresh = get(lastWarehouseRefreshAtom);
+    lastRefresh = lastRefresh ? dayjs(lastRefresh) : null
+    if (warehouses?.length == 0 || !lastRefresh || now.diff(lastRefresh, "hour") >= 24) {
+      await set(updateWarehouseDataAtom);
+    }
+  }
+);

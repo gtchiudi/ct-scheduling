@@ -20,8 +20,7 @@ import {
   authenticatedAtom,
   isAuthAtom,
   refreshAtom,
-  warehouseDataAtom,
-  updateWarehouseDataAtom,
+  warehouseDataEffectAtom,
   warehouseCheckedAtom,
 } from "../components/atoms.jsx";
 import axios from "axios";
@@ -106,16 +105,18 @@ export default function Calendar() {
   const [allEvents, setAllEvents] = useState([]); // calendar event storage of all events
   let result = useState(null); // query result storage
 
-  const warehouseData = useAtom(warehouseDataAtom);
+  const [warehouseData, refreshWarehouseData] = useAtom(warehouseDataEffectAtom);
   const [warehousesChecked, setWarehousesChecked] = useAtom(warehouseCheckedAtom);
-  const [, updateWarehouseData] = useAtom(updateWarehouseDataAtom);
 
   const [parsedWarehouseData, setParsedWarehouseData] = useState([]); // parsed warehouse data storage
 
   const ref = React.useRef(null);
   // check authentication
   useEffect(() => {
-    updateWarehouseData();
+    refreshWarehouseData();
+  }, []);
+  
+  useEffect(() => {
     pauseQuery = true; // pause query
 
     if (!authenticated) {
@@ -140,7 +141,7 @@ export default function Calendar() {
 
   // Map warehouses to checkboxes
   useEffect(() => {
-    const allWarehouses = warehouseData[0] || [];
+    const allWarehouses = warehouseData || [];
     const checkedList = warehousesChecked || [];
 
     setParsedWarehouseData(

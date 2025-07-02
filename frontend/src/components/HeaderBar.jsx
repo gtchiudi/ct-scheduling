@@ -58,6 +58,7 @@ function HeaderBar() {
     }
     else if (location.pathname === '/PendingRequests')
       pagesToRender = [{text: 'Calendar', href: '/Calendar'}];
+    // Add handling for RequestPage when logged in.
 
     if (userGroups.includes('Admin'))
       settings = [
