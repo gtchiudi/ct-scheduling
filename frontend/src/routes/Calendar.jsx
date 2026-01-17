@@ -220,15 +220,18 @@ export default function Calendar() {
     });
   }, [allEvents, parsedWarehouseData]);
 
-  const isLate = (request) => {
-    return (
-      (request.check_in_time === null &&
-        dayjs().isAfter(dayjs(request.date_time).add(10, "minutes"))) ||
-      (request.check_in_time !== null &&
-        dayjs(request.check_in_time).isAfter(
-          dayjs(request.date_time).add(10, "minutes")
-        ))
-    );
+  const isLate = (requestDateTime, requestCheckInTime = null) => {
+    if (requestDateTime === null) {
+      return false
+    } else if (requestCheckInTime === null) {
+      return dayjs().isAfter(dayjs(requestDateTime).add(10, "minutes"));
+    } else {
+      return (
+        dayjs(requestCheckInTime).isAfter(
+          dayjs(requestDateTime).add(10, "minutes")
+        )
+      );
+    }
   };
   result = useQuery({
     queryKey: key,
@@ -276,7 +279,7 @@ export default function Calendar() {
         editable: false,
         deletable: false,
         draggable: false,
-        color: isLate(request) ? "#FF0000" : "#00FF00",
+        color: isLate(request.date_time, request.check_in_time) ? "#FF0000" : "#00FF00",
       }));
       // map each result row to an event
       setAllEvents(newEvents); // set events

@@ -18,8 +18,8 @@ from django.forms.models import model_to_dict
 from datetime import datetime
 import pytz
 
-# candorEmailRecipient = 'candor.scheduling@gmail.com'
-candorEmailRecipient = 'appointments@candortransport.com'
+candorEmailRecipient = 'candor.scheduling@gmail.com'
+# candorEmailRecipient = 'appointments@candortransport.com'
 
 class IsAuthenticatedOrPostOnly(permissions.BasePermission):
     def has_permission(self, request, view):

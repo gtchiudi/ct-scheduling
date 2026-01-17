@@ -366,11 +366,11 @@ function Form({ request, closeModal, dateTime }) {
   let formEnd = (
     <Box>
       <TextField
-        required
         label="Driver Phone Number"
         name="driver_phone_number"
-        value={requestData.driver_phone_number}
+        value={requestData.driver_phone_number ?? ""}
         onChange={handleChange}
+        autoComplete="off"
         InputProps={{
           readOnly: requestData.check_in_time != null ? true : false,
         }}
@@ -380,7 +380,6 @@ function Form({ request, closeModal, dateTime }) {
         via SMS from Candor Logistics? Msg and data rates may apply.
       </Typography>
       <FormControlLabel
-        required
         control={<Checkbox />}
         label="SMS Consent"
         name="sms_consent"
@@ -389,14 +388,14 @@ function Form({ request, closeModal, dateTime }) {
       />
     </Box>
   );
-  let checkedContent = // Content for checked in appointments
+  let checkedInContent = // Content for checked in appointments
     (
       <Box>
         <DateTimeField
           readOnly
           label="Checked-In Time"
           name="check_in_time"
-          value={requestData.check_in_time}
+          value={requestData.check_in_time ? dayjs(requestData.check_in_time) : undefined}
         />
 
         <TextField
@@ -404,11 +403,11 @@ function Form({ request, closeModal, dateTime }) {
           id="dock_number"
           label="Dock Number"
           name="dock_number"
-          value={requestData.dock_number}
+          defaultValue={requestData.dock_number ?? ""}
+          autoComplete="off"
           InputProps={{
             readOnly: requestData.dock_number != null ? true : false,
           }}
-          //onChange={}
         />
       </Box>
     );
@@ -416,12 +415,12 @@ function Form({ request, closeModal, dateTime }) {
     (
       <Box>
         {" "}
-        {checkedContent}
+        {checkedInContent}
         <DateTimeField
           readOnly
           label="Docked Time"
           name="docked_time"
-          value={requestData.docked_time}
+          value={requestData.docked_time ? dayjs(requestData.docked_time) : undefined}
         />
       </Box>
     );
@@ -459,7 +458,7 @@ function Form({ request, closeModal, dateTime }) {
 
       formBottom = (
         <Box>
-          {formEnd} {checkedContent} {formButton}
+          {formEnd} {checkedInContent} {formButton}
         </Box>
       );
     } else {
@@ -548,6 +547,7 @@ function Form({ request, closeModal, dateTime }) {
             name="ref_number"
             value={requestData.ref_number}
             onChange={handleChange}
+            autoComplete="off"
             InputProps={{
               readOnly:
                 (request && path != "/PendingRequests") ||
@@ -565,6 +565,7 @@ function Form({ request, closeModal, dateTime }) {
             variant="filled"
             value={requestData.warehouse}
             onChange={handleChange}
+            autoComplete="off"
             InputProps={{
               readOnly: request && path != "/PendingRequests" ? true : false,
             }}
@@ -585,6 +586,7 @@ function Form({ request, closeModal, dateTime }) {
             variant="filled"
             value={requestData.load_type}
             onChange={handleChange}
+            autoComplete="off"
             InputProps={{
               readOnly: request && path != "/PendingRequests" ? true : false,
             }}
@@ -610,6 +612,7 @@ function Form({ request, closeModal, dateTime }) {
                 name="container_number"
                 value={requestData.container_number}
                 onChange={handleChange}
+                autoComplete="off"
               />
             </Box>
           ) : null}
@@ -628,6 +631,7 @@ function Form({ request, closeModal, dateTime }) {
                 : "pickup"
             }
             onChange={handleChange}
+            autoComplete="off"
             InputProps={{
               readOnly: request && path != "/PendingRequests" ? true : false,
             }}
@@ -647,6 +651,7 @@ function Form({ request, closeModal, dateTime }) {
               name="trailer_number"
               value={requestData.trailer_number}
               onChange={handleChange}
+              autoComplete="off"
             />
           )}
 
@@ -657,6 +662,7 @@ function Form({ request, closeModal, dateTime }) {
             rows={4}
             value={requestData.notes}
             onChange={handleChange}
+            autoComplete="off"
           />
           {requestData.warehouse === "" ? (
             <Typography maxWidth={480} color="error">
@@ -667,7 +673,7 @@ function Form({ request, closeModal, dateTime }) {
               readOnly
               label="Appointment Date and Time"
               name="date_time"
-              value={requestData.date_time}
+              value={dayjs(requestData.date_time)}
             />
           ) : (
             <DateTimePicker
@@ -676,7 +682,7 @@ function Form({ request, closeModal, dateTime }) {
               thresholdToRenderTimeInASingleColumn={30}
               skipDisabled={true}
               label="Select Appointment Date and Time"
-              value={requestData.date_time}
+              value={dayjs(requestData.date_time)}
               shouldDisableTime={getTimes}
               onChange={(date) => {
                 findTimes(date);
