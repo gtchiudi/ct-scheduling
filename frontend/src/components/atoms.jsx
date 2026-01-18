@@ -12,6 +12,7 @@ export const lastWarehouseRefreshAtom = atomWithStorage("lastWarehouseRefresh", 
 export const refreshAtom = atom(false);
 export const authenticatedAtom = atom(false);
 export const userGroupsAtom = atomWithStorage("userGroups", [], undefined, {getOnInit: true}); // already present
+export const userInitialAtom = atomWithStorage("userInitial", "U", undefined, {getOnInit: true});
 
 authenticatedAtom.onMount = (set) => {
   set(isAuthAtom);

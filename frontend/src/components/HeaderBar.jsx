@@ -12,11 +12,11 @@ import {
   Button,
   Tooltip,
   MenuItem,
-  Experimental_CssVarsProvider,
+  // Avatar,
 } from "@mui/material";
 import MenuIcon from "@mui/icons-material/Menu";
 import { useAtom } from "jotai";
-import { authenticatedAtom, userGroupsAtom } from "../components/atoms.jsx";
+import { authenticatedAtom, userGroupsAtom, userInitialAtom } from "../components/atoms.jsx";
 
 // Add Links to header here using same format as Request List
 // This is the only part that needs modified to change the header links
@@ -34,6 +34,7 @@ function HeaderBar() {
   const [anchorElUser, setAnchorElUser] = React.useState(null);
   const [authenticated] = useAtom(authenticatedAtom);
   const userGroups = useAtom(userGroupsAtom)[0];
+  const [userInitial] = useAtom(userInitialAtom);
   const location = useLocation();
   let pagesToRender = pagesNonAuth;
   let settings = [{ text: "Login", href: "/Login" }];
@@ -153,6 +154,7 @@ function HeaderBar() {
                 onClick={handleCloseNavMenu}
                 component={RouterLink}
                 to={page.href}
+                variant="contained"
                 sx={{ my: 2, color: "white", display: "block" }}
               >
                 {page.text}
@@ -160,43 +162,57 @@ function HeaderBar() {
             ))}
           </Box>
 
-          <Box sx={{ flexGrow: 0 }}>
-            <Tooltip title="Open Settings">
-              <IconButton onClick={handleOpenUserMenu} sx={{ p: 0 }}>
-                <Avatar alt="Remy Sharp" src="/static/images/avatar/2.jpg" />
-              </IconButton>
-            </Tooltip>
-            <Menu
-              sx={{ mt: "45px" }}
-              id="menu-appbar"
-              anchorEl={anchorElUser}
-              anchorOrigin={{
-                vertical: "top",
-                horizontal: "right",
-              }}
-              keepMounted
-              transformOrigin={{
-                vertical: "top",
-                horizontal: "right",
-              }}
-              open={Boolean(anchorElUser)}
-              onClose={handleCloseUserMenu}
-            >
-              {settings.map((setting) => (
-                <MenuItem key={setting.text} onClick={handleCloseUserMenu}>
-                  <Typography textAlign="center">
-                    <Button
-                      key={setting.href}
-                      onClick={handleCloseNavMenu}
-                      component={setting.component ? setting.component : RouterLink}
-                      {...(setting.component === 'a' ? { href: setting.href } : { to: setting.href })}
-                    >
-                      {setting.text}
-                    </Button>
-                  </Typography>
-                </MenuItem>
-              ))}
-            </Menu>
+          <Box sx={{ flexGrow: 0, ml: 2 }}>
+            
+            {authenticated ? (
+              <>
+                <Tooltip title="Open Settings">
+                  <IconButton onClick={handleOpenUserMenu} sx={{ p: 0 }}>
+                    <Avatar>{userInitial}</Avatar>
+                  </IconButton>
+                </Tooltip>
+                <Menu
+                  sx={{ mt: "45px" }}
+                  id="menu-appbar"
+                  anchorEl={anchorElUser}
+                  anchorOrigin={{
+                    vertical: "top",
+                    horizontal: "right",
+                  }}
+                  keepMounted
+                  transformOrigin={{
+                    vertical: "top",
+                    horizontal: "right",
+                  }}
+                  open={Boolean(anchorElUser)}
+                  onClose={handleCloseUserMenu}
+                >
+                  {settings.map((setting) => (
+                    <MenuItem key={setting.text} onClick={handleCloseUserMenu}>
+                      <Typography textAlign="center">
+                        <Button
+                          key={setting.href}
+                          onClick={handleCloseNavMenu}
+                          component={setting.component ? setting.component : RouterLink}
+                          {...(setting.component === 'a' ? { href: setting.href } : { to: setting.href })}
+                        >
+                          {setting.text}
+                        </Button>
+                      </Typography>
+                    </MenuItem>
+                  ))}
+                </Menu>
+              </>
+            ) : (
+              <Button
+                component={RouterLink}
+                to="/Login"
+                variant="contained"
+                sx={{ backgroundColor: "grey"}}
+              >
+                Login
+              </Button>
+            )}
           </Box>
         </Toolbar>
       </Container>

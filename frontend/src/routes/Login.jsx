@@ -15,6 +15,7 @@ import {
   lastLoginDatetimeAtom,
   isAuthAtom,
   authenticatedAtom,
+  userInitialAtom,
 } from "../components/atoms.jsx";
 import { useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
@@ -45,6 +46,7 @@ export default function Login() {
   const [, setLastLoginDatetime] = useAtom(lastLoginDatetimeAtom);
   const [, isAuth] = useAtom(isAuthAtom);
   const [authenticated] = useAtom(authenticatedAtom);
+  const [, setUserInitial] = useAtom(userInitialAtom);
 
   const [showPassword, setShowPassword] = React.useState(false);
   const [errorMessage, setErrorMessage] = React.useState("");
@@ -66,6 +68,7 @@ export default function Login() {
       setAccessToken(data.access);
       setRefreshToken(data.refresh);
       setLastLoginDatetime(dayjs());
+      setUserInitial(username.charAt(0).toUpperCase() || "U");
       setUsername("");
       setPassword("");
       setErrorMessage("");
