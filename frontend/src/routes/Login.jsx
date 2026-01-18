@@ -22,6 +22,17 @@ import dayjs from "dayjs";
 import { useMutation } from "@tanstack/react-query";
 import axios from "axios";
 
+import IconButton from '@mui/material/IconButton';
+import Input from '@mui/material/Input';
+import FilledInput from '@mui/material/FilledInput';
+import OutlinedInput from '@mui/material/OutlinedInput';
+import InputLabel from '@mui/material/InputLabel';
+import InputAdornment from '@mui/material/InputAdornment';
+import FormHelperText from '@mui/material/FormHelperText';
+import FormControl from '@mui/material/FormControl';
+import Visibility from '@mui/icons-material/Visibility';
+import VisibilityOff from '@mui/icons-material/VisibilityOff';
+
 export default function Login() {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
@@ -35,6 +46,19 @@ export default function Login() {
   const [, isAuth] = useAtom(isAuthAtom);
   const [authenticated] = useAtom(authenticatedAtom);
 
+  const [showPassword, setShowPassword] = React.useState(false);
+  const [errorMessage, setErrorMessage] = React.useState("");
+
+  const handleClickShowPassword = () => setShowPassword((show) => !show);
+
+  const handleMouseDownPassword = (event) => {
+    event.preventDefault();
+  };
+
+  const handleMouseUpPassword = (event) => {
+    event.preventDefault();
+  };
+
   const submitUserDataMutation = useMutation(submitUserData, {
     onSuccess: (data) => {
       console.log("Login Successful");
@@ -44,7 +68,18 @@ export default function Login() {
       setLastLoginDatetime(dayjs());
       setUsername("");
       setPassword("");
+      setErrorMessage("");
       navigate("/Calendar");
+    },
+    onError: (error) => {
+      console.error("Login failed:", error);
+      if (error.response?.status === 401) {
+        setErrorMessage("Invalid username or password");
+      } else if (error.response?.data?.detail) {
+        setErrorMessage(error.response.data.detail);
+      } else {
+        setErrorMessage("Login failed. Please try again.");
+      }
     },
   });
 
@@ -86,34 +121,54 @@ export default function Login() {
         <Typography alignContent="center" textAlign="center" variant="h3">
           Login
         </Typography>
-        <label htmlFor="Username">Username:</label>
         <br></br>
-        <TextField
-          id="Username"
-          label="Enter Username"
-          variant="filled"
-          required
-          type="text"
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
-        />
-        <label htmlFor="fPassword">Password:</label>
+        <FormControl sx={{ m: 1, width: '25ch' }} variant="outlined">
+          <InputLabel htmlFor="username">Username</InputLabel>
+          <OutlinedInput
+            id="username"
+            type={'text'}
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            label="Username"
+          />
+        </FormControl>
         <br></br>
-        <TextField
-          id="Password"
-          label="Enter Password"
-          variant="filled"
-          required
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-        />
+        <FormControl sx={{ m: 1, width: '25ch' }} variant="outlined">
+          <InputLabel htmlFor="outlined-adornment-password">Password</InputLabel>
+          <OutlinedInput
+            id="outlined-adornment-password"
+            type={showPassword ? 'text' : 'password'}
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            endAdornment={
+              <InputAdornment position="end">
+                <IconButton
+                  aria-label={
+                    showPassword ? 'hide the password' : 'display the password'
+                  }
+                  onClick={handleClickShowPassword}
+                  onMouseDown={handleMouseDownPassword}
+                  onMouseUp={handleMouseUpPassword}
+                  edge="end"
+                >
+                  {showPassword ? <VisibilityOff /> : <Visibility />}
+                </IconButton>
+              </InputAdornment>
+            }
+            label="Password"
+          />
+        </FormControl>
+        {errorMessage && (
+          <Typography color="error" sx={{ mt: 2, textAlign: "center" }}>
+            {errorMessage}
+          </Typography>
+        )}
         <Button
           type="submit"
           fullWidth
           variant="contained"
           sx={{ mt: 3, mb: 2 }}
-          disabled={submitUserDataMutation.isLoading}
+          disabled={!username || !password || submitUserDataMutation.isLoading}
         >
           {submitUserDataMutation.isLoading ? "Logging in..." : "Log in"}
         </Button>
