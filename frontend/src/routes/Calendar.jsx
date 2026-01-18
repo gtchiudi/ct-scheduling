@@ -39,6 +39,7 @@ export function CustomViewer({ event, onClose }) {
   // view/edit a request
   const [open, setOpen] = useState(true);
   const [editAppointment, setEditAppointment] = useAtom(editAppointmentAtom);
+  const userGroups = useAtom(userGroupsAtom)[0];
   
   const closeDialog = () => {
     setEditAppointment(false);
@@ -61,7 +62,7 @@ export function CustomViewer({ event, onClose }) {
             <Form request={event.request} closeModal={closeDialog} />
           </DialogContent>
           <DialogActions>
-            {!editAppointment && event.request.check_in_time == null && (
+            {!editAppointment && event.request.check_in_time == null && userGroups.includes("Admin", "Dispatch") && (
               <Button onClick={enableEdit}> Edit Appointment</Button>
             )}
             <Button onClick={closeDialog}>Cancel</Button>
