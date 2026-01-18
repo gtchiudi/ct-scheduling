@@ -22,6 +22,8 @@ import {
   refreshAtom,
   warehouseDataEffectAtom,
   warehouseCheckedAtom,
+  userGroupsAtom,
+  editAppointmentAtom,
 } from "../components/atoms.jsx";
 import axios from "axios";
 import Form from "../components/Form.jsx";
@@ -36,9 +38,16 @@ function isWarehouseChecked(id, warehousesChecked, allWarehouses) {
 export function CustomViewer({ event, onClose }) {
   // view/edit a request
   const [open, setOpen] = useState(true);
+  const [editAppointment, setEditAppointment] = useAtom(editAppointmentAtom);
+  
   const closeDialog = () => {
+    setEditAppointment(false);
     if (typeof onClose === "function") onClose();
     setOpen(false);
+  };
+
+  const enableEdit = () => {
+    setEditAppointment(true);
   };
 
   return (
@@ -46,12 +55,15 @@ export function CustomViewer({ event, onClose }) {
       {open && (
         <Dialog open={open} onClose={closeDialog}>
           <DialogTitle textAlign={"center"}>
-            Ref #: {event.request.ref_number}
+            Reference number: {event.request.ref_number}
           </DialogTitle>
           <DialogContent>
             <Form request={event.request} closeModal={closeDialog} />
           </DialogContent>
           <DialogActions>
+            {!editAppointment && event.request.check_in_time == null && (
+              <Button onClick={enableEdit}> Edit Appointment</Button>
+            )}
             <Button onClick={closeDialog}>Cancel</Button>
           </DialogActions>
         </Dialog>

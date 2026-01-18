@@ -15,7 +15,7 @@ import {
 } from "@mui/material";
 import axios from "axios";
 import { useAtom } from "jotai";
-import { warehouseDataEffectAtom} from "./atoms.jsx";
+import { warehouseDataEffectAtom, editAppointmentAtom } from "./atoms.jsx";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import FormGroup from "@mui/material/FormGroup";
 import { DateTimePicker, DateTimeField } from "@mui/x-date-pickers";
@@ -25,6 +25,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 function Form({ request, closeModal, dateTime }) {
   const queryClient = useQueryClient();
   const [warehouseData, refreshWarehouseData] = useAtom(warehouseDataEffectAtom);
+  const [editAppointment, setEditAppointment] = useAtom(editAppointmentAtom);
   const path = useLocation().pathname;
   const navigate = useNavigate();
 
@@ -74,7 +75,7 @@ function Form({ request, closeModal, dateTime }) {
     load_type: "",
     container_drop: false,
     container_number: "",
-    notes: "",
+    note_section: "",
     date_time: nextWorkDay(),
     delivery: "",
     trailer_number: "",
@@ -333,9 +334,12 @@ function Form({ request, closeModal, dateTime }) {
         requestData
       );
       queryClient.invalidateQueries("pendingRequests");
+      queryClient.invalidateQueries("requests");
+      setEditAppointment(false);
       closeModal();
     } catch (error) {
       console.error("Error updating request:", error);
+      setEditAppointment(false);
       closeModal();
     }
   };
@@ -438,17 +442,30 @@ function Form({ request, closeModal, dateTime }) {
     formBottom = <Box> {formButton} </Box>;
   } else if (path == "/Calendar" && requestData.approved) {
     if (requestData.check_in_time == null) {
-      formButton = (
-        <Button name="check_in_time" variant="contained" onClick={handleButton}>
-          Check-In
-        </Button>
-      );
+      if (editAppointment) {
+        formButton = (
+          <Button variant="contained" onClick={updateRequest}>
+            Save
+          </Button>
+        );
+        formBottom = (
+          <Box>
+            {formButton}
+          </Box>
+        );
+      } else {
+        formButton = (
+          <Button name="check_in_time" variant="contained" onClick={handleButton}>
+            Check-In
+          </Button>
+        );
+        formBottom = (
+          <Box>
+            {formEnd} {formButton}
+          </Box>
+        );
+      }
 
-      formBottom = (
-        <Box>
-          {formEnd} {formButton}
-        </Box>
-      );
     } else if (requestData.dock_number == null) {
       formButton = (
         <Button name="dock_number" variant="contained" onClick={handleButton}>
@@ -514,8 +531,9 @@ function Form({ request, closeModal, dateTime }) {
             name="company_name"
             value={requestData.company_name}
             onChange={handleChange}
+            autoComplete="off"
             InputProps={{
-              readOnly: request && path != "/PendingRequests" ? true : false,
+              readOnly: request && path != "/PendingRequests" && !editAppointment ? true : false,
             }}
           ></TextField>
 
@@ -525,8 +543,9 @@ function Form({ request, closeModal, dateTime }) {
             name="phone_number"
             value={requestData.phone_number}
             onChange={handleChange}
+            autoComplete="off"
             InputProps={{
-              readOnly: request && path != "/PendingRequests" ? true : false,
+              readOnly: request && path != "/PendingRequests" && !editAppointment ? true : false,
             }}
           ></TextField>
 
@@ -536,8 +555,9 @@ function Form({ request, closeModal, dateTime }) {
             name="email"
             value={requestData.email}
             onChange={handleChange}
+            autoComplete="off"
             InputProps={{
-              readOnly: request && path != "/PendingRequests" ? true : false,
+              readOnly: request && path != "/PendingRequests" && !editAppointment ? true : false,
             }}
           ></TextField>
 
@@ -551,7 +571,8 @@ function Form({ request, closeModal, dateTime }) {
             InputProps={{
               readOnly:
                 (request && path != "/PendingRequests") ||
-                requestData.load_type == "Container"
+                requestData.load_type == "Container" ||
+                editAppointment
                   ? true
                   : false,
             }}
@@ -567,7 +588,7 @@ function Form({ request, closeModal, dateTime }) {
             onChange={handleChange}
             autoComplete="off"
             InputProps={{
-              readOnly: request && path != "/PendingRequests" ? true : false,
+              readOnly: request && path != "/PendingRequests" && !editAppointment ? true : false,
             }}
           >
             {warehouseData.map((option) => (
@@ -588,7 +609,7 @@ function Form({ request, closeModal, dateTime }) {
             onChange={handleChange}
             autoComplete="off"
             InputProps={{
-              readOnly: request && path != "/PendingRequests" ? true : false,
+              readOnly: request && path != "/PendingRequests" && !editAppointment ? true : false,
             }}
           >
             {load_types.map((option) => (
@@ -633,7 +654,7 @@ function Form({ request, closeModal, dateTime }) {
             onChange={handleChange}
             autoComplete="off"
             InputProps={{
-              readOnly: request && path != "/PendingRequests" ? true : false,
+              readOnly: request && path != "/PendingRequests" && !editAppointment ? true : false,
             }}
           >
             <MenuItem key={"delivery"} value={"delivery"}>
@@ -656,19 +677,22 @@ function Form({ request, closeModal, dateTime }) {
           )}
 
           <TextField
-            name="notes"
+            name="note_section"
             label="Notes"
             multiline
             rows={4}
-            value={requestData.notes}
+            value={requestData.note_section}
             onChange={handleChange}
             autoComplete="off"
+            InputProps={{
+              readOnly: request && path != "/PendingRequests" && !editAppointment ? true : false,
+            }}
           />
           {requestData.warehouse === "" ? (
             <Typography maxWidth={480} color="error">
               Please select a warehouse
             </Typography>
-          ) : request && path != "/PendingRequests" ? (
+          ) : request && path != "/PendingRequests" && !editAppointment ? (
             <DateTimeField
               readOnly
               label="Appointment Date and Time"
