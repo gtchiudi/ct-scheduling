@@ -15,6 +15,7 @@ function Footer() {
         display: "flex",
         position: "fixed", // Position fixed to stick to the viewport
         bottom: 0, // Stick to the bottom of the viewport
+        height: "45px",
         backgroundColor: (theme) =>
           theme.palette.mode === "light"
             ? theme.palette.grey[200]

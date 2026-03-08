@@ -10,6 +10,8 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 
+# SET DEBUG to False for production, and ensure CORS_ORIGIN_WHITELIST is set appropriately
+
 from pathlib import Path
 from datetime import timedelta
 import os
@@ -28,7 +30,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-q*+(03o^)&zw-)ve8a441iw-tnura(^qj#j&wgy8580*01a(6r'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
 ALLOWED_HOSTS = ['*']
 
@@ -176,7 +178,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 CORS_ORIGIN_WHITELIST = [
     'http://frontend_c_dev:3004',
     'http://frontend_c:80'
-    # ,'http://localhost:5173'
+    ,'http://localhost:5173'
 ]
 
 if os.getenv("CSRF_TRUSTED_ORIGIN"):
