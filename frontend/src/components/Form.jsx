@@ -287,8 +287,8 @@ function Form({ request, closeModal, dateTime }) {
       );
       requestData["docked_time"] = dayjs().format("YYYY-MM-DD HH:mm:ss");
     } else {
-      (requestData[name] = dayjs().format("YYYY-MM-DD HH:mm:ss")),
-        name == "completed_time" ? (requestData.active = false) : true;
+      (requestData[name] = dayjs().format("YYYY-MM-DD HH:mm:ss"));
+        // name == "completed_time" ? (requestData.active = false) : true;
     }
     updateRequest();
   };

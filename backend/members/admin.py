@@ -5,6 +5,7 @@ from .models import *
 class requestListView(admin.ModelAdmin):
     list_display = ("approved", "company_name",
                     "email", "warehouse", "ref_number", "date_time")
+    list_display_links = ("company_name", "ref_number")
 
 
 class ApprovalLogListView(admin.ModelAdmin):

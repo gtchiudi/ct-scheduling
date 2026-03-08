@@ -246,6 +246,14 @@ export default function Calendar() {
       );
     }
   };
+
+  const getEventColor = (request) => {
+    if (request.completed_time !== null) {
+      return "#808080"; // Gray for completed requests
+    }
+    return isLate(request.date_time, request.check_in_time) ? "#FF0000" : "#00FF00";
+  };
+
   result = useQuery({
     queryKey: key,
     queryFn: async () =>
@@ -292,7 +300,7 @@ export default function Calendar() {
         editable: false,
         deletable: false,
         draggable: false,
-        color: isLate(request.date_time, request.check_in_time) ? "#FF0000" : "#00FF00",
+        color: getEventColor(request),
       }));
       // map each result row to an event
       setAllEvents(newEvents); // set events
