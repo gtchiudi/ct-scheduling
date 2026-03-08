@@ -21,6 +21,27 @@ import FormGroup from "@mui/material/FormGroup";
 import { DateTimePicker, DateTimeField } from "@mui/x-date-pickers";
 import dayjs from "dayjs";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import Calendar from "../routes/Calendar.jsx";
+import { IMaskInput } from 'react-imask';
+import PropTypes from 'prop-types';
+
+const PhoneMaskCustom = React.forwardRef(function PhoneMaskCustom(props, ref) {
+  const { onChange, ...other } = props;
+  return (
+    <IMaskInput
+      {...other}
+      mask="(000)-000-0000"
+      inputRef={ref}
+      onAccept={(value) => onChange({ target: { name: props.name, value } })}
+      overwrite
+    />
+  );
+});
+
+PhoneMaskCustom.propTypes = {
+  name: PropTypes.string.isRequired,
+  onChange: PropTypes.func.isRequired,
+};
 
 function Form({ request, closeModal, dateTime }) {
   const queryClient = useQueryClient();
@@ -33,9 +54,16 @@ function Form({ request, closeModal, dateTime }) {
   const [times, setTimes] = useState([]);
 
   const [getInitialTime, setGetInitialTime] = useState(false);
+  
+  // Add validation state
+  const [emailError, setEmailError] = useState(false);
+  const [phoneError, setPhoneError] = useState(false);
+  const [driverPhoneError, setDriverPhoneError] = useState(false);
+
   React.useEffect(() => {
     refreshWarehouseData();
   }, []);
+
   // gets work day following provided date
   const nextWorkDay = (date) => {
     // gets the next work day at 8:00 am
@@ -111,9 +139,12 @@ function Form({ request, closeModal, dateTime }) {
     }, {})
   );
   const isFormCompleted = () => {
-    return Object.values(requiredFieldsCompleted).every(
+    // Check if all required fields are completed AND no validation errors
+    const allFieldsCompleted = Object.values(requiredFieldsCompleted).every(
       (completed) => completed
     );
+    const noValidationErrors = !emailError && !phoneError && !driverPhoneError;
+    return allFieldsCompleted && noValidationErrors;
   };
   const submitButtonDisabled = !isFormCompleted();
 
@@ -211,32 +242,53 @@ function Form({ request, closeModal, dateTime }) {
 
   const handleChange = (e) => {
     const { name, value, checked, type } = e.target;
+    
+    // Remove formatting from phone numbers before saving
+    let processedValue = value;
+    if (name === "phone_number" || name === "driver_phone_number") {
+      processedValue = value.replace(/\D/g, ''); // Remove all non-digits
+      
+      // Validate phone number
+      const isValid = validatePhone(value);
+      if (name === "phone_number") {
+        setPhoneError(!isValid);
+      } else if (name === "driver_phone_number") {
+        setDriverPhoneError(!isValid);
+      }
+    }
+    
+    // Validate email
+    if (name === "email") {
+      const isValidEmail = validateEmail(value);
+      setEmailError(!isValidEmail);
+    }
+    
     if (name === "delivery") {
-      setRequestData({ ...requestData, [name]: value === "delivery" });
+      setRequestData({ ...requestData, [name]: processedValue === "delivery" });
     } else if (type === "checkbox") {
       setRequestData({ ...requestData, [name]: checked });
     } else if (name === "container_number") {
       setRequestData({
         ...requestData,
-        [name]: value,
-        ref_number: value,
-        trailer_number: value,
+        [name]: processedValue,
+        ref_number: processedValue,
+        trailer_number: processedValue,
       });
       setRequiredFieldsCompleted((prevCompleted) => ({
         ...prevCompleted,
-        ref_number: !!value,
-        trailer_number: !!value,
+        ref_number: !!processedValue,
+        trailer_number: !!processedValue,
       }));
     } else if (
       name === "load_type" &&
-      value != "Container" &&
+      processedValue != "Container" &&
       (requestData.container_drop || requestData.container_number)
     ) {
       // if the value of load type is not container, but the container drop is true or container number is not empty,
       // reset the container drop, container number, ref number, trailer number
       setRequestData({
         ...requestData,
-        [name]: value,
+        [name]: processedValue,
         container_drop: false,
         container_number: "",
         trailer_number: "",
@@ -248,7 +300,7 @@ function Form({ request, closeModal, dateTime }) {
         trailer_number: false,
         ref_number: false,
       }));
-    } else setRequestData({ ...requestData, [name]: value });
+    } else setRequestData({ ...requestData, [name]: processedValue });
 
     if (requiredFields.includes(name)) {
       if (type === "checkbox")
@@ -259,14 +311,14 @@ function Form({ request, closeModal, dateTime }) {
       else if (name === "container_number")
         setRequiredFieldsCompleted((prevCompleted) => ({
           ...prevCompleted,
-          ref_number: !!value,
-          trailer_number: !!value,
-          [name]: !!value,
+          ref_number: !!processedValue,
+          trailer_number: !!processedValue,
+          [name]: !!processedValue,
         }));
       else
         setRequiredFieldsCompleted((prevCompleted) => ({
           ...prevCompleted,
-          [name]: !!value,
+          [name]: !!processedValue,
         }));
     }
     if (name === "warehouse" && path === "/RequestForm") {
@@ -286,9 +338,12 @@ function Form({ request, closeModal, dateTime }) {
         document.getElementById("dock_number").value
       );
       requestData["docked_time"] = dayjs().format("YYYY-MM-DD HH:mm:ss");
-    } else {
-      (requestData[name] = dayjs().format("YYYY-MM-DD HH:mm:ss"));
-        // name == "completed_time" ? (requestData.active = false) : true;
+    } else if (name == "check_in_time") {
+      requestData[name] = dayjs().format("YYYY-MM-DD HH:mm:ss");
+    } else if (name == 'completed_time'){
+      requestData[name] = dayjs().format("YYYY-MM-DD HH:mm:ss");
+    } else if (name == 'remove_from_calendar') {
+      requestData.active = false;
     }
     updateRequest();
   };
@@ -324,6 +379,20 @@ function Form({ request, closeModal, dateTime }) {
       }
     } catch (error) {
       console.error("Error handling new request:", error);
+      
+      // Handle validation errors from backend
+      if (error.response && error.response.data) {
+        const errors = error.response.data;
+        
+        if (errors.email) {
+          setEmailError(true);
+          window.alert(`Email Error: ${errors.email.join(', ')}`);
+        }
+        if (errors.phone_number) {
+          setPhoneError(true);
+          window.alert(`Phone Error: ${errors.phone_number.join(', ')}`);
+        }
+      }
     }
   };
 
@@ -339,6 +408,21 @@ function Form({ request, closeModal, dateTime }) {
       closeModal();
     } catch (error) {
       console.error("Error updating request:", error);
+      
+      // Handle validation errors from backend
+      if (error.response && error.response.data) {
+        const errors = error.response.data;
+        
+        if (errors.email) {
+          setEmailError(true);
+          window.alert(`Email Error: ${errors.email.join(', ')}`);
+        }
+        if (errors.phone_number) {
+          setPhoneError(true);
+          window.alert(`Phone Error: ${errors.phone_number.join(', ')}`);
+        }
+      }
+      
       setEditAppointment(false);
       closeModal();
     }
@@ -375,8 +459,11 @@ function Form({ request, closeModal, dateTime }) {
         value={requestData.driver_phone_number ?? ""}
         onChange={handleChange}
         autoComplete="off"
+        error={driverPhoneError}
+        helperText={driverPhoneError ? "Phone number must be 10 digits" : ""}
         InputProps={{
           readOnly: requestData.check_in_time != null ? true : false,
+          inputComponent: PhoneMaskCustom,
         }}
       />
       <Typography>
@@ -428,10 +515,24 @@ function Form({ request, closeModal, dateTime }) {
         />
       </Box>
     );
-  let completionContent; // completed appointments are not displayed
+  let completionContent = // completed will have button to remove from calendar.
+    (
+      <Box>
+        {" "}
+        {dockedContent}
+        <DateTimeField
+          readOnly
+          label="Completed Time"
+          name="completed_time"
+          value={requestData.completed_time ? dayjs(requestData.completed_time) : undefined}
+        />
+      </Box>
+    );
+
   if (path == "/RequestForm" || !requestData.approved) {
     formButton = (
       <Button
+        name = 'submit'
         variant="contained"
         onClick={handleNewRequest}
         disabled={submitButtonDisabled}
@@ -478,7 +579,7 @@ function Form({ request, closeModal, dateTime }) {
           {formEnd} {checkedInContent} {formButton}
         </Box>
       );
-    } else {
+    } else if (requestData.completed_time == null){
       formButton = (
         <Button
           name="completed_time"
@@ -491,6 +592,21 @@ function Form({ request, closeModal, dateTime }) {
       formBottom = (
         <Box>
           {formEnd} {dockedContent} {formButton}
+        </Box>
+      );
+    } else {
+      formButton = (
+        <Button
+          name="remove_from_calendar"
+          variant="contained"
+          onClick={handleButton}
+        >
+          Remove from Calendar
+        </Button>
+      );
+      formBottom = (
+        <Box>
+          {formEnd} {completionContent} {formButton}
         </Box>
       );
     }
@@ -544,8 +660,11 @@ function Form({ request, closeModal, dateTime }) {
             value={requestData.phone_number}
             onChange={handleChange}
             autoComplete="off"
+            error={phoneError}
+            helperText={phoneError ? "Phone number must be 10 digits" : ""}
             InputProps={{
               readOnly: request && path != "/PendingRequests" && !editAppointment ? true : false,
+              inputComponent: PhoneMaskCustom,
             }}
           ></TextField>
 
@@ -556,6 +675,8 @@ function Form({ request, closeModal, dateTime }) {
             value={requestData.email}
             onChange={handleChange}
             autoComplete="off"
+            error={emailError}
+            helperText={emailError ? "Please enter a valid email address" : ""}
             InputProps={{
               readOnly: request && path != "/PendingRequests" && !editAppointment ? true : false,
             }}
@@ -724,3 +845,14 @@ function Form({ request, closeModal, dateTime }) {
 }
 
 export default Form;
+
+// Validation functions
+const validateEmail = (email) => {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(email);
+};
+
+const validatePhone = (phone) => {
+  const digitsOnly = phone.replace(/\D/g, '');
+  return digitsOnly.length === 0 || digitsOnly.length === 10;
+};
