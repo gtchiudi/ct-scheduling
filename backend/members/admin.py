@@ -11,6 +11,7 @@ class requestListView(admin.ModelAdmin):
 class ApprovalLogListView(admin.ModelAdmin):
     list_display = ('approver', 'request_ref_number',
                     'request_company_name', 'request_date_time')
+    list_display_links = ('request_ref_number',)
 
     def request_ref_number(self, obj):
         return obj.request.ref_number
