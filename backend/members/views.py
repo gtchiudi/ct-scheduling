@@ -4,6 +4,8 @@ from .serializers import *
 from .models import *
 from django.contrib.auth.models import User, Group
 from rest_framework.views import APIView
+from django.utils import timezone
+from django.db.models import Q
 
 from .messages import send_email, send_text
 
@@ -222,3 +224,28 @@ class UserGroupsView(APIView):
     def get(self, request):
         groups = list(request.user.groups.values_list('name', flat=True))
         return Response({'groups': groups})
+
+class PendingRequestStatsView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        # Get count of pending requests (not approved and active)
+        pending_count = Request.objects.filter(
+            approved=False,
+            active=True
+        ).count()
+        
+        # Check if there are requests for today or older
+        now = timezone.now()
+        today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+        
+        has_urgent_requests = Request.objects.filter(
+            approved=False,
+            active=True,
+            date_time__lte=now  # Requests on or before current time
+        ).exists()
+        
+        return Response({
+            'pending_count': pending_count,
+            'has_urgent_requests': has_urgent_requests
+        })

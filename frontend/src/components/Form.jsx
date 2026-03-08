@@ -218,7 +218,7 @@ function Form({ request, closeModal, dateTime }) {
   });
 
   // find times to be disabled
-  const getTimes = (value, view) => {
+  const getTimesToDisable = (value, view) => {
     // return true will disable the time
     const formattedTime = dayjs(value).format("HH:mm");
 
@@ -434,7 +434,7 @@ function Form({ request, closeModal, dateTime }) {
     let beginNextDay = nextWorkDay();
     findTimes(beginNextDay);
     while (true) {
-      if (!getTimes(beginNextDay, "minutes")) break;
+      if (!getTimesToDisable(beginNextDay, "minutes")) break;
       beginNextDay = beginNextDay.add(15, "minutes");
       if (beginNextDay.hour() === 16) {
         beginNextDay = nextWorkDay(beginNextDay);
@@ -555,8 +555,18 @@ function Form({ request, closeModal, dateTime }) {
           </Box>
         );
       } else {
+        const isDriverPhoneValid = !driverPhoneError && (
+          !requestData.driver_phone_number || 
+          requestData.driver_phone_number.replace(/\D/g, '').length === 10
+        );
+        
         formButton = (
-          <Button name="check_in_time" variant="contained" onClick={handleButton}>
+          <Button 
+            name="check_in_time" 
+            variant="contained" 
+            onClick={handleButton}
+            disabled={!isDriverPhoneValid}
+          >
             Check-In
           </Button>
         );
@@ -828,12 +838,13 @@ function Form({ request, closeModal, dateTime }) {
               skipDisabled={true}
               label="Select Appointment Date and Time"
               value={dayjs(requestData.date_time)}
-              shouldDisableTime={getTimes}
+              shouldDisableTime={getTimesToDisable}
               onChange={(date) => {
                 findTimes(date);
               }}
               onAccept={(newValue) => handleDateChange(newValue)}
               timeSteps={{ minutes: 15 }}
+              disablePast={path === "/RequestForm"}
             />
           )}
 

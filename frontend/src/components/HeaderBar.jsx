@@ -12,11 +12,14 @@ import {
   Button,
   Tooltip,
   MenuItem,
-  // Avatar,
+  Stack,
+  Badge,
 } from "@mui/material";
 import MenuIcon from "@mui/icons-material/Menu";
 import { useAtom } from "jotai";
 import { authenticatedAtom, userGroupsAtom, userInitialAtom } from "../components/atoms.jsx";
+import { useQuery } from "@tanstack/react-query";
+import axios from "axios";
 
 // Add Links to header here using same format as Request List
 // This is the only part that needs modified to change the header links
@@ -39,13 +42,33 @@ function HeaderBar() {
   let pagesToRender = pagesNonAuth;
   let settings = [{ text: "Login", href: "/Login" }];
 
+  // Query for pending request stats
+  const { data: pendingStats } = useQuery({
+    queryKey: ['pendingStats'],
+    queryFn: async () => {
+      const response = await axios.get('/api/pending-requests-stats/');
+      return response.data;
+    },
+    enabled: authenticated && !userGroups.includes('Dock') && (location.pathname === '/' || location.pathname === '/Calendar'), // Only fetch if authenticated and not Dock user
+    refetchInterval: 30000, // Refetch every 30 seconds
+    retry: 3,
+    retryDelay: 1000,
+  });
+
+  const pendingCount = pendingStats?.pending_count || 0;
+  const hasUrgentRequests = pendingStats?.has_urgent_requests || false;
+
   if (authenticated){
     if (location.pathname === '/' || location.pathname === '/RequestForm'){
       if (userGroups.includes('Dock'))
-        pagesToRender = [{ text: "Calendar", href: "/Calendar" },];
+        pagesToRender = [{ text: "Calendar", href: "/Calendar" }];
       else
         pagesToRender = [
-          { text: "Pending Requests", href: "/PendingRequests" },
+          { 
+            text: "Pending Requests", 
+            href: "/PendingRequests",
+            color: hasUrgentRequests ? "error" : "warning"
+          },
           { text: "Calendar", href: "/Calendar" },
         ];
       }
@@ -53,7 +76,11 @@ function HeaderBar() {
       if (userGroups.includes('Dock'))
         pagesToRender = [{text: 'Home', href: '/'}];
       else
-        pagesToRender = [{text: 'Pending Requests', href: '/PendingRequests'}];
+        pagesToRender = [{
+          text: 'Pending Requests', 
+          href: '/PendingRequests',
+          color: hasUrgentRequests ? "error" : "warning"
+        }];
     }
     else if (location.pathname === '/PendingRequests')
       pagesToRender = [{text: 'Calendar', href: '/Calendar'}];
@@ -98,49 +125,6 @@ function HeaderBar() {
             />
           </a>
 
-          <Box sx={{ flexGrow: 1, display: { xs: "flex", md: "none" } }}>
-            <IconButton
-              size="large"
-              aria-label="account of current user"
-              aria-controls="menu-appbar"
-              aria-haspopup="true"
-              onClick={handleOpenNavMenu}
-              color="inherit"
-            >
-              <MenuIcon />
-            </IconButton>
-            <Menu
-              id="menu-appbar"
-              anchorEl={anchorElNav}
-              anchorOrigin={{
-                vertical: "bottom",
-                horizontal: "left",
-              }}
-              keepMounted
-              transformOrigin={{
-                vertical: "top",
-                horizontal: "left",
-              }}
-              open={Boolean(anchorElNav)}
-              onClose={handleCloseNavMenu}
-              sx={{
-                display: { xs: "block", md: "none" },
-              }}
-            >
-              {pagesToRender.map((page) => (
-                <Button
-                  key={page.text}
-                  onClick={handleCloseNavMenu}
-                  component={RouterLink}
-                  to={page.href}
-                  sx={{ my: 2, display: "block" }}
-                >
-                  {page.text}
-                </Button>
-              ))}
-            </Menu>
-          </Box>
-
           <Box
             sx={{
               flexGrow: 1,
@@ -148,25 +132,39 @@ function HeaderBar() {
               display: { xs: "none", md: "flex" },
             }}
           >
-            {pagesToRender.map((page) => (
-              <Button
-                key={page.text}
-                onClick={handleCloseNavMenu}
-                component={RouterLink}
-                to={page.href}
-                variant="contained"
-                sx={{ my: 2, color: "white", display: "block" }}
-              >
-                {page.text}
-              </Button>
-            ))}
+            <Stack
+              spacing={2} 
+              direction="row" 
+              justifyContent= 'flex-end'
+              sx={{ 
+                color: 'action.active'
+              }}
+            >
+              {pagesToRender.map((page) => (
+                <Badge 
+                  key={page.text}
+                  color={page.color} 
+                  badgeContent={page.text === 'Pending Requests' ? pendingCount : 0} 
+                  showZero={page.text === 'Pending Requests'}
+                >
+                  <Button
+                    onClick={handleCloseNavMenu}
+                    component={RouterLink}
+                    to={page.href}
+                    variant="contained"
+                  >
+                    {page.text}
+                  </Button>
+                </Badge>
+              ))}
+            </Stack>
           </Box>
 
           <Box sx={{ flexGrow: 0, ml: 2 }}>
             
             {authenticated ? (
               <>
-                <Tooltip title="Open Settings">
+                <Tooltip title="User Menu">
                   <IconButton onClick={handleOpenUserMenu} sx={{ p: 0 }}>
                     <Avatar>{userInitial}</Avatar>
                   </IconButton>
