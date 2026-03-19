@@ -1,4 +1,5 @@
 from django.shortcuts import render
+from django.conf import settings
 from rest_framework import viewsets, filters, status
 from .serializers import *
 from .models import *
@@ -8,6 +9,7 @@ from django.utils import timezone
 from django.db.models import Q
 
 from .messages import send_email, send_text
+from .email_templates import *
 
 from datetime import datetime
 
@@ -20,8 +22,10 @@ from django.forms.models import model_to_dict
 from datetime import datetime
 import pytz
 
-# candorEmailRecipient = 'candor.scheduling@gmail.com'
-candorEmailRecipient = 'appointments@candortransport.com'
+if settings.DEBUG:
+    candorEmailRecipient = 'candor.scheduling@gmail.com'
+else:
+    candorEmailRecipient = 'appointments@candortransport.com'
 
 class IsAuthenticatedOrPostOnly(permissions.BasePermission):
     def has_permission(self, request, view):
@@ -81,19 +85,10 @@ class RequestView(viewsets.ModelViewSet):
                 send_email(
                     updated_data['email'],
                     'Appointment Request Approved',
-                    F'''
-<pre>Please do not reply to this email.
-
-Your appointment request has been approved. Please review details below.
-
-Appointement Details:
-    Reference Number: {updated_data["ref_number"]}
-    Date Time: {date_time.strftime('%Y-%m-%d %H:%M:%S')}
-
-Please email appointments@candortransport.com with any questions or concerns.
-
-Thank you for choosing Candor Logistics.
-</pre>''')
+                    appointment_approved_email_template(
+                        updated_data["ref_number"],
+                        date_time.strftime('%Y-%m-%d %H:%M:%S')
+                    ))
 
             elif 'dock_number' in altered_fields:
                 number_log = SmsNumberLog.objects.filter(
@@ -144,16 +139,11 @@ Reply 'STOP' to opt out of future notifications.''')
             send_email(
                 candorEmailRecipient,
                 'New Calendar Event Confirmation',
-                F'''
-<pre>Please do not reply to this email.
-
-A new appointment has been created. Please review.
-
-Event Details:
-    Reference Number: {request.data["ref_number"]}
-    Customer: {request.data["company_name"]}
-    Date Time: {date_time.strftime('%Y-%m-%d %H:%M:%S')}
-</pre>''')
+                calendar_event_confirmation_email_template(
+                    request.data["ref_number"],
+                    request.data["company_name"],
+                    date_time.strftime('%Y-%m-%d %H:%M:%S')
+                ))
 
         else:  # created from the request page
             date_time = datetime.fromisoformat(
@@ -163,32 +153,19 @@ Event Details:
             send_email(  # to sales team
                 candorEmailRecipient,
                 'New Pending Request',
-                F'''
-<pre>Please do not reply to this email.
-
-A new request is now pending. Please review.
-
-Event Details:
-    Reference Number: {request.data["ref_number"]}
-    Customer: {request.data["company_name"]}
-    Date Time: {date_time.strftime('%Y-%m-%d %H:%M:%S')}
-</pre>''')
+                new_request_email_template(
+                    request.data["ref_number"],
+                    request.data["company_name"],
+                    date_time.strftime('%Y-%m-%d %H:%M:%S')
+                ))
 
             send_email(  # to customer
                 request.data['email'],
                 'Appointment Request Confirmation',
-                F'''
-<pre>Please do not reply to this email.
-Email appointments@candortransport.com for any issues.
-
-Your appointment request has been received. Please allow 24 hours for approval.
-
-Request Details:
-    Reference Number: {request.data["ref_number"]}
-    DateTime: {date_time.strftime('%Y-%m-%d %H:%M:%S')}
-
-Thank you for choosing Candor Logistics.</pre>'''
-            )
+                request_confirmation_email_template(
+                    request.data["ref_number"],
+                    date_time.strftime('%Y-%m-%d %H:%M:%S')
+                ))
 
         return response
 

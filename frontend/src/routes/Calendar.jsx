@@ -12,8 +12,6 @@ import {
   DialogContent,
   DialogTitle,
   FormControlLabel,
-  Typography,
-  Paper,
 } from "@mui/material";
 import { useAtom } from "jotai";
 import {
@@ -161,6 +159,7 @@ export default function Calendar() {
       allWarehouses.map((warehouse) => ({
         id: warehouse.id,
         name: warehouse.name,
+        color: warehouse.color,
         checked: isWarehouseChecked(warehouse.id, checkedList),
       }))
     );
@@ -251,7 +250,12 @@ export default function Calendar() {
     if (request.completed_time !== null) {
       return "#808080"; // Gray for completed requests
     }
-    return isLate(request.date_time, request.check_in_time) ? "#FF0000" : "#00FF00";
+    else if (isLate(request.date_time, request.check_in_time)) {
+      return "#FF0000"; // Red for late requests
+    } else {
+      const warehouse = warehouseData.find(w => w.id === request.warehouse);
+      return warehouse.color // ? warehouse.color : "#00FF00"; // Return warehouse color or default green
+    }
   };
 
   result = useQuery({
@@ -301,6 +305,7 @@ export default function Calendar() {
         deletable: false,
         draggable: false,
         color: getEventColor(request),
+        notes: request.notes || "",
       }));
       // map each result row to an event
       setAllEvents(newEvents); // set events
@@ -356,6 +361,12 @@ export default function Calendar() {
             startHour: 6,
             endHour: 18,
             step: 15,
+          }}
+          agenda={{
+            fields: [
+              { name: "title", label: "Reference" },
+              { name: "notes", label: "Notes" },
+            ],
           }}
           onSelectedDateChange={(date) => {
             updateRange(date);

@@ -1,7 +1,7 @@
 {
   "name": "candor-scheduling",
   "private": true,
-  "version": "0.0.32",
+  "version": "0.0.34",
   "type": "module",
   "homepage": "/static",
   "scripts": {

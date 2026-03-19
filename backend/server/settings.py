@@ -30,9 +30,15 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-q*+(03o^)&zw-)ve8a441iw-tnura(^qj#j&wgy8580*01a(6r'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
 ALLOWED_HOSTS = ['*']
+
+CORS_ORIGIN_WHITELIST = [
+    'http://frontend_c_dev:3004',
+    'http://frontend_c:80'
+    , 'http://localhost:5173'
+]
 
 # Application definition
 
@@ -175,12 +181,6 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-
-CORS_ORIGIN_WHITELIST = [
-    'http://frontend_c_dev:3004',
-    'http://frontend_c:80'
-    # ,'http://localhost:5173'
-]
 
 if os.getenv("CSRF_TRUSTED_ORIGIN"):
     CSRF_TRUSTED_ORIGINS = [os.getenv("CSRF_TRUSTED_ORIGIN")]

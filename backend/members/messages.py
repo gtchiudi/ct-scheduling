@@ -10,7 +10,7 @@ def send_email(to_email, subject, body):
         from_email=SENDER,
         to_emails=to_email,
         subject=subject,
-        html_content=F'<body>{body}</body>'
+        html_content=body
     )
     try:
         sg = SendGridAPIClient(os.getenv('SENDGRID_API_KEY'))
