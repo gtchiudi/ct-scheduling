@@ -841,14 +841,14 @@ function Form({ request, closeModal, dateTime }) {
                 skipDisabled={true}
                 label="Select Appointment Date and Time"
                 value={dayjs(requestData.date_time)}
-                shouldDisableTime={getTimesToDisable}
+                shouldDisableTime={(path == "/RequestForm") ? getTimesToDisable : null}
                 onChange={(date) => {
                   findTimes(date);
                 }}
                 onAccept={(newValue) => handleDateChange(newValue)}
                 timeSteps={{ minutes: 15 }}
                 disablePast={path === "/RequestForm"}
-                shouldDisableDate={(date) => dayjs(date).isSame(dayjs(), "day")}
+                shouldDisableDate={(date) => (dayjs(date).isSame(dayjs(), "day") && path == "/RequestForm")}
                 timezone={warehouseTimezone || undefined}
               />
               {warehouseTimezone && (
