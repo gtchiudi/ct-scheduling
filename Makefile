@@ -44,7 +44,7 @@ rollback-history:
 clean:
 	rm -f deployments/production/.replacements.bak
 
-.PHONY: build diff deploy rollback clean
+.PHONY: build diff deploy rollback clean migrate
 
 # Get most recent pod name (sorted by creation timestamp)
 GET_POD = kubectl -n ctscheduling get pods --sort-by=.metadata.creationTimestamp -o jsonpath='{.items[-1:].metadata.name}'
@@ -62,3 +62,8 @@ shell:
 django-shell:
 	@pod=$$($(GET_POD)) && \
 	kubectl -n ctscheduling exec -it $$pod -- python manage.py shell
+
+# Run Django migrations in most recent pod
+migrate:
+	@pod=$$($(GET_POD)) && \
+	kubectl -n ctscheduling exec -it $$pod -- python manage.py migrate --noinput

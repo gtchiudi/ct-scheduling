@@ -22,13 +22,15 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY --from=dev /ct-scheduling/frontend/build ./static
 
 COPY ./backend .
+COPY entrypoint.sh .
 
 RUN cp ./static/index.html ./templates/
 
 # Collect static files (for Django projects)
 RUN python manage.py collectstatic --noinput
 
+RUN chmod +x entrypoint.sh
+
 EXPOSE 8000
 
-# Use Gunicorn with Uvicorn workers to serve the application
-CMD ["gunicorn", "server.wsgi:application", "--bind", "0.0.0.0:8000", "--workers=4"]
+ENTRYPOINT ["./entrypoint.sh"]
