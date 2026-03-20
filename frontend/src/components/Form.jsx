@@ -64,23 +64,19 @@ function Form({ request, closeModal, dateTime }) {
     refreshWarehouseData();
   }, []);
 
-  // gets work day following provided date
-  const nextWorkDay = (date) => {
-    // gets the next work day at 8:00 am
-    let now = date ? dayjs(date) : dayjs();
+  // gets work day following provided date, optionally in a given IANA timezone
+  const nextWorkDay = (date, tz) => {
+    let now = tz
+      ? (date ? dayjs(date).tz(tz) : dayjs().tz(tz))
+      : (date ? dayjs(date) : dayjs());
     if (now.day() === 5) {
-      // date is Friday
       now = now.add(3, "day");
     } else if (now.day() === 6) {
-      // date is Saturday
       now = now.add(2, "day");
     } else {
       now = now.add(1, "day");
     }
-    //day now is next work day.
-    //set to 8:00 am
-    now = now.set("hour", 8).set("minute", 0).set("second", 0);
-    return now;
+    return now.set("hour", 8).set("minute", 0).set("second", 0);
   };
 
   const [selectedDate, setDate] = useState(nextWorkDay());
@@ -120,14 +116,14 @@ function Form({ request, closeModal, dateTime }) {
   const requiredFields = React.useMemo(() => {
     let fields = [
       "company_name",
-      "phone_number",
-      "email",
       "warehouse",
       "ref_number",
       "load_type",
       "delivery",
-      // "trailer_number",
     ];
+    if (path !== "/Calendar") {
+      fields = [...fields, "phone_number", "email"];
+    }
     return fields;
   }, [path]);
 
@@ -428,16 +424,21 @@ function Form({ request, closeModal, dateTime }) {
     }
   };
 
+  const warehouseTimezone = React.useMemo(() => {
+    const wh = warehouseData.find((w) => w.id === requestData.warehouse);
+    return wh?.timezone || null;
+  }, [warehouseData, requestData.warehouse]);
+
   // gets the first available time following
-  const getFirstAvailableTime = (date) => {
+  const getFirstAvailableTime = () => {
     if (!getInitialTime) return;
-    let beginNextDay = nextWorkDay();
+    let beginNextDay = nextWorkDay(null, warehouseTimezone);
     findTimes(beginNextDay);
     while (true) {
       if (!getTimesToDisable(beginNextDay, "minutes")) break;
       beginNextDay = beginNextDay.add(15, "minutes");
       if (beginNextDay.hour() === 16) {
-        beginNextDay = nextWorkDay(beginNextDay);
+        beginNextDay = nextWorkDay(beginNextDay, warehouseTimezone);
       }
     }
     handleDateChange(beginNextDay);
@@ -664,7 +665,7 @@ function Form({ request, closeModal, dateTime }) {
           ></TextField>
 
           <TextField
-            required
+            required={path !== "/Calendar"}
             label="Phone Number"
             name="phone_number"
             value={requestData.phone_number}
@@ -679,7 +680,7 @@ function Form({ request, closeModal, dateTime }) {
           ></TextField>
 
           <TextField
-            required
+            required={path !== "/Calendar"}
             label="Email"
             name="email"
             value={requestData.email}
@@ -831,21 +832,31 @@ function Form({ request, closeModal, dateTime }) {
               value={dayjs(requestData.date_time)}
             />
           ) : (
-            <DateTimePicker
-              disabled={requestData.warehouse === ""}
-              ampm={false}
-              thresholdToRenderTimeInASingleColumn={30}
-              skipDisabled={true}
-              label="Select Appointment Date and Time"
-              value={dayjs(requestData.date_time)}
-              shouldDisableTime={getTimesToDisable}
-              onChange={(date) => {
-                findTimes(date);
-              }}
-              onAccept={(newValue) => handleDateChange(newValue)}
-              timeSteps={{ minutes: 15 }}
-              disablePast={path === "/RequestForm"}
-            />
+            <>
+              <DateTimePicker
+                disabled={requestData.warehouse === ""}
+                ampm={false}
+                thresholdToRenderTimeInASingleColumn={30}
+                skipDisabled={true}
+                label="Select Appointment Date and Time"
+                value={dayjs(requestData.date_time)}
+                shouldDisableTime={getTimesToDisable}
+                onChange={(date) => {
+                  findTimes(date);
+                }}
+                onAccept={(newValue) => handleDateChange(newValue)}
+                timeSteps={{ minutes: 15 }}
+                disablePast={path === "/RequestForm"}
+                timezone={warehouseTimezone || undefined}
+              />
+              {warehouseTimezone && (
+                <Box textAlign="center">
+                  <Typography variant="caption" color="text.secondary">
+                    Timezone: {warehouseTimezone}
+                  </Typography>
+                </Box>
+              )}
+            </>
           )}
 
           {formBottom}
