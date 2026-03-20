@@ -40,10 +40,24 @@ function isWarehouseChecked(id, warehousesChecked, allWarehouses) {
 export function CustomViewer({ event, onClose }) {
   // view/edit a request
   const [open, setOpen] = useState(true);
+  const [locked, setLocked] = useState(false);
+  const pendingAcknowledge = React.useRef(null);
   const [editAppointment, setEditAppointment] = useAtom(editAppointmentAtom);
   const userGroups = useAtom(userGroupsAtom)[0];
-  
+
+  const handleLockChange = (acknowledgeFn) => {
+    pendingAcknowledge.current = acknowledgeFn;
+    setLocked(!!acknowledgeFn);
+  };
+
   const closeDialog = () => {
+    if (pendingAcknowledge.current) {
+      const ack = pendingAcknowledge.current;
+      pendingAcknowledge.current = null;
+      setLocked(false);
+      ack();
+      return;
+    }
     setEditAppointment(false);
     if (typeof onClose === "function") onClose();
     setOpen(false);
@@ -61,13 +75,13 @@ export function CustomViewer({ event, onClose }) {
             Reference number: {event.request.ref_number}
           </DialogTitle>
           <DialogContent>
-            <Form request={event.request} closeModal={closeDialog} />
+            <Form request={event.request} closeModal={closeDialog} onLockChange={handleLockChange} />
           </DialogContent>
           <DialogActions>
             {!editAppointment && event.request.check_in_time == null && userGroups.includes("Admin", "Dispatch") && (
               <Button onClick={enableEdit}> Edit Appointment</Button>
             )}
-            <Button onClick={closeDialog}>Cancel</Button>
+            <Button onClick={closeDialog} disabled={locked}>Cancel</Button>
           </DialogActions>
         </Dialog>
       )}

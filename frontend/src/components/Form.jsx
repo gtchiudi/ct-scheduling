@@ -17,6 +17,8 @@ import {
   DialogContent,
   DialogActions,
   Button as MuiButton,
+  Alert,
+  Collapse,
 } from "@mui/material";
 import axios from "axios";
 import { useAtom } from "jotai";
@@ -48,7 +50,7 @@ PhoneMaskCustom.propTypes = {
   onChange: PropTypes.func.isRequired,
 };
 
-function Form({ request, closeModal, dateTime }) {
+function Form({ request, closeModal, dateTime, onLockChange }) {
   const queryClient = useQueryClient();
   const [warehouseData, refreshWarehouseData] = useAtom(warehouseDataEffectAtom);
   const [editAppointment, setEditAppointment] = useAtom(editAppointmentAtom);
@@ -65,6 +67,11 @@ function Form({ request, closeModal, dateTime }) {
   const [phoneError, setPhoneError] = useState(false);
   const [driverPhoneError, setDriverPhoneError] = useState(false);
   const [successOpen, setSuccessOpen] = useState(false);
+  const [formAlert, setFormAlert] = useState(null); // { message, severity, onAcknowledge? }
+
+  React.useEffect(() => {
+    onLockChange?.(formAlert?.onAcknowledge || null);
+  }, [formAlert]);
 
   React.useEffect(() => {
     refreshWarehouseData();
@@ -332,15 +339,22 @@ function Form({ request, closeModal, dateTime }) {
   const handleButton = (e) => {
     const { name } = e.target;
     if (name == "dock_number") {
+      const dockNum = parseInt(document.getElementById("dock_number").value);
+      const dockedTime = dayjs().format("YYYY-MM-DD HH:mm:ss");
       if (!requestData.sms_consent) {
-        window.alert(
-          "Driver did not consent to SMS notifications.\nPlease inform them of dock number."
-        );
+        setFormAlert({
+          message: "Driver did not consent to SMS notifications. Please inform them of dock number.",
+          severity: "warning",
+          onAcknowledge: () => {
+            requestData.dock_number = dockNum;
+            requestData.docked_time = dockedTime;
+            updateRequest();
+          },
+        });
+        return;
       }
-      requestData[name] = parseInt(
-        document.getElementById("dock_number").value
-      );
-      requestData["docked_time"] = dayjs().format("YYYY-MM-DD HH:mm:ss");
+      requestData[name] = dockNum;
+      requestData["docked_time"] = dockedTime;
     } else if (name == "check_in_time") {
       requestData[name] = dayjs().format("YYYY-MM-DD HH:mm:ss");
     } else if (name == 'completed_time'){
@@ -373,6 +387,7 @@ function Form({ request, closeModal, dateTime }) {
     setEmailError(false);
     setPhoneError(false);
     setDriverPhoneError(false);
+    setFormAlert(null);
   }
 
   const handleNewRequest = async () => {
@@ -398,11 +413,11 @@ function Form({ request, closeModal, dateTime }) {
         
         if (errors.email) {
           setEmailError(true);
-          window.alert(`Email Error: ${errors.email.join(', ')}`);
+          setFormAlert({ message: `Email Error: ${errors.email.join(', ')}`, severity: "error" });
         }
         if (errors.phone_number) {
           setPhoneError(true);
-          window.alert(`Phone Error: ${errors.phone_number.join(', ')}`);
+          setFormAlert({ message: `Phone Error: ${errors.phone_number.join(', ')}`, severity: "error" });
         }
       }
     }
@@ -427,14 +442,14 @@ function Form({ request, closeModal, dateTime }) {
         
         if (errors.email) {
           setEmailError(true);
-          window.alert(`Email Error: ${errors.email.join(', ')}`);
+          setFormAlert({ message: `Email Error: ${errors.email.join(', ')}`, severity: "error" });
         }
         if (errors.phone_number) {
           setPhoneError(true);
-          window.alert(`Phone Error: ${errors.phone_number.join(', ')}`);
+          setFormAlert({ message: `Phone Error: ${errors.phone_number.join(', ')}`, severity: "error" });
         }
       }
-      
+
       setEditAppointment(false);
       closeModal();
     }
@@ -578,9 +593,9 @@ function Form({ request, closeModal, dateTime }) {
         );
         
         formButton = (
-          <Button 
-            name="check_in_time" 
-            variant="contained" 
+          <Button
+            name="check_in_time"
+            variant="contained"
             onClick={handleButton}
             disabled={!isDriverPhoneValid}
           >
@@ -596,7 +611,7 @@ function Form({ request, closeModal, dateTime }) {
 
     } else if (requestData.dock_number == null) {
       formButton = (
-        <Button name="dock_number" variant="contained" onClick={handleButton}>
+        <Button name="dock_number" variant="contained" onClick={handleButton} disabled={!!formAlert?.onAcknowledge}>
           Send To Dock
         </Button>
       );
@@ -890,6 +905,25 @@ function Form({ request, closeModal, dateTime }) {
             </>
           )}
 
+          <Box>
+            <Collapse in={!!formAlert}>
+              {formAlert && (
+                <Alert
+                  severity={formAlert.severity}
+                  onClose={formAlert.onAcknowledge ? undefined : () => setFormAlert(null)}
+                  action={
+                    formAlert.onAcknowledge ? (
+                      <MuiButton size="small" color="inherit" onClick={() => { setFormAlert(null); formAlert.onAcknowledge(); }}>
+                        OK
+                      </MuiButton>
+                    ) : undefined
+                  }
+                >
+                  <Box textAlign="center">{formAlert.message}</Box>
+                </Alert>
+              )}
+            </Collapse>
+          </Box>
           {formBottom}
         </Stack>
       </FormControl>
