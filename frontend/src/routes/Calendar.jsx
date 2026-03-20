@@ -424,6 +424,13 @@ export default function Calendar() {
                     variant="caption"
                     color="text.secondary"
                     display="block"
+                  >
+                    Customer: {event.request.company_name}
+                  </Typography>
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    display="block"
                     sx={{ lineHeight: 1.2 }}
                   >
                     Appointment Time: {dayjs(event.start).format("HH:mm")}

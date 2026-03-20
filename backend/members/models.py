@@ -45,7 +45,7 @@ class Request(BaseModel):
         max_length=255)  # changeable only via admin
     phone_number = models.CharField(
         max_length=12, null=True, blank=True)  # changeable only via admin
-    email = models.EmailField(max_length=254)  # changeable only via admin
+    email = models.EmailField(max_length=254, null=True, blank=True)  # changeable only via admin
     # Cannot be changed unless loged in as admin
     warehouse = models.ForeignKey(
         Warehouse, on_delete=models.CASCADE)  # changeable via emp
