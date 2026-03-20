@@ -12,6 +12,11 @@ import {
   Stack,
   Container,
   FormLabel,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Button as MuiButton,
 } from "@mui/material";
 import axios from "axios";
 import { useAtom } from "jotai";
@@ -59,6 +64,7 @@ function Form({ request, closeModal, dateTime }) {
   const [emailError, setEmailError] = useState(false);
   const [phoneError, setPhoneError] = useState(false);
   const [driverPhoneError, setDriverPhoneError] = useState(false);
+  const [successOpen, setSuccessOpen] = useState(false);
 
   React.useEffect(() => {
     refreshWarehouseData();
@@ -88,7 +94,7 @@ function Form({ request, closeModal, dateTime }) {
   );
 
   // default request data
-  const [requestData, setRequestData] = useState({
+  const initialRequestData = {
     id: "",
     approved: false,
     company_name: "",
@@ -110,7 +116,8 @@ function Form({ request, closeModal, dateTime }) {
     docked_time: null,
     completed_time: null,
     active: true,
-  });
+  };
+  const [requestData, setRequestData] = useState(initialRequestData);
 
   // fields required for form completion
   const requiredFields = React.useMemo(() => {
@@ -359,6 +366,15 @@ function Form({ request, closeModal, dateTime }) {
       updateRequest();
   };
 
+  const handleDialogueClose = () => {
+    setSuccessOpen(false);
+    setRequestData({ ...initialRequestData, date_time: nextWorkDay() });
+    setRequiredFieldsCompleted(requiredFields.reduce((acc, field) => { acc[field] = false; return acc; }, {}));
+    setEmailError(false);
+    setPhoneError(false);
+    setDriverPhoneError(false);
+  }
+
   const handleNewRequest = async () => {
     if (path === "/Calendar") {
       requestData.approved = true;
@@ -371,7 +387,7 @@ function Form({ request, closeModal, dateTime }) {
         queryClient.invalidateQueries("requests");
         closeModal();
       } else {
-        navigate("/");
+        setSuccessOpen(true);
       }
     } catch (error) {
       console.error("Error handling new request:", error);
@@ -639,6 +655,19 @@ function Form({ request, closeModal, dateTime }) {
   }
 
   return (
+    <Box>
+      <Dialog open={successOpen} onClose={handleDialogueClose}>
+        <DialogTitle textAlign="center">Request Submitted</DialogTitle>
+        <DialogContent>
+          <Typography>
+            Your request has been submitted successfully. Please check your email for a confirmation.
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <MuiButton onClick={handleDialogueClose}>Submit Another</MuiButton>
+          <MuiButton variant="contained" onClick={() => navigate("/")}>Dismiss</MuiButton>
+        </DialogActions>
+      </Dialog>
     <Box marginBottom={"20px"}>
       <FormControl>
         <Stack
@@ -864,6 +893,7 @@ function Form({ request, closeModal, dateTime }) {
           {formBottom}
         </Stack>
       </FormControl>
+    </Box>
     </Box>
   );
 }
