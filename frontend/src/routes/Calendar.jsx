@@ -376,11 +376,18 @@ export default function Calendar() {
                   <Typography variant="subtitle2" fontWeight="bold">
                     {event.title}
                   </Typography>
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    display="block"
+                  >
+                    Customer: {event.request.company_name}
+                  </Typography>
                   <Typography variant="caption" color="text.secondary" display="block">
                     Appointment Time: {dayjs(event.start).format("HH:mm")}
                   </Typography>
                   {event.request.note_section && (
-                    <Box sx={{ mt: 0.5 }}>
+                    <Box>
                       <Typography
                         variant="caption"
                         color="text.secondary"
@@ -388,7 +395,7 @@ export default function Calendar() {
                       >
                         Notes:
                       </Typography>
-                      <Typography variant="body2">
+                      <Typography variant="body2" sx={{ whiteSpace: "pre-wrap" }}>
                         {event.request.note_section}
                       </Typography>
                     </Box>

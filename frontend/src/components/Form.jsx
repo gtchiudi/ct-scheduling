@@ -818,6 +818,7 @@ function Form({ request, closeModal, dateTime }) {
             autoComplete="off"
             InputProps={{
               readOnly: request && path != "/PendingRequests" && !editAppointment ? true : false,
+              sx: { whiteSpace: "pre-wrap" },
             }}
           />
           {requestData.warehouse === "" ? (
