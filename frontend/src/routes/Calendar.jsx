@@ -12,7 +12,11 @@ import {
   DialogContent,
   DialogTitle,
   FormControlLabel,
+  Typography,
+  Paper,
+  Tooltip,
 } from "@mui/material";
+import { alpha } from "@mui/material/styles";
 import { useAtom } from "jotai";
 import {
   authenticatedAtom,
@@ -114,6 +118,8 @@ export default function Calendar() {
 
   const [refresh, setRefresh] = useAtom(refreshAtom); // is refreshing
   const [allEvents, setAllEvents] = useState([]); // calendar event storage of all events
+  const [agendaViewerEvent, setAgendaViewerEvent] = useState(null);
+  const schedulerViewRef = React.useRef("week");
   let result = useState(null); // query result storage
 
   const [warehouseData, refreshWarehouseData] = useAtom(warehouseDataEffectAtom);
@@ -305,7 +311,6 @@ export default function Calendar() {
         deletable: false,
         draggable: false,
         color: getEventColor(request),
-        notes: request.notes || "",
       }));
       // map each result row to an event
       setAllEvents(newEvents); // set events
@@ -342,8 +347,115 @@ export default function Calendar() {
       </Box>
       <Box id="calendar" paddingTop="129px">
         <Scheduler
+          ref={ref}
           hourFormat="24"
           events={events}
+          eventRenderer={({ event, onClick, draggable }) => {
+            const isAgenda = draggable === undefined;
+
+            const paperSx = {
+              borderLeft: `4px solid ${event.color}`,
+              backgroundColor: alpha(event.color, 0.08),
+              padding: "2px 6px",
+              cursor: "pointer",
+              width: "100%",
+              height: "100%",
+              borderRadius: "0 4px 4px 0",
+              overflow: "hidden",
+              boxSizing: "border-box",
+            };
+
+            if (isAgenda) {
+              return (
+                <Paper
+                  key={event.event_id}
+                  onClick={() => setAgendaViewerEvent(event)}
+                  elevation={1}
+                  sx={{ ...paperSx, height: "auto", padding: "6px 10px" }}
+                >
+                  <Typography variant="subtitle2" fontWeight="bold">
+                    {event.title}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary" display="block">
+                    Appointment Time: {dayjs(event.start).format("HH:mm")}
+                  </Typography>
+                  {event.request.note_section && (
+                    <Box sx={{ mt: 0.5 }}>
+                      <Typography
+                        variant="caption"
+                        color="text.secondary"
+                        display="block"
+                      >
+                        Notes:
+                      </Typography>
+                      <Typography variant="body2">
+                        {event.request.note_section}
+                      </Typography>
+                    </Box>
+                  )}
+                </Paper>
+              );
+            }
+
+            if (schedulerViewRef.current === "day") {
+              return (
+                <Paper
+                  key={event.event_id}
+                  onClick={onClick}
+                  elevation={1}
+                  sx={paperSx}
+                >
+                  <Typography
+                    variant="caption"
+                    fontWeight="bold"
+                    display="block"
+                    sx={{ lineHeight: 1.3 }}
+                  >
+                    {event.title}
+                  </Typography>
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    display="block"
+                    sx={{ lineHeight: 1.2 }}
+                  >
+                    Appointment Time: {dayjs(event.start).format("HH:mm")}
+                  </Typography>
+                </Paper>
+              );
+            }
+
+            // month and week view — title only, tooltip shows time
+            const isMonth = schedulerViewRef.current === "month";
+
+            return (
+              <Tooltip
+                key={event.event_id}
+                title={dayjs(event.start).format("HH:mm")}
+                placement="bottom"
+                disableInteractive
+              >
+                <Paper
+                  onClick={onClick}
+                  elevation={1}
+                  sx={{
+                    ...paperSx,
+                    height: isMonth ? "auto" : "100%",
+                    padding: isMonth ? "1px 4px" : "2px 6px",
+                  }}
+                >
+                  <Typography
+                    variant="caption"
+                    fontWeight="bold"
+                    display="block"
+                    sx={{ lineHeight: 1.3 }}
+                  >
+                    {event.title}
+                  </Typography>
+                </Paper>
+              </Tooltip>
+            );
+          }}
           month={{
             weekDays: [1, 2, 3, 4, 5, 6, 0],
             weekStartOn: 6,
@@ -362,12 +474,7 @@ export default function Calendar() {
             endHour: 18,
             step: 15,
           }}
-          agenda={{
-            fields: [
-              { name: "title", label: "Reference" },
-              { name: "notes", label: "Notes" },
-            ],
-          }}
+          onViewChange={(view) => { schedulerViewRef.current = view; }}
           onSelectedDateChange={(date) => {
             updateRange(date);
           }}
@@ -377,6 +484,12 @@ export default function Calendar() {
           }}
           customEditor={(event) => <CustomEditor event={event} />}
         />
+        {agendaViewerEvent && (
+          <CustomViewer
+            event={agendaViewerEvent}
+            onClose={() => setAgendaViewerEvent(null)}
+          />
+        )}
       </Box>
     </Box>
   );

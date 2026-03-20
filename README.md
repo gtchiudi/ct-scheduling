@@ -90,3 +90,6 @@ $ kubectl create secret docker-registry oracle-docker-registry \
     --docker-username=$(DOCKER_USERNAME) \
     --docker-password=$(DOCKER_PASSWORD) \
     --docker-email=$(DOCKER_EMAIL)
+
+
+One note: the patch was generated against version 2.9.2 (the version patch-package fetched), but your package.json specifies ^2.7.25. If the version ever bumps past 2.9.2, patch-package will warn and may fail to apply — at that point you'd re-run npx patch-package @aldabil/react-scheduler to regenerate against the new version.
