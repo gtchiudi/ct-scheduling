@@ -161,13 +161,7 @@ export const updateWarehouseDataAtom = atom(null, async (get, set, updated) => {
 
 export const warehouseDataEffectAtom = atom(
   (get) => get(warehouseDataAtom),
-  async (get, set, _arg) => {
-    const warehouses = get(warehouseDataAtom);
-    const now = dayjs();
-    let lastRefresh = get(lastWarehouseRefreshAtom);
-    lastRefresh = lastRefresh ? dayjs(lastRefresh) : null
-    if (warehouses?.length == 0 || !lastRefresh || now.diff(lastRefresh, "hour") >= 24) {
-      await set(updateWarehouseDataAtom);
-    }
+  async (_get, set, _arg) => {
+    await set(updateWarehouseDataAtom);
   }
 );
