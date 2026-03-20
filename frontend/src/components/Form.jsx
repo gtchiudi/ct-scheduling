@@ -847,6 +847,7 @@ function Form({ request, closeModal, dateTime }) {
                 onAccept={(newValue) => handleDateChange(newValue)}
                 timeSteps={{ minutes: 15 }}
                 disablePast={path === "/RequestForm"}
+                shouldDisableDate={(date) => dayjs(date).isSame(dayjs(), "day")}
                 timezone={warehouseTimezone || undefined}
               />
               {warehouseTimezone && (
