@@ -278,6 +278,19 @@ export default function Calendar() {
     }
   };
 
+  const getEventStatus = (event) => {
+    if (isLate(event.request.date_time, event.request.check_in_time))
+      return 'Late'
+    else if (event.request.check_in_time == null)
+      return 'On Time'
+    else if (event.request.docked_time == null)
+      return 'Checked In'
+    else if (event.request.completed_time == null)
+      return 'Docked'
+    else
+      return 'Completed'
+  }
+
   result = useQuery({
     queryKey: key,
     queryFn: async () =>
@@ -447,7 +460,7 @@ export default function Calendar() {
                     display="block"
                     sx={{ lineHeight: 1.2 }}
                   >
-                    Appointment Time: {dayjs(event.start).format("HH:mm")}
+                    Appointment Status: {getEventStatus(event)}
                   </Typography>
                 </Paper>
               );
