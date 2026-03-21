@@ -542,7 +542,7 @@ export default function Calendar() {
             );
           }}
           month={{
-            weekDays: [1, 2, 3, 4, 5, 6, 0],
+            weekDays: [0, 1, 2, 3, 4, 5, 6],
             weekStartOn: 6,
             startHour: 6,
             endHour: 18,
