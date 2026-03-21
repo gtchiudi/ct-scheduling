@@ -43,7 +43,7 @@ class Request(BaseModel):
     approved = models.BooleanField(default=False)
     company_name = models.CharField(
         max_length=255)  # changeable only via admin
-    customer_name = models.CharField(max_length=255, null=True)
+    customer_name = models.CharField(max_length=255, null=True, blank=True)
     phone_number = models.CharField(
         max_length=12, null=True, blank=True)  # changeable only via admin
     email = models.EmailField(max_length=254, null=True, blank=True)  # changeable only via admin
