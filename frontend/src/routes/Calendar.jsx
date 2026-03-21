@@ -299,10 +299,11 @@ export default function Calendar() {
   };
 
   const getEventStatus = (event) => {
-    if (isLate(event.request.date_time, event.request.check_in_time))
-      return 'Late'
-    else if (event.request.check_in_time == null)
+    if (event.request.check_in_time == null){
+      if (isLate(event.request.date_time, event.request.check_in_time))
+        return 'Late'
       return 'On Time'
+    }
     else if (event.request.docked_time == null)
       return 'Checked In'
     else if (event.request.completed_time == null)
@@ -350,7 +351,7 @@ export default function Calendar() {
       const newEvents = data.data.map((request) => ({
         // map requests to events on success
         event_id: request.id,
-        title: `Ref #: ${request.ref_number}`, // set title to po number
+        title: request.ref_number, // set title to po number
         start: new Date(request.date_time), // start and end are same
         end: new Date(dayjs(request.date_time).add(15, "minutes")),
         request: request, // store request in event
@@ -445,7 +446,7 @@ export default function Calendar() {
                   sx={{ ...paperSx, height: "auto", padding: "6px 10px" }}
                 >
                   <Typography variant="subtitle2" fontWeight="bold">
-                    {event.title}
+                    Reference Number: {event.title}
                   </Typography>
                   <Typography
                     variant="caption"
@@ -497,7 +498,7 @@ export default function Calendar() {
                     display="block"
                     sx={{ lineHeight: 1.3 }}
                   >
-                    {event.title}
+                    Reference #: {event.title}
                   </Typography>
                   <Typography
                     variant="caption"
@@ -543,7 +544,7 @@ export default function Calendar() {
                     display="block"
                     sx={{ lineHeight: 1.3 }}
                   >
-                    {event.title}
+                    Ref #: {event.title}
                   </Typography>
                 </Paper>
               </Tooltip>

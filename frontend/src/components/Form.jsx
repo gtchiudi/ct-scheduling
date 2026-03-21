@@ -682,8 +682,10 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
       <Dialog open={successOpen} onClose={handleDialogueClose}>
         <DialogTitle textAlign="center">Request Submitted</DialogTitle>
         <DialogContent>
-          <Typography>
-            Your request has been submitted successfully. Please check your email for a confirmation.
+          <Typography textAlign="center">
+            Your appointment request has been submitted successfully.
+            <br/>
+            Please check your inbox for a confirmation email.
           </Typography>
         </DialogContent>
         <DialogActions>
