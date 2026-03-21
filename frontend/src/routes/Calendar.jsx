@@ -133,6 +133,7 @@ export default function Calendar() {
   const [refresh, setRefresh] = useAtom(refreshAtom); // is refreshing
   const [allEvents, setAllEvents] = useState([]); // calendar event storage of all events
   const [agendaViewerEvent, setAgendaViewerEvent] = useState(null);
+  const [newAppointmentOpen, setNewAppointmentOpen] = useState(false);
   const schedulerViewRef = React.useRef("week");
   let result = useState(null); // query result storage
 
@@ -346,10 +347,30 @@ export default function Calendar() {
 
   return (
     <Box id="body">
+      <Dialog open={newAppointmentOpen} onClose={() => setNewAppointmentOpen(false)}>
+        <DialogTitle textAlign="center">Create Appointment</DialogTitle>
+        <DialogContent>
+          <Form
+            closeModal={() => { queryClient.invalidateQueries("requests"); setNewAppointmentOpen(false); }}
+            dateTime={(() => {
+              let d = dayjs();
+              if (d.day() === 5) d = d.add(3, "day");
+              else if (d.day() === 6) d = d.add(2, "day");
+              else d = d.add(1, "day");
+              return d.set("hour", 8).set("minute", 0).set("second", 0);
+            })()}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setNewAppointmentOpen(false)}>Cancel</Button>
+        </DialogActions>
+      </Dialog>
+
       <Box
         id="checkboxes"
         display="flex"
-        justifyContent="flex-end"
+        justifyContent="space-between"
+        alignItems="center"
         marginBottom={0}
         backgroundColor="white"
         position="fixed"
@@ -358,6 +379,10 @@ export default function Calendar() {
         zIndex={1000}
         width="100%"
       >
+        <Button variant="contained" sx={{ ml: 2 }} onClick={() => setNewAppointmentOpen(true)}>
+          New Appointment
+        </Button>
+        <Box display="flex" alignItems="center">
         {parsedWarehouseData.map((warehouse) => (
           <Box key={warehouse.id} marginRight={2}>
             <FormControlLabel
@@ -371,6 +396,7 @@ export default function Calendar() {
             />
           </Box>
         ))}
+        </Box>
       </Box>
       <Box id="calendar" paddingTop="134px">
         <Scheduler
