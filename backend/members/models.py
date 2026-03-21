@@ -43,6 +43,7 @@ class Request(BaseModel):
     approved = models.BooleanField(default=False)
     company_name = models.CharField(
         max_length=255)  # changeable only via admin
+    customer_name = models.CharField(max_length=255, null=True)
     phone_number = models.CharField(
         max_length=12, null=True, blank=True)  # changeable only via admin
     email = models.EmailField(max_length=254, null=True, blank=True)  # changeable only via admin
@@ -78,6 +79,9 @@ class Request(BaseModel):
         "Docked Time", null=True, blank=True)  # emp use only
     completed_time = models.DateTimeField(
         "Time Completed", null=True, blank=True)  # emp use only
+    cancelled_time = models.DateTimeField(
+        'Cancelled At', null=True, blank=True
+    )
     # Last two are done with buttons and auto added to DB
     active = models.BooleanField(default=True)
     # BEcomes false after completed delivery

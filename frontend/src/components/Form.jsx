@@ -407,7 +407,7 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
       const response = await axios.post("/api/request/", requestData);
 
       if (path === "/Calendar") {
-        queryClient.invalidateQueries("requests");
+        queryClient.invalidateQueries(["requests"]);
         closeModal();
       } else {
         setSuccessOpen(true);
@@ -437,8 +437,8 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
         `/api/request/${requestData.id}/`,
         requestData
       );
-      queryClient.invalidateQueries("pendingRequests");
-      queryClient.invalidateQueries("requests");
+      queryClient.invalidateQueries(["pendingRequests"]);
+      queryClient.invalidateQueries(["requests"]);
       setEditAppointment(false);
       closeModal();
     } catch (error) {
@@ -894,8 +894,10 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
                 shouldDisableTime={(path == "/RequestForm") ? getTimesToDisable : null}
                 onChange={(date) => {
                   findTimes(date);
+                  if (date && dayjs(date).isValid()) {
+                    handleDateChange(date);
+                  }
                 }}
-                onAccept={(newValue) => handleDateChange(newValue)}
                 timeSteps={{ minutes: 15 }}
                 disablePast={path === "/RequestForm"}
                 shouldDisableDate={(date) => (dayjs(date).isSame(dayjs(), "day") && path == "/RequestForm")}

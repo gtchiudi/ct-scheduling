@@ -6,11 +6,11 @@ from django.contrib.auth.models import User, Group
 class RequestSerializer(serializers.ModelSerializer):
     class Meta:
         model = Request
-        fields = ('id', 'approved', 'company_name', 'phone_number',
+        fields = ('id', 'approved', 'company_name', 'customer_name', 'phone_number',
                   'email', 'warehouse', 'ref_number', 'load_type', 'container_drop', 'container_number',
                   'note_section', 'date_time', 'delivery', 'trailer_number',
                   'driver_phone_number', 'sms_consent', 'dock_number', 'check_in_time', 'docked_time',
-                  'completed_time', 'active')
+                  'completed_time', 'cancelled_time' 'active')
 
 
 class WarehouseSerializer(serializers.ModelSerializer):

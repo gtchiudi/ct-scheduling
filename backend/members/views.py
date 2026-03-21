@@ -89,6 +89,10 @@ class RequestView(viewsets.ModelViewSet):
                         updated_data["ref_number"],
                         date_time.strftime('%Y-%m-%d %H:%M:%S')
                     ))
+            elif 'cancelled_time' in altered_fields:
+                requestUpdate.active = False
+                requestUpdate.save()
+
 
             elif 'dock_number' in altered_fields:
                 number_log = SmsNumberLog.objects.filter(

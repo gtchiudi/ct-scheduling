@@ -371,7 +371,7 @@ export default function Calendar() {
         <DialogTitle textAlign="center">Create Appointment</DialogTitle>
         <DialogContent>
           <Form
-            closeModal={() => { queryClient.invalidateQueries("requests"); setNewAppointmentOpen(false); }}
+            closeModal={() => { queryClient.invalidateQueries(["requests"]); setNewAppointmentOpen(false); }}
           />
         </DialogContent>
         <DialogActions>
