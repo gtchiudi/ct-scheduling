@@ -132,6 +132,7 @@ export default function Calendar() {
   const [agendaViewerEvent, setAgendaViewerEvent] = useState(null);
   const [newAppointmentOpen, setNewAppointmentOpen] = useState(false);
   const schedulerViewRef = React.useRef("week");
+  const [isAgendaMode, setIsAgendaMode] = useState(false);
   let result = useState(null); // query result storage
 
   const [warehouseData, refreshWarehouseData] = useAtom(warehouseDataEffectAtom);
@@ -365,7 +366,7 @@ export default function Calendar() {
         backgroundColor="white"
         position="fixed"
         right={0}
-        top="70.29px"
+        top="66px"
         zIndex={1000}
         width="100%"
       >
@@ -388,10 +389,11 @@ export default function Calendar() {
         ))}
         </Box>
       </Box>
-      <Box id="calendar" paddingTop="134px">
+      <Box id="calendar" paddingTop="134px" className={isAgendaMode ? "agenda-mode" : ""}>
         <Scheduler
           ref={ref}
           hourFormat="24"
+          height={window.innerHeight - 200}
           events={events}
           eventRenderer={({ event, onClick, draggable }) => {
             const isAgenda = draggable === undefined;
@@ -531,7 +533,7 @@ export default function Calendar() {
             endHour: 18,
             step: 15,
           }}
-          onViewChange={(view) => { schedulerViewRef.current = view; }}
+          onViewChange={(view, agenda) => { schedulerViewRef.current = view; setIsAgendaMode(!!agenda); }}
           onSelectedDateChange={(date) => {
             updateRange(date);
           }}

@@ -16,7 +16,7 @@ body{
     width: 100%;
     z-index: 1000;
   }
-    #calendar div[data-testid="grid"]>:first-child {
+    #calendar:not(.agenda-mode) div[data-testid="grid"]>:first-child {
       position: fixed;
       top: 152.77px;
       z-index: 1000;
