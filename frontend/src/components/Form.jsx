@@ -269,6 +269,7 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
       time.isAfter(dayjs("16:00", "HH:mm"));
     if (path != "/RequestForm") isOutsideWorkingHours = false;
 
+    if (path !== "/RequestForm") return false;
     if (isOutsideWorkingHours) return true;
     else if (view === "minutes") {
       return timeUnavailable;
@@ -1034,8 +1035,10 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
                     }
 
                     handleDateChange(snappedDate);
-                    const notAligned = dayjs(snappedDate).minute() % 15 !== 0;
-                    setTimeError(notAligned || !!getTimesToDisable(snappedDate, "minutes"));
+                    if (path === "/RequestForm") {
+                      const notAligned = dayjs(snappedDate).minute() % 15 !== 0;
+                      setTimeError(notAligned || !!getTimesToDisable(snappedDate, "minutes"));
+                    }
                   }
                 }}
                 timeSteps={{ minutes: 15 }}
@@ -1047,6 +1050,7 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
                     error: timeError,
                     helperText: timeError ? "Please select an available time in 15-minute increments." : "",
                     onBlur: () => {
+                      if (path !== "/RequestForm") return;
                       const current = dayjs(requestData.date_time);
                       const minutes = current.minute();
                       if (minutes % 15 !== 0) {
