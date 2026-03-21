@@ -20,6 +20,7 @@ function Layout({ children }) {
     <Box sx={{ height: "100%", margin: "0" }}>
       <Box sx={{ minHeight: "100%", marginBottom: "-50px" }}>
         <HeaderBar />
+        <Box sx={{ height: "66px" }} /> {/* spacer for fixed AppBar */}
         <Box sx={{ flex: "1" }}>{children}</Box>
         <Box sx={{ height: "50px" }}></Box>
       </Box>

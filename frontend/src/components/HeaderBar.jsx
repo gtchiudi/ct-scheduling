@@ -111,7 +111,7 @@ function HeaderBar() {
 
   return (
     <AppBar
-      position="sticky"
+      position="fixed"
       style={{ border: "1px solid rgba(0, 0, 0, 0.1)" }}
     >
       <Container maxWidth="false">

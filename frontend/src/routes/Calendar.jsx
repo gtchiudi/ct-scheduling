@@ -16,7 +16,7 @@ import {
   Paper,
   Tooltip,
 } from "@mui/material";
-import { alpha } from "@mui/material/styles";
+import { alpha, createTheme, ThemeProvider } from "@mui/material/styles";
 import { useAtom } from "jotai";
 import {
   authenticatedAtom,
@@ -114,6 +114,14 @@ export function CustomEditor({ event }) {
   );
 }
 
+const warningTheme = createTheme({
+  palette: {
+    secondary: {
+      main: "#ed6c02",
+    },
+  },
+});
+
 export default function Calendar() {
   const navigate = useNavigate();
   const [, isAuth] = useAtom(isAuthAtom);
@@ -132,6 +140,7 @@ export default function Calendar() {
   const [agendaViewerEvent, setAgendaViewerEvent] = useState(null);
   const [newAppointmentOpen, setNewAppointmentOpen] = useState(false);
   const schedulerViewRef = React.useRef("week");
+  const [currentView, setCurrentView] = useState("week");
   const [isAgendaMode, setIsAgendaMode] = useState(false);
   let result = useState(null); // query result storage
 
@@ -141,10 +150,22 @@ export default function Calendar() {
   const [parsedWarehouseData, setParsedWarehouseData] = useState([]); // parsed warehouse data storage
 
   const ref = React.useRef(null);
+  const checkboxesRef = React.useRef(null);
+  const [calendarTopOffset, setCalendarTopOffset] = React.useState(135);
   // check authentication
   useEffect(() => {
     refreshWarehouseData();
   }, []);
+
+  // useEffect(() => {
+  //   const node = checkboxesRef.current;
+  //   if (!node) return;
+  //   const measure = () => setCalendarTopOffset(node.getBoundingClientRect().bottom);
+  //   measure();
+  //   const observer = new ResizeObserver(measure);
+  //   observer.observe(node);
+  //   return () => observer.disconnect();
+  // }, []);
   
   useEffect(() => {
     pauseQuery = true; // pause query
@@ -358,15 +379,17 @@ export default function Calendar() {
       </Dialog>
 
       <Box
+        ref={checkboxesRef}
         id="checkboxes"
         display="flex"
         justifyContent="space-between"
         alignItems="center"
-        marginBottom={0}
+        // marginBottom={100}
         backgroundColor="white"
         position="fixed"
         right={0}
         top="66px"
+        height={"50px"}
         zIndex={1000}
         width="100%"
       >
@@ -389,11 +412,14 @@ export default function Calendar() {
         ))}
         </Box>
       </Box>
-      <Box id="calendar" paddingTop="134px" className={isAgendaMode ? "agenda-mode" : ""}>
+      <Box id="calendar" 
+        paddingTop={isAgendaMode ? `${calendarTopOffset-48}px` : ( currentView === "month" ? `${calendarTopOffset-14}px` : `${calendarTopOffset}px`)}
+        className={isAgendaMode ? "agenda-mode" : ""}
+      >
+        <ThemeProvider theme={warningTheme}>
         <Scheduler
           ref={ref}
           hourFormat="24"
-          height={window.innerHeight - 200}
           events={events}
           eventRenderer={({ event, onClick, draggable }) => {
             const isAgenda = draggable === undefined;
@@ -533,7 +559,7 @@ export default function Calendar() {
             endHour: 18,
             step: 15,
           }}
-          onViewChange={(view, agenda) => { schedulerViewRef.current = view; setIsAgendaMode(!!agenda); }}
+          onViewChange={(view, agenda) => { schedulerViewRef.current = view; setCurrentView(view); setIsAgendaMode(!!agenda); }}
           onSelectedDateChange={(date) => {
             updateRange(date);
           }}
@@ -549,6 +575,7 @@ export default function Calendar() {
             onClose={() => setAgendaViewerEvent(null)}
           />
         )}
+        </ThemeProvider>
       </Box>
     </Box>
   );
