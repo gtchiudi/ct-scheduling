@@ -40,21 +40,18 @@ function isWarehouseChecked(id, warehousesChecked, allWarehouses) {
 export function CustomViewer({ event, onClose }) {
   // view/edit a request
   const [open, setOpen] = useState(true);
-  const [locked, setLocked] = useState(false);
   const pendingAcknowledge = React.useRef(null);
   const [editAppointment, setEditAppointment] = useAtom(editAppointmentAtom);
   const userGroups = useAtom(userGroupsAtom)[0];
 
   const handleLockChange = (acknowledgeFn) => {
     pendingAcknowledge.current = acknowledgeFn;
-    setLocked(!!acknowledgeFn);
   };
 
   const closeDialog = () => {
     if (pendingAcknowledge.current) {
       const ack = pendingAcknowledge.current;
       pendingAcknowledge.current = null;
-      setLocked(false);
       ack();
       return;
     }
@@ -81,7 +78,7 @@ export function CustomViewer({ event, onClose }) {
             {!editAppointment && event.request.check_in_time == null && userGroups.includes("Admin", "Dispatch") && (
               <Button onClick={enableEdit}> Edit Appointment</Button>
             )}
-            <Button onClick={closeDialog} disabled={locked}>Cancel</Button>
+            <Button onClick={closeDialog}>Close</Button>
           </DialogActions>
         </Dialog>
       )}
@@ -109,7 +106,7 @@ export function CustomEditor({ event }) {
             />
           </DialogContent>
           <DialogActions>
-            <Button onClick={closeDialog}>Cancel</Button>
+            <Button onClick={closeDialog}>Close</Button>
           </DialogActions>
         </Dialog>
       )}
@@ -352,17 +349,10 @@ export default function Calendar() {
         <DialogContent>
           <Form
             closeModal={() => { queryClient.invalidateQueries("requests"); setNewAppointmentOpen(false); }}
-            dateTime={(() => {
-              let d = dayjs();
-              if (d.day() === 5) d = d.add(3, "day");
-              else if (d.day() === 6) d = d.add(2, "day");
-              else d = d.add(1, "day");
-              return d.set("hour", 8).set("minute", 0).set("second", 0);
-            })()}
           />
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setNewAppointmentOpen(false)}>Cancel</Button>
+          <Button onClick={() => setNewAppointmentOpen(false)}>Close</Button>
         </DialogActions>
       </Dialog>
 

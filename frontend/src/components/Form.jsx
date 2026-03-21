@@ -126,6 +126,14 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
   };
   const [requestData, setRequestData] = useState(initialRequestData);
 
+  React.useEffect(() => {
+    if (!request && requestData.warehouse === "") {
+      setFormAlert({ message: "Please select a warehouse.", severity: "info" });
+    } else if (requestData.warehouse !== "") {
+      setFormAlert((prev) => prev?.message === "Please select a warehouse." ? null : prev);
+    }
+  }, [requestData.warehouse]);
+
   // fields required for form completion
   const requiredFields = React.useMemo(() => {
     let fields = [
@@ -865,11 +873,7 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
               sx: { whiteSpace: "pre-wrap" },
             }}
           />
-          {requestData.warehouse === "" ? (
-            <Typography maxWidth={480} color="error">
-              Please select a warehouse
-            </Typography>
-          ) : request && path != "/PendingRequests" && !editAppointment ? (
+          {requestData.warehouse === "" ? null : request && path != "/PendingRequests" && !editAppointment ? (
             <DateTimeField
               readOnly
               label="Appointment Date and Time"
