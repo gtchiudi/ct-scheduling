@@ -3,7 +3,7 @@ from .models import *
 
 
 class requestListView(admin.ModelAdmin):
-    list_display = ("approved", "company_name",
+    list_display = ("approved", "company_name", "customer_name",
                     "email", "warehouse", "ref_number", "date_time", "active")
     list_display_links = ("company_name", "ref_number")
     search_fields = ("company_name", "email", "ref_number", "driver_phone_number")

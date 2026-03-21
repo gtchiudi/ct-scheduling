@@ -67,6 +67,7 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
   const [phoneError, setPhoneError] = useState(false);
   const [driverPhoneError, setDriverPhoneError] = useState(false);
   const [successOpen, setSuccessOpen] = useState(false);
+  const [cancelConfirmOpen, setCancelConfirmOpen] = useState(false);
   const [formAlert, setFormAlert] = useState(null); // { message, severity, onAcknowledge? }
 
   React.useEffect(() => {
@@ -105,6 +106,7 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
     id: "",
     approved: false,
     company_name: "",
+    customer_name: null,
     phone_number: "",
     email: "",
     warehouse: "",
@@ -145,6 +147,9 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
     ];
     if (path !== "/Calendar") {
       fields = [...fields, "phone_number", "email"];
+    }
+    if (path === "/PendingRequests" || path === "/Calendar") {
+      fields = [...fields, "customer_name"];
     }
     return fields;
   }, [path]);
@@ -194,6 +199,13 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
           : null,
       };
       setRequestData(convertedRequestData);
+      setRequiredFieldsCompleted((prev) => {
+        const updated = { ...prev };
+        requiredFields.forEach((field) => {
+          updated[field] = !!convertedRequestData[field];
+        });
+        return updated;
+      });
     }
     if (dateTime) {
       setRequestData({ ...requestData, date_time: dayjs(dateTime) });
@@ -584,13 +596,28 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
   } else if (path == "/Calendar" && requestData.approved) {
     if (requestData.check_in_time == null) {
       if (editAppointment) {
+        const cancelButton = (
+          <Button
+            variant="contained"
+            color="error"
+            onClick={() => setCancelConfirmOpen(true)}
+          >
+            Cancel Appointment
+          </Button>
+        );
         formButton = (
-          <Button variant="contained" onClick={updateRequest}>
-            Save
+          <Button 
+            variant="contained"
+            color="success"
+            onClick={updateRequest}
+            disabled={submitButtonDisabled}
+          >
+            Save Changes
           </Button>
         );
         formBottom = (
-          <Box>
+          <Box sx={{ display: "flex", gap: 1, justifyContent: "center" }}>
+            {cancelButton}
             {formButton}
           </Box>
         );
@@ -670,7 +697,7 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
         spacing={2}
         direction={"row"}
       >
-        <Button color="success" variant="contained" onClick={handleApprove}>
+        <Button color="success" variant="contained" onClick={handleApprove} disabled={submitButtonDisabled}>
           Approve
         </Button>
       </Stack>
@@ -679,6 +706,37 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
 
   return (
     <Box>
+      <Dialog open={cancelConfirmOpen} onClose={() => setCancelConfirmOpen(false)}>
+        <DialogTitle textAlign="center">Cancel Appointment</DialogTitle>
+        <DialogContent>
+          <Typography textAlign="center">
+            Are you sure you want to cancel this appointment?
+          </Typography>
+        </DialogContent>
+        <DialogActions
+          justifyContent="center"
+        >
+          <MuiButton 
+            onClick={() => setCancelConfirmOpen(false)}
+            variant="contained"
+          >
+            Go Back
+          </MuiButton>
+          <MuiButton
+            autoFocus
+            variant="contained"
+            color="error"
+            onClick={() => {
+              setCancelConfirmOpen(false);
+              requestData.cancelled_time = dayjs().format("YYYY-MM-DD HH:mm:ss");
+              updateRequest();
+            }}
+          >
+            Cancel Appointment
+          </MuiButton>
+        </DialogActions>
+      </Dialog>
+
       <Dialog open={successOpen} onClose={handleDialogueClose}>
         <DialogTitle textAlign="center">Request Submitted</DialogTitle>
         <DialogContent>
@@ -763,6 +821,20 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
                   : false,
             }}
           ></TextField>
+
+          {path !== "/RequestForm" && (
+            <TextField
+              required={path === "/PendingRequests" || path === "/Calendar"}
+              label="Customer Name"
+              name="customer_name"
+              value={requestData.customer_name ?? null}
+              onChange={handleChange}
+              autoComplete="off"
+              InputProps={{
+                readOnly: request && path != "/PendingRequests" && !editAppointment ? true : false,
+              }}
+            />
+          )}
 
           <TextField
             required
