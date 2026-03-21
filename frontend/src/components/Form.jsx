@@ -1048,7 +1048,9 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
                 slotProps={{
                   textField: {
                     error: timeError,
-                    helperText: timeError ? "Please select an available time in 15-minute increments." : "",
+                    helperText: timeError
+                      ? "Please select an available time in 15-minute increments."
+                      : warehouseTimezone ? `Timezone: ${warehouseTimezone}` : "",
                     onBlur: () => {
                       const current = dayjs(requestData.date_time);
                       const minutes = current.minute();
@@ -1066,13 +1068,6 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
                   },
                 }}
               />
-              {warehouseTimezone && (
-                <Box textAlign="center">
-                  <Typography variant="caption" color="text.secondary">
-                    Timezone: {warehouseTimezone}
-                  </Typography>
-                </Box>
-              )}
             </>
           )}
 
