@@ -23,6 +23,7 @@ class Warehouse(BaseModel):
     phone_number = models.CharField(max_length=12)
     timezone = models.CharField(max_length=64, default='America/New_York')
     color = models.CharField(max_length=7, default="#02B40B")  # Hex color code
+    appointments_per_slot = models.IntegerField(default=1)
     active = models.BooleanField(default=True)
 
     def __str__(self):

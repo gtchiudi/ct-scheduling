@@ -16,7 +16,7 @@ class RequestSerializer(serializers.ModelSerializer):
 class WarehouseSerializer(serializers.ModelSerializer):
     class Meta:
         model = Warehouse
-        fields = ('id', 'name', 'address', 'phone_number', 'timezone', 'color')
+        fields = ('id', 'name', 'address', 'phone_number', 'timezone', 'color', 'appointments_per_slot')
 
 
 class ApprovalLog(serializers.ModelSerializer):
