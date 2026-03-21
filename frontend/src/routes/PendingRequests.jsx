@@ -247,7 +247,7 @@ export default function PendingRequests() {
   const [selected, setSelected] = React.useState([]);
   const [page, setPage] = React.useState(0);
   const [dense, setDense] = React.useState(false);
-  const [rowsPerPage, setRowsPerPage] = React.useState(5);
+  const [rowsPerPage, setRowsPerPage] = React.useState(15);
 
   // variables used for table functions
 
@@ -411,7 +411,7 @@ export default function PendingRequests() {
                 </Table>
               </TableContainer>
               <TablePagination
-                rowsPerPageOptions={[5, 10, 25]}
+                rowsPerPageOptions={[15, 25, 50]}
                 component="div"
                 count={result.data.data.length}
                 rowsPerPage={rowsPerPage}

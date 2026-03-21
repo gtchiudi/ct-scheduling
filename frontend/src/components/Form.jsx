@@ -130,7 +130,7 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
 
   React.useEffect(() => {
     if (!request && requestData.warehouse === "") {
-      setFormAlert({ message: "Please select a warehouse.", severity: "info" });
+      setFormAlert({ message: "Please select a warehouse to view appointment times.", severity: "info" });
     } else if (requestData.warehouse !== "") {
       setFormAlert((prev) => prev?.message === "Please select a warehouse." ? null : prev);
     }
@@ -145,14 +145,17 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
       "load_type",
       "delivery",
     ];
-    if (path !== "/Calendar") {
+    if (path === "/RequestForm") {
       fields = [...fields, "phone_number", "email"];
     }
     if (path === "/PendingRequests" || path === "/Calendar") {
       fields = [...fields, "customer_name"];
     }
+    if (requestData.load_type === "Container") {
+      fields = [...fields, "container_number"];
+    }
     return fields;
-  }, [path]);
+  }, [path, requestData.load_type]);
 
   // Form Completion:
   const [requiredFieldsCompleted, setRequiredFieldsCompleted] = useState(
@@ -162,10 +165,7 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
     }, {})
   );
   const isFormCompleted = () => {
-    // Check if all required fields are completed AND no validation errors
-    const allFieldsCompleted = Object.values(requiredFieldsCompleted).every(
-      (completed) => completed
-    );
+    const allFieldsCompleted = requiredFields.every((field) => requiredFieldsCompleted[field]);
     const noValidationErrors = !emailError && !phoneError && !driverPhoneError;
     return allFieldsCompleted && noValidationErrors;
   };
@@ -390,6 +390,29 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
       ...requestData,
       date_time: dayjs(date),
     });
+  };
+
+  const getWarningProps = (fieldName, { hasError = false, filled = false } = {}) => {
+    if (hasError || !requiredFields.includes(fieldName) || requiredFieldsCompleted[fieldName]) return {};
+    if (filled) {
+      return {
+        sx: {
+          "& .MuiFilledInput-root:before": { borderBottomColor: "#ed6c02" },
+          "& .MuiFilledInput-root:after": { borderBottomColor: "#ed6c02" },
+          "& .MuiFilledInput-root:hover:before": { borderBottomColor: "#e65100" },
+          "& label": { color: "#ed6c02" },
+        },
+      };
+    }
+    return {
+      sx: {
+        "& .MuiOutlinedInput-notchedOutline": { borderColor: "#ed6c02" },
+        "&:hover .MuiOutlinedInput-notchedOutline": { borderColor: "#e65100" },
+        "& .MuiInputLabel-root": { color: "#ed6c02" },
+        "& .MuiInputLabel-root.Mui-focused": { color: "#ed6c02" },
+        "& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline": { borderColor: "#ed6c02" },
+      },
+    };
   };
 
   const handleApprove = () => {
@@ -765,7 +788,7 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
           }}
         >
           <TextField
-            required
+            required={requiredFields.includes("company_name")}
             label="Company Name"
             name="company_name"
             value={requestData.company_name}
@@ -774,10 +797,11 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
             InputProps={{
               readOnly: request && path != "/PendingRequests" && !editAppointment ? true : false,
             }}
+            {...getWarningProps("company_name")}
           ></TextField>
 
           <TextField
-            required={path !== "/Calendar"}
+            required={requiredFields.includes("phone_number")}
             label="Phone Number"
             name="phone_number"
             value={requestData.phone_number}
@@ -789,10 +813,11 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
               readOnly: request && path != "/PendingRequests" && !editAppointment ? true : false,
               inputComponent: PhoneMaskCustom,
             }}
+            {...getWarningProps("phone_number", { hasError: phoneError })}
           ></TextField>
 
           <TextField
-            required={path !== "/Calendar"}
+            required={requiredFields.includes("email")}
             label="Email"
             name="email"
             value={requestData.email}
@@ -803,10 +828,11 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
             InputProps={{
               readOnly: request && path != "/PendingRequests" && !editAppointment ? true : false,
             }}
+            {...getWarningProps("email", { hasError: emailError })}
           ></TextField>
 
           <TextField
-            required
+            required={requiredFields.includes("ref_number")}
             label="Reference Number"
             name="ref_number"
             value={requestData.ref_number}
@@ -820,11 +846,12 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
                   ? true
                   : false,
             }}
+            {...getWarningProps("ref_number")}
           ></TextField>
 
           {path !== "/RequestForm" && (
             <TextField
-              required={path === "/PendingRequests" || path === "/Calendar"}
+              required={requiredFields.includes("customer_name")}
               label="Customer Name"
               name="customer_name"
               value={requestData.customer_name ?? null}
@@ -833,11 +860,12 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
               InputProps={{
                 readOnly: request && path != "/PendingRequests" && !editAppointment ? true : false,
               }}
+              {...getWarningProps("customer_name")}
             />
           )}
 
           <TextField
-            required
+            required={requiredFields.includes("warehouse")}
             select
             label="Warehouse"
             name="warehouse"
@@ -848,6 +876,7 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
             InputProps={{
               readOnly: request && path != "/PendingRequests" && !editAppointment ? true : false,
             }}
+            {...getWarningProps("warehouse", { filled: true })}
           >
             {warehouseData.map((option) => (
               <MenuItem key={option.id} value={option.id}>
@@ -857,7 +886,7 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
           </TextField>
 
           <TextField
-            required
+            required={requiredFields.includes("load_type")}
             select
             id="load_type"
             label="Load Type"
@@ -869,6 +898,7 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
             InputProps={{
               readOnly: request && path != "/PendingRequests" && !editAppointment ? true : false,
             }}
+            {...getWarningProps("load_type", { filled: true })}
           >
             {load_types.map((option) => (
               <MenuItem key={option.value} value={option.value}>
@@ -887,16 +917,18 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
                 onChange={handleChange}
               />
               <TextField
+                required={requiredFields.includes("container_number")}
                 label="Intermodal Container Number"
                 name="container_number"
                 value={requestData.container_number}
                 onChange={handleChange}
                 autoComplete="off"
+                {...getWarningProps("container_number")}
               />
             </Box>
           ) : null}
           <TextField
-            required
+            required={requiredFields.includes("delivery")}
             select
             id="delivery"
             label="Select Pickup or Delivery"
@@ -914,6 +946,7 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
             InputProps={{
               readOnly: request && path != "/PendingRequests" && !editAppointment ? true : false,
             }}
+            {...getWarningProps("delivery", { filled: true })}
           >
             <MenuItem key={"delivery"} value={"delivery"}>
               Delivery
