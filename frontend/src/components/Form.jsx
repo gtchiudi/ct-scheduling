@@ -1050,7 +1050,6 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
                     error: timeError,
                     helperText: timeError ? "Please select an available time in 15-minute increments." : "",
                     onBlur: () => {
-                      if (path !== "/RequestForm") return;
                       const current = dayjs(requestData.date_time);
                       const minutes = current.minute();
                       if (minutes % 15 !== 0) {
@@ -1059,7 +1058,9 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
                           ? current.add(1, "hour").minute(0).second(0)
                           : current.minute(snapped).second(0);
                         handleDateChange(snappedDate);
-                        setTimeError(!!getTimesToDisable(snappedDate, "minutes"));
+                        if (path === "/RequestForm") {
+                          setTimeError(!!getTimesToDisable(snappedDate, "minutes"));
+                        }
                       }
                     },
                   },
