@@ -66,6 +66,7 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
   const [emailError, setEmailError] = useState(false);
   const [phoneError, setPhoneError] = useState(false);
   const [driverPhoneError, setDriverPhoneError] = useState(false);
+  const [timeError, setTimeError] = useState(false);
   const [successOpen, setSuccessOpen] = useState(false);
   const [cancelConfirmOpen, setCancelConfirmOpen] = useState(false);
   const [formAlert, setFormAlert] = useState(null); // { message, severity, onAcknowledge? }
@@ -166,7 +167,7 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
   );
   const isFormCompleted = () => {
     const allFieldsCompleted = requiredFields.every((field) => requiredFieldsCompleted[field]);
-    const noValidationErrors = !emailError && !phoneError && !driverPhoneError;
+    const noValidationErrors = !emailError && !phoneError && !driverPhoneError && !timeError;
     return allFieldsCompleted && noValidationErrors;
   };
   const submitButtonDisabled = !isFormCompleted();
@@ -255,9 +256,13 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
     const timesForSelectedWarehouse = times.filter(
       (entry) => entry.warehouse === requestData.warehouse
     );
-    const timeUnavailable = timesForSelectedWarehouse.some(
+    const appointmentsAtSlot = timesForSelectedWarehouse.filter(
       (entry) => entry.time === formattedTime
-    );
+    ).length;
+    const warehouse = warehouseData.find((w) => w.id === requestData.warehouse);
+    const appointmentsPerSlot = warehouse?.appointments_per_slot ?? 1;
+    const timeUnavailable = appointmentsAtSlot >= appointmentsPerSlot;
+
     const time = dayjs(formattedTime, "HH:mm");
     let isOutsideWorkingHours =
       time.isBefore(dayjs("08:00", "HH:mm")) ||
@@ -425,11 +430,12 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
 
   const handleDialogueClose = () => {
     setSuccessOpen(false);
-    setRequestData({ ...initialRequestData, date_time: nextWorkDay() });
+    setRequestData(initialRequestData);
     setRequiredFieldsCompleted(requiredFields.reduce((acc, field) => { acc[field] = false; return acc; }, {}));
     setEmailError(false);
     setPhoneError(false);
     setDriverPhoneError(false);
+    setTimeError(false);
     setFormAlert(null);
   }
 
@@ -1000,13 +1006,60 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
                 onChange={(date) => {
                   findTimes(date);
                   if (date && dayjs(date).isValid()) {
-                    handleDateChange(date);
+                    const prevMinutes = dayjs(requestData.date_time).minute();
+                    const newMinutes = dayjs(date).minute();
+                    const minuteDelta = Math.abs(newMinutes - prevMinutes);
+                    // Only snap during arrow key presses (delta of 1 or 59 for wrap-around)
+                    const isArrowKey = minuteDelta === 1 || minuteDelta === 59;
+
+                    let snappedDate = dayjs(date).second(0);
+
+                    if (newMinutes !== prevMinutes && isArrowKey) {
+                      // isDownWrap: 0→59 — MUI does not decrement hour, so we must
+                      const isDownWrap = newMinutes > prevMinutes && newMinutes - prevMinutes > 30;
+                      const isUpWrap   = prevMinutes > newMinutes && prevMinutes - newMinutes > 30;
+                      const wentUp = (newMinutes > prevMinutes && !isDownWrap) || isUpWrap;
+
+                      if (wentUp) {
+                        const snapped = Math.ceil(newMinutes / 15) * 15;
+                        snappedDate = snapped === 60
+                          ? dayjs(date).add(1, "hour").minute(0).second(0)
+                          : dayjs(date).minute(snapped).second(0);
+                      } else {
+                        const snapped = Math.floor(newMinutes / 15) * 15;
+                        snappedDate = isDownWrap
+                          ? dayjs(date).subtract(1, "hour").minute(snapped).second(0)
+                          : dayjs(date).minute(snapped).second(0);
+                      }
+                    }
+
+                    handleDateChange(snappedDate);
+                    const notAligned = dayjs(snappedDate).minute() % 15 !== 0;
+                    setTimeError(notAligned || !!getTimesToDisable(snappedDate, "minutes"));
                   }
                 }}
                 timeSteps={{ minutes: 15 }}
                 disablePast={path === "/RequestForm"}
                 shouldDisableDate={(date) => (dayjs(date).isSame(dayjs(), "day") && path == "/RequestForm")}
                 timezone={warehouseTimezone || undefined}
+                slotProps={{
+                  textField: {
+                    error: timeError,
+                    helperText: timeError ? "Please select an available time in 15-minute increments." : "",
+                    onBlur: () => {
+                      const current = dayjs(requestData.date_time);
+                      const minutes = current.minute();
+                      if (minutes % 15 !== 0) {
+                        const snapped = Math.round(minutes / 15) * 15;
+                        const snappedDate = snapped === 60
+                          ? current.add(1, "hour").minute(0).second(0)
+                          : current.minute(snapped).second(0);
+                        handleDateChange(snappedDate);
+                        setTimeError(!!getTimesToDisable(snappedDate, "minutes"));
+                      }
+                    },
+                  },
+                }}
               />
               {warehouseTimezone && (
                 <Box textAlign="center">
