@@ -372,7 +372,7 @@ export default function Calendar() {
           </Box>
         ))}
       </Box>
-      <Box id="calendar" paddingTop="129px">
+      <Box id="calendar" paddingTop="134px">
         <Scheduler
           ref={ref}
           hourFormat="24"
