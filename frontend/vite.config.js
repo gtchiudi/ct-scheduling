@@ -2,7 +2,7 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import path from 'path'
 
-const debug = true
+const debug = false
 const proxyURL = debug ? 'http://localhost:8000' : '';
 
 // https://vitejs.dev/config/

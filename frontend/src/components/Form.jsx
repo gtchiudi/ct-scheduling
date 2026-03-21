@@ -398,28 +398,6 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
     });
   };
 
-  const getWarningProps = (fieldName, { hasError = false, filled = false } = {}) => {
-    if (hasError || !requiredFields.includes(fieldName) || requiredFieldsCompleted[fieldName]) return {};
-    if (filled) {
-      return {
-        sx: {
-          "& .MuiFilledInput-root:before": { borderBottomColor: "#ed6c02" },
-          "& .MuiFilledInput-root:after": { borderBottomColor: "#ed6c02" },
-          "& .MuiFilledInput-root:hover:before": { borderBottomColor: "#e65100" },
-          "& label": { color: "#ed6c02" },
-        },
-      };
-    }
-    return {
-      sx: {
-        "& .MuiOutlinedInput-notchedOutline": { borderColor: "#ed6c02" },
-        "&:hover .MuiOutlinedInput-notchedOutline": { borderColor: "#e65100" },
-        "& .MuiInputLabel-root": { color: "#ed6c02" },
-        "& .MuiInputLabel-root.Mui-focused": { color: "#ed6c02" },
-        "& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline": { borderColor: "#ed6c02" },
-      },
-    };
-  };
 
   const handleApprove = () => {
     requestData.approved = true;
@@ -804,7 +782,6 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
             InputProps={{
               readOnly: request && path != "/PendingRequests" && !editAppointment ? true : false,
             }}
-            {...getWarningProps("company_name")}
           ></TextField>
 
           <TextField
@@ -820,7 +797,6 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
               readOnly: request && path != "/PendingRequests" && !editAppointment ? true : false,
               inputComponent: PhoneMaskCustom,
             }}
-            {...getWarningProps("phone_number", { hasError: phoneError })}
           ></TextField>
 
           <TextField
@@ -835,7 +811,6 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
             InputProps={{
               readOnly: request && path != "/PendingRequests" && !editAppointment ? true : false,
             }}
-            {...getWarningProps("email", { hasError: emailError })}
           ></TextField>
 
           <TextField
@@ -853,7 +828,6 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
                   ? true
                   : false,
             }}
-            {...getWarningProps("ref_number")}
           ></TextField>
 
           {path !== "/RequestForm" && (
@@ -867,7 +841,6 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
               InputProps={{
                 readOnly: request && path != "/PendingRequests" && !editAppointment ? true : false,
               }}
-              {...getWarningProps("customer_name")}
             />
           )}
 
@@ -883,7 +856,6 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
             InputProps={{
               readOnly: request && path != "/PendingRequests" && !editAppointment ? true : false,
             }}
-            {...getWarningProps("warehouse", { filled: true })}
           >
             {warehouseData.map((option) => (
               <MenuItem key={option.id} value={option.id}>
@@ -905,7 +877,6 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
             InputProps={{
               readOnly: request && path != "/PendingRequests" && !editAppointment ? true : false,
             }}
-            {...getWarningProps("load_type", { filled: true })}
           >
             {load_types.map((option) => (
               <MenuItem key={option.value} value={option.value}>
@@ -930,7 +901,6 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
                 value={requestData.container_number}
                 onChange={handleChange}
                 autoComplete="off"
-                {...getWarningProps("container_number")}
               />
             </Box>
           ) : null}
@@ -953,7 +923,6 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
             InputProps={{
               readOnly: request && path != "/PendingRequests" && !editAppointment ? true : false,
             }}
-            {...getWarningProps("delivery", { filled: true })}
           >
             <MenuItem key={"delivery"} value={"delivery"}>
               Delivery

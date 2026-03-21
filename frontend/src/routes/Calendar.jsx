@@ -15,6 +15,7 @@ import {
   Typography,
   Paper,
   Tooltip,
+  Divider,
 } from "@mui/material";
 import { alpha, createTheme, ThemeProvider } from "@mui/material/styles";
 import { useAtom } from "jotai";
