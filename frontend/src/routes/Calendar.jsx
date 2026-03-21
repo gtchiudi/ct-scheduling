@@ -453,7 +453,7 @@ export default function Calendar() {
                     color="text.secondary"
                     display="block"
                   >
-                    Customer: {event.request.company_name}
+                    Customer: {event.request.customer_name ? event.request.customer_name : event.request.company_name }
                   </Typography>
                   <Typography
                     variant="caption"
@@ -505,7 +505,7 @@ export default function Calendar() {
                     color="text.secondary"
                     display="block"
                   >
-                    Customer: {event.request.company_name}
+                    Customer: {event.request.customer_name ? event.request.customer_name : event.request.company_name }
                   </Typography>
                   <Typography
                     variant="caption"
