@@ -201,8 +201,16 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
       };
       setRequestData(convertedRequestData);
       setRequiredFieldsCompleted((prev) => {
+        // Compute fields based on the loaded data, not the current requiredFields,
+        // since load_type-dependent fields (e.g. container_number) aren't in
+        // requiredFields yet when this seeding runs.
+        const fieldsToSeed = ["company_name", "warehouse", "ref_number", "load_type", "delivery"];
+        if (path === "/RequestForm") fieldsToSeed.push("phone_number", "email");
+        if (path === "/PendingRequests" || path === "/Calendar") fieldsToSeed.push("customer_name");
+        if (convertedRequestData.load_type === "Container") fieldsToSeed.push("container_number");
+
         const updated = { ...prev };
-        requiredFields.forEach((field) => {
+        fieldsToSeed.forEach((field) => {
           updated[field] = convertedRequestData[field] !== null &&
             convertedRequestData[field] !== undefined &&
             convertedRequestData[field] !== "";
