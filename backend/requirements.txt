@@ -11,3 +11,4 @@ django-cors-headers==4.2.0
 gunicorn==23.0.0
 cryptography==44.0.2
 setuptools==67.6.1
+django-crontab==0.7.1

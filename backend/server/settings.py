@@ -53,6 +53,7 @@ INSTALLED_APPS = [
     'corsheaders',
     'rest_framework',
     'rest_framework_simplejwt.token_blacklist',
+    'django_crontab',
     # 'react'
 ]
 
@@ -82,7 +83,7 @@ SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=15),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
     'ROTATE_REFRESH_TOKENS': True,
-    'BLACKLIST_AFTER_ROTATION': False,
+    'BLACKLIST_AFTER_ROTATION': True,
     'UPDATE_LAST_LOGIN': True,
 }
 
@@ -181,6 +182,10 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+CRONJOBS = [
+    ('0 2 * * *', 'django.core.management.call_command', ['flushexpiredtokens']),
+]
 
 if os.getenv("CSRF_TRUSTED_ORIGIN"):
     CSRF_TRUSTED_ORIGINS = [os.getenv("CSRF_TRUSTED_ORIGIN")]

@@ -19,6 +19,7 @@ from django.urls import path, include, re_path
 from rest_framework import routers
 from members import views
 from rest_framework_simplejwt import views as jwt_views
+from rest_framework_simplejwt.views import TokenBlacklistView
 from django.views.generic import TemplateView
 from django.conf.urls.static import static
 from django.conf import settings
@@ -40,6 +41,9 @@ urlpatterns = [
     path('token/refresh/',
          jwt_views.TokenRefreshView.as_view(),
          name='token_refresh'),
+    path('token/blacklist/',
+         TokenBlacklistView.as_view(),
+         name='token_blacklist'),
     path('', include('members.urls')),
     path('api-auth/', include('rest_framework.urls')),
     path('', TemplateView.as_view(template_name='index.html')),
