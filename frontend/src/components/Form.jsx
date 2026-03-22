@@ -1,17 +1,11 @@
 import React, { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-//import dayjs from "dayjs";
 import TextField from "@mui/material/TextField";
-import Button from "@mui/material/Button";
 import {
   Checkbox,
   Box,
   FormControl,
   MenuItem,
-  Typography,
-  Stack,
-  Container,
-  FormLabel,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -24,31 +18,12 @@ import axios from "axios";
 import { useAtom } from "jotai";
 import { warehouseDataEffectAtom, editAppointmentAtom } from "./atoms.jsx";
 import FormControlLabel from "@mui/material/FormControlLabel";
-import FormGroup from "@mui/material/FormGroup";
 import { DateTimePicker, DateTimeField } from "@mui/x-date-pickers";
 import dayjs from "dayjs";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import Calendar from "../routes/Calendar.jsx";
-import { IMaskInput } from 'react-imask';
-import PropTypes from 'prop-types';
-
-const PhoneMaskCustom = React.forwardRef(function PhoneMaskCustom(props, ref) {
-  const { onChange, ...other } = props;
-  return (
-    <IMaskInput
-      {...other}
-      mask="(000)-000-0000"
-      inputRef={ref}
-      onAccept={(value) => onChange({ target: { name: props.name, value } })}
-      overwrite
-    />
-  );
-});
-
-PhoneMaskCustom.propTypes = {
-  name: PropTypes.string.isRequired,
-  onChange: PropTypes.func.isRequired,
-};
+import PhoneMaskCustom from "./PhoneMaskCustom.jsx";
+import FormActions from "./FormActions.jsx";
+import { validateEmail, validatePhone } from "../utils/validation.js";
 
 function Form({ request, closeModal, dateTime, onLockChange }) {
   const queryClient = useQueryClient();
@@ -518,209 +493,6 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
     setGetInitialTime(false);
   }, [getInitialTime]);
 
-  // This controls the dyanmic display of buttons based on the state of the request
-  let formButton;
-  let formBottom;
-  let formEnd = (
-    <Box>
-      <TextField
-        label="Driver Phone Number"
-        name="driver_phone_number"
-        value={requestData.driver_phone_number ?? ""}
-        onChange={handleChange}
-        autoComplete="off"
-        error={driverPhoneError}
-        helperText={driverPhoneError ? "Phone number must be 10 digits" : ""}
-        InputProps={{
-          readOnly: requestData.check_in_time != null ? true : false,
-          inputComponent: PhoneMaskCustom,
-        }}
-      />
-      <Typography>
-        Read to Driver: Do you consent to receive recurring appointment updates
-        via SMS from Candor Logistics? Msg and data rates may apply.
-      </Typography>
-      <FormControlLabel
-        control={<Checkbox />}
-        label="SMS Consent"
-        name="sms_consent"
-        checked={requestData.sms_consent}
-        onChange={handleChange}
-      />
-    </Box>
-  );
-  let checkedInContent = // Content for checked in appointments
-    (
-      <Box>
-        <DateTimeField
-          readOnly
-          label="Checked-In Time"
-          name="check_in_time"
-          value={requestData.check_in_time ? dayjs(requestData.check_in_time) : undefined}
-        />
-
-        <TextField
-          required
-          id="dock_number"
-          label="Dock Number"
-          name="dock_number"
-          defaultValue={requestData.dock_number ?? ""}
-          autoComplete="off"
-          InputProps={{
-            readOnly: requestData.dock_number != null ? true : false,
-          }}
-        />
-      </Box>
-    );
-  let dockedContent = // content for docked appointments
-    (
-      <Box>
-        {" "}
-        {checkedInContent}
-        <DateTimeField
-          readOnly
-          label="Docked Time"
-          name="docked_time"
-          value={requestData.docked_time ? dayjs(requestData.docked_time) : undefined}
-        />
-      </Box>
-    );
-  let completionContent = // completed will have button to remove from calendar.
-    (
-      <Box>
-        {" "}
-        {dockedContent}
-        <DateTimeField
-          readOnly
-          label="Completed Time"
-          name="completed_time"
-          value={requestData.completed_time ? dayjs(requestData.completed_time) : undefined}
-        />
-      </Box>
-    );
-
-  if (path == "/RequestForm" || !requestData.approved) {
-    formButton = (
-      <Button
-        name = 'submit'
-        variant="contained"
-        onClick={handleNewRequest}
-        disabled={submitButtonDisabled}
-      >
-        Submit
-      </Button>
-    );
-    formBottom = <Box> {formButton} </Box>;
-  } else if (path == "/Calendar" && requestData.approved) {
-    if (requestData.check_in_time == null) {
-      if (editAppointment) {
-        const cancelButton = (
-          <Button
-            variant="contained"
-            color="error"
-            onClick={() => setCancelConfirmOpen(true)}
-          >
-            Cancel Appointment
-          </Button>
-        );
-        formButton = (
-          <Button 
-            variant="contained"
-            color="success"
-            onClick={updateRequest}
-            disabled={submitButtonDisabled}
-          >
-            Save Changes
-          </Button>
-        );
-        formBottom = (
-          <Box sx={{ display: "flex", gap: 1, justifyContent: "center" }}>
-            {cancelButton}
-            {formButton}
-          </Box>
-        );
-      } else {
-        const isDriverPhoneValid = !driverPhoneError && (
-          !requestData.driver_phone_number || 
-          requestData.driver_phone_number.replace(/\D/g, '').length === 10
-        );
-        
-        formButton = (
-          <Button
-            name="check_in_time"
-            variant="contained"
-            onClick={handleButton}
-            disabled={!isDriverPhoneValid}
-          >
-            Check-In
-          </Button>
-        );
-        formBottom = (
-          <Box>
-            {formEnd} {formButton}
-          </Box>
-        );
-      }
-
-    } else if (requestData.dock_number == null) {
-      formButton = (
-        <Button name="dock_number" variant="contained" onClick={handleButton} disabled={!!formAlert?.onAcknowledge}>
-          Send To Dock
-        </Button>
-      );
-
-      formBottom = (
-        <Box>
-          {formEnd} {checkedInContent} {formButton}
-        </Box>
-      );
-    } else if (requestData.completed_time == null){
-      formButton = (
-        <Button
-          name="completed_time"
-          variant="contained"
-          onClick={handleButton}
-        >
-          Complete
-        </Button>
-      );
-      formBottom = (
-        <Box>
-          {formEnd} {dockedContent} {formButton}
-        </Box>
-      );
-    } else {
-      formButton = (
-        <Button
-          name="remove_from_calendar"
-          variant="contained"
-          onClick={handleButton}
-        >
-          Remove from Calendar
-        </Button>
-      );
-      formBottom = (
-        <Box>
-          {formEnd} {completionContent} {formButton}
-        </Box>
-      );
-    }
-  }
-
-  if (path == "/PendingRequests") {
-    formBottom = (
-      <Stack
-        display={"flex"}
-        justifyContent={"center"}
-        spacing={2}
-        direction={"row"}
-      >
-        <Button color="success" variant="contained" onClick={handleApprove} disabled={submitButtonDisabled}>
-          Approve
-        </Button>
-      </Stack>
-    );
-  }
 
   return (
     <Box>
@@ -1069,7 +841,20 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
               )}
             </Collapse>
           </Box>
-          {formBottom}
+          <FormActions
+            requestData={requestData}
+            path={path}
+            editAppointment={editAppointment}
+            driverPhoneError={driverPhoneError}
+            formAlert={formAlert}
+            handleChange={handleChange}
+            handleButton={handleButton}
+            updateRequest={updateRequest}
+            handleNewRequest={handleNewRequest}
+            handleApprove={handleApprove}
+            setCancelConfirmOpen={setCancelConfirmOpen}
+            submitButtonDisabled={submitButtonDisabled}
+          />
         </Stack>
       </FormControl>
     </Box>
@@ -1079,13 +864,3 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
 
 export default Form;
 
-// Validation functions
-const validateEmail = (email) => {
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  return emailRegex.test(email);
-};
-
-const validatePhone = (phone) => {
-  const digitsOnly = phone.replace(/\D/g, '');
-  return digitsOnly.length === 0 || digitsOnly.length === 10;
-};
