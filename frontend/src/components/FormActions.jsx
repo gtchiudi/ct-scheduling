@@ -15,6 +15,7 @@ function FormActions({
   handleNewRequest,
   handleApprove,
   setCancelConfirmOpen,
+  setDeclineConfirmOpen,
   submitButtonDisabled,
 }) {
   const formEnd = (
@@ -96,6 +97,9 @@ function FormActions({
   if (path === "/PendingRequests") {
     return (
       <Stack display="flex" justifyContent="center" spacing={2} direction="row">
+        <Button color="error" variant="contained" onClick={() => setDeclineConfirmOpen(true)}>
+          Decline
+        </Button>
         <Button color="success" variant="contained" onClick={handleApprove} disabled={submitButtonDisabled}>
           Approve
         </Button>

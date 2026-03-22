@@ -46,6 +46,7 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
   const [timeError, setTimeError] = useState(false);
   const [successOpen, setSuccessOpen] = useState(false);
   const [cancelConfirmOpen, setCancelConfirmOpen] = useState(false);
+  const [declineConfirmOpen, setDeclineConfirmOpen] = useState(false);
   const [formAlert, setFormAlert] = useState(null); // { message, severity, onAcknowledge? }
 
   React.useEffect(() => {
@@ -504,6 +505,32 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
 
   return (
     <Box>
+      <Dialog open={declineConfirmOpen} onClose={() => setDeclineConfirmOpen(false)}>
+        <DialogTitle textAlign="center">Decline Request</DialogTitle>
+        <DialogContent>
+          <Typography textAlign="center">
+            Are you sure you want to decline this request?
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <MuiButton onClick={() => setDeclineConfirmOpen(false)} variant="contained">
+            Go Back
+          </MuiButton>
+          <MuiButton
+            autoFocus
+            variant="contained"
+            color="error"
+            onClick={() => {
+              setDeclineConfirmOpen(false);
+              requestData.active = false;
+              updateRequest();
+            }}
+          >
+            Decline
+          </MuiButton>
+        </DialogActions>
+      </Dialog>
+
       <Dialog open={cancelConfirmOpen} onClose={() => setCancelConfirmOpen(false)}>
         <DialogTitle textAlign="center">Cancel Appointment</DialogTitle>
         <DialogContent>
@@ -511,9 +538,7 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
             Are you sure you want to cancel this appointment?
           </Typography>
         </DialogContent>
-        <DialogActions
-          justifyContent="center"
-        >
+        <DialogActions>
           <MuiButton 
             onClick={() => setCancelConfirmOpen(false)}
             variant="contained"
@@ -861,6 +886,7 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
             handleNewRequest={handleNewRequest}
             handleApprove={handleApprove}
             setCancelConfirmOpen={setCancelConfirmOpen}
+            setDeclineConfirmOpen={setDeclineConfirmOpen}
             submitButtonDisabled={submitButtonDisabled}
           />
         </Stack>
