@@ -156,6 +156,7 @@ export default function Calendar() {
   // check authentication
   useEffect(() => {
     refreshWarehouseData();
+    queryClient.invalidateQueries(["requests", "date"]);
   }, []);
 
   // useEffect(() => {
@@ -324,7 +325,8 @@ export default function Calendar() {
           end_date: endDate.format("YYYY-MM-DD HH:mm:ss.SSSSSS[Z]"),
         },
       }),
-    refetchInterval: 30000, // refetches every 30 seconds
+    refetchInterval: 180000, // refetches every 3 minutes
+    staleTime: 120000, // data considered fresh for 2 minutes
     retry: 3, // retry 3 times
     retryDelay: 1000, // retry every 1 second
     enabled: !pauseQuery, // enable query if not paused
@@ -350,19 +352,17 @@ export default function Calendar() {
     },
     onSuccess: (data) => {
       const newEvents = data.data.map((request) => ({
-        // map requests to events on success
         event_id: request.id,
-        title: request.ref_number, // set title to po number
-        start: new Date(request.date_time), // start and end are same
+        title: request.ref_number,
+        start: new Date(request.date_time),
         end: new Date(dayjs(request.date_time).add(15, "minutes")),
-        request: request, // store request in event
+        request: request,
         editable: false,
         deletable: false,
         draggable: false,
         color: getEventColor(request),
       }));
-      // map each result row to an event
-      setAllEvents(newEvents); // set events
+      setAllEvents(newEvents);
     },
   });
 

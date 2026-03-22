@@ -213,7 +213,8 @@ export default function PendingRequests() {
         },
         withCredentials: true,
       }),
-    refetchInterval: 30000, // refetch every 30 seconds
+    refetchInterval: 90000, // refetch every 90 seconds
+    staleTime: 45000, // data considered fresh for 45 seconds
     retry: 1, // retry once
     retryDelay: 1000, // retry after 1 second
     enabled: !pauseQuery, // pause query if pauseQuery is true

@@ -133,7 +133,7 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
     if (!request && requestData.warehouse === "") {
       setFormAlert({ message: "Please select a warehouse to view appointment times.", severity: "info" });
     } else if (requestData.warehouse !== "") {
-      setFormAlert((prev) => prev?.message === "Please select a warehouse." ? null : prev);
+      setFormAlert((prev) => prev?.message === "Please select a warehouse to view appointment times." ? null : prev);
     }
   }, [requestData.warehouse]);
 
@@ -203,7 +203,9 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
       setRequiredFieldsCompleted((prev) => {
         const updated = { ...prev };
         requiredFields.forEach((field) => {
-          updated[field] = !!convertedRequestData[field];
+          updated[field] = convertedRequestData[field] !== null &&
+            convertedRequestData[field] !== undefined &&
+            convertedRequestData[field] !== "";
         });
         return updated;
       });
@@ -231,7 +233,7 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
       }),
     refetchInterval: 300000, // refetches every 300 seconds
     retry: 3,
-    enabled: !pauseQuery,
+    enabled: !pauseQuery && path === "/RequestForm",
     onSuccess: (data) => {
       const extractTimes = data.data.map((entry) => {
         return {
@@ -788,7 +790,7 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
             required={requiredFields.includes("phone_number")}
             label="Phone Number"
             name="phone_number"
-            value={requestData.phone_number}
+            value={requestData.phone_number ?? ""}
             onChange={handleChange}
             autoComplete="off"
             error={phoneError}
@@ -803,7 +805,7 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
             required={requiredFields.includes("email")}
             label="Email"
             name="email"
-            value={requestData.email}
+            value={requestData.email ?? ""}
             onChange={handleChange}
             autoComplete="off"
             error={emailError}
@@ -835,7 +837,7 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
               required={requiredFields.includes("customer_name")}
               label="Customer Name"
               name="customer_name"
-              value={requestData.customer_name ?? null}
+              value={requestData.customer_name ?? ""}
               onChange={handleChange}
               autoComplete="off"
               InputProps={{
@@ -898,7 +900,7 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
                 required={requiredFields.includes("container_number")}
                 label="Intermodal Container Number"
                 name="container_number"
-                value={requestData.container_number}
+                value={requestData.container_number ?? ""}
                 onChange={handleChange}
                 autoComplete="off"
               />
@@ -912,7 +914,7 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
             name="delivery"
             variant="filled"
             value={
-              requestData.delivery === ""
+              requestData.delivery == null || requestData.delivery === ""
                 ? ""
                 : requestData.delivery
                 ? "delivery"
@@ -937,7 +939,7 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
               // required
               label="Trailer Number"
               name="trailer_number"
-              value={requestData.trailer_number}
+              value={requestData.trailer_number ?? ""}
               onChange={handleChange}
               autoComplete="off"
             />
@@ -948,7 +950,7 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
             label="Notes"
             multiline
             rows={4}
-            value={requestData.note_section}
+            value={requestData.note_section ?? ""}
             onChange={handleChange}
             autoComplete="off"
             InputProps={{

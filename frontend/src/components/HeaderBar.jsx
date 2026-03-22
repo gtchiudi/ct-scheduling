@@ -50,7 +50,8 @@ function HeaderBar() {
       return response.data;
     },
     enabled: authenticated && !userGroups.includes('Dock') && (location.pathname === '/' || location.pathname === '/Calendar'), // Only fetch if authenticated and not Dock user
-    refetchInterval: 30000, // Refetch every 30 seconds
+    refetchInterval: 90000, // Refetch every 90 seconds
+    staleTime: 45000, // data considered fresh for 45 seconds
     retry: 3,
     retryDelay: 1000,
   });

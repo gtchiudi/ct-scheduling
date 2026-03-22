@@ -159,9 +159,15 @@ export const updateWarehouseDataAtom = atom(null, async (get, set, updated) => {
   }
 });
 
+const WAREHOUSE_CACHE_MINUTES = 10;
+
 export const warehouseDataEffectAtom = atom(
   (get) => get(warehouseDataAtom),
-  async (_get, set, _arg) => {
-    await set(updateWarehouseDataAtom);
+  async (get, set, _arg) => {
+    const lastRefresh = get(lastWarehouseRefreshAtom);
+    const isStale = !lastRefresh || dayjs().diff(dayjs(lastRefresh), "minute") >= WAREHOUSE_CACHE_MINUTES;
+    if (isStale) {
+      await set(updateWarehouseDataAtom);
+    }
   }
 );
