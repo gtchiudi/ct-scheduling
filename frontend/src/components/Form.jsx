@@ -13,6 +13,8 @@ import {
   Button as MuiButton,
   Alert,
   Collapse,
+  Typography,
+  Stack,
 } from "@mui/material";
 import axios from "axios";
 import { useAtom } from "jotai";
@@ -352,7 +354,7 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
     if (name == "dock_number") {
       const dockNum = parseInt(document.getElementById("dock_number").value);
       const dockedTime = dayjs().format("YYYY-MM-DD HH:mm:ss");
-      if (!requestData.sms_consent) {
+      if (!(requestData.sms_consent && requestData.driver_phone_number)) {
         setFormAlert({
           message: "Driver did not consent to SMS notifications. Please inform them of dock number.",
           severity: "warning",
@@ -448,11 +450,17 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
       closeModal();
     } catch (error) {
       console.error("Error updating request:", error);
-      
+
       // Handle validation errors from backend
       if (error.response && error.response.data) {
         const errors = error.response.data;
-        
+
+        if (errors.twilio_error) {
+          queryClient.invalidateQueries(["pendingRequests"]);
+          queryClient.invalidateQueries(["requests"]);
+          setFormAlert({ message: `SMS notification failed: ${errors.twilio_error}`, severity: "warning" });
+          return;
+        }
         if (errors.email) {
           setEmailError(true);
           setFormAlert({ message: `Email Error: ${errors.email.join(', ')}`, severity: "error" });

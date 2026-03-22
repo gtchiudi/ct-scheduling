@@ -9,6 +9,7 @@ from django.utils import timezone
 from django.db.models import Q
 
 from .messages import send_email, send_text
+from twilio.base.exceptions import TwilioRestException
 from .email_templates import *
 
 from datetime import datetime
@@ -97,14 +98,17 @@ class RequestView(viewsets.ModelViewSet):
             elif 'dock_number' in altered_fields:
                 number_log = SmsNumberLog.objects.filter(
                     sms_number=updated_data['driver_phone_number'])
-                if number_log.exists() and number_log[0].consent:
-                    send_text(updated_data['driver_phone_number'],
-                              F'''Thank you for choosing Candor Logistics.
+                if number_log.exists() and number_log[0].consent and updated_data['sms_consent']:
+                    try:
+                        send_text(updated_data['driver_phone_number'],
+                                  F'''Thank you for choosing Candor Logistics.
 Please slide tandems back.
 Proceed to dock door {updated_data['dock_number']}.
 Candor Logistics does not send marketing messages.
 
 Reply 'STOP' to opt out of future notifications.''')
+                    except TwilioRestException as e:
+                        return Response({"twilio_error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
             elif 'driver_phone_number' in altered_fields:
                 number_log = SmsNumberLog.objects.filter(
@@ -121,15 +125,18 @@ Reply 'STOP' to opt out of future notifications.''')
                 number_log = SmsNumberLog.objects.filter(
                     sms_number=updated_data['driver_phone_number'])
 
-                if number_log.exists() and number_log[0].consent:
-                    send_text(updated_data['driver_phone_number'],
-                              F'''Thank you for choosing Candor Logistics.
+                if number_log.exists() and number_log[0].consent and updated_data['sms_consent']:
+                    try:
+                        send_text(updated_data['driver_phone_number'],
+                                  F'''Thank you for choosing Candor Logistics.
 You have subscribed to receive recurring appointment notifications via SMS.
 Message and data rates may apply.
 Candor Logistics will not sent marketing messages.
 Please wait for further instructions.
 
 Reply 'STOP' to opt out of future notifications.''')
+                    except TwilioRestException as e:
+                        return Response({"twilio_error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 

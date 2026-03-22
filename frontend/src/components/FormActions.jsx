@@ -1,4 +1,3 @@
-import React from "react";
 import { Box, Button, Checkbox, FormControlLabel, Stack, TextField, Typography } from "@mui/material";
 import { DateTimeField } from "@mui/x-date-pickers";
 import dayjs from "dayjs";
@@ -43,6 +42,7 @@ function FormActions({
         name="sms_consent"
         checked={requestData.sms_consent}
         onChange={handleChange}
+        disabled={requestData.check_in_time != null ? true : false}
       />
     </Box>
   );
@@ -92,6 +92,16 @@ function FormActions({
       />
     </Box>
   );
+
+  if (path === "/PendingRequests") {
+    return (
+      <Stack display="flex" justifyContent="center" spacing={2} direction="row">
+        <Button color="success" variant="contained" onClick={handleApprove} disabled={submitButtonDisabled}>
+          Approve
+        </Button>
+      </Stack>
+    );
+  }
 
   if (path === "/RequestForm" || !requestData.approved) {
     return (
@@ -163,16 +173,6 @@ function FormActions({
           Remove from Calendar
         </Button>
       </Box>
-    );
-  }
-
-  if (path === "/PendingRequests") {
-    return (
-      <Stack display="flex" justifyContent="center" spacing={2} direction="row">
-        <Button color="success" variant="contained" onClick={handleApprove} disabled={submitButtonDisabled}>
-          Approve
-        </Button>
-      </Stack>
     );
   }
 
