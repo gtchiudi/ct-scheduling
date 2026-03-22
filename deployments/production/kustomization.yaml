@@ -6,6 +6,7 @@ resources:
 
 patches:
 - path: ctscheduling/ctscheduling-patch.yaml
+- path: ctscheduling/cronjob-patch.yaml
 - target:
     kind: Ingress
     name: ctscheduling
@@ -51,3 +52,8 @@ replacements:
       name: ctscheduling
     fieldPaths:
     - spec.template.spec.containers.0.image
+  - select:
+      kind: CronJob
+      name: flush-expired-tokens
+    fieldPaths:
+    - spec.jobTemplate.spec.template.spec.containers.0.image

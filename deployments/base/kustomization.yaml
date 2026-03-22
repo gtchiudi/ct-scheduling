@@ -2,3 +2,4 @@ namespace: ctscheduling
 
 resources:
 - ctscheduling.yaml
+- cronjob.yaml
