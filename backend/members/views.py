@@ -114,18 +114,22 @@ Reply 'STOP' to opt out of future notifications.''')
                 number_log = SmsNumberLog.objects.filter(
                     sms_number=updated_data['driver_phone_number'])
                 consent = updated_data['sms_consent']
+                should_send_sms = False
                 if number_log.exists() and not number_log[0].consent and consent:
+                    # Consent was just granted for an existing number
                     SmsNumberLog.objects.filter(
                         sms_number=updated_data['driver_phone_number']).update(consent=True)
-
+                    should_send_sms = True
                 elif not number_log.exists():
+                    # New number — only send if consent is given
                     SmsNumberLog.objects.create(
                         sms_number=updated_data['driver_phone_number'], consent=updated_data['sms_consent'])
+                    should_send_sms = consent
 
                 number_log = SmsNumberLog.objects.filter(
                     sms_number=updated_data['driver_phone_number'])
 
-                if number_log.exists() and number_log[0].consent and updated_data['sms_consent']:
+                if should_send_sms and number_log.exists() and number_log[0].consent and updated_data['sms_consent']:
                     try:
                         send_text(updated_data['driver_phone_number'],
                                   F'''Thank you for choosing Candor Logistics.
