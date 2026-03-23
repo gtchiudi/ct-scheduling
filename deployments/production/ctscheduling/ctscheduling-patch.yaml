@@ -59,6 +59,11 @@ spec:
               secretKeyRef:
                 name: ctscheduling-env-secret
                 key: TWILIO_PHONE_NUMBER
+          - name: DJANGO_SECRET_KEY
+            valueFrom:
+              secretKeyRef:
+                name: ctscheduling-env-secret
+                key: DJANGO_SECRET_KEY
       imagePullSecrets:
         - name: oracle-docker-registry
       
