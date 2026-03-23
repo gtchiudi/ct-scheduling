@@ -12,7 +12,7 @@ import {
   DialogActions,
   Button as MuiButton,
   Alert,
-  Collapse,
+
   Typography,
   Stack,
 } from "@mui/material";
@@ -606,8 +606,10 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
             autoComplete="off"
             error={phoneError}
             helperText={phoneError ? "Phone number must be 10 digits" : ""}
-            inputcomponent={PhoneMaskCustom}
             disabled={request && path != "/PendingRequests" && !editAppointment ? true : false}
+            InputProps={{
+              inputComponent: PhoneMaskCustom,
+            }}
           ></TextField>
 
           <TextField
@@ -660,6 +662,7 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
             onChange={handleChange}
             autoComplete="off"
             disabled= {request && path != "/PendingRequests" && !editAppointment ? true : false}
+            SelectProps={{ MenuProps: { disablePortal: true } }}
           >
             {warehouseData.map((option) => (
               <MenuItem key={option.id} value={option.id}>
@@ -679,6 +682,7 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
             onChange={handleChange}
             autoComplete="off"
             disabled= {request && path != "/PendingRequests" && !editAppointment ? true : false}
+            SelectProps={{ MenuProps: { disablePortal: true } }}
           >
             {load_types.map((option) => (
               <MenuItem key={option.value} value={option.value}>
@@ -725,6 +729,7 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
             onChange={handleChange}
             autoComplete="off"
             disabled= {request && path != "/PendingRequests" && !editAppointment ? true : false}
+            SelectProps={{ MenuProps: { disablePortal: true } }}
           >
             <MenuItem key={"delivery"} value={"delivery"}>
               Delivery
@@ -816,6 +821,7 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
                 shouldDisableDate={(date) => (dayjs(date).isSame(dayjs(), "day") && path == "/RequestForm")}
                 timezone={warehouseTimezone || undefined}
                 slotProps={{
+                  popper: { disablePortal: true },
                   textField: {
                     error: timeError,
                     helperText: timeError
@@ -841,25 +847,21 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
             </>
           )}
 
-          <Box>
-            <Collapse in={!!formAlert}>
-              {formAlert && (
-                <Alert
-                  severity={formAlert.severity}
-                  onClose={formAlert.onAcknowledge ? undefined : () => setFormAlert(null)}
-                  action={
-                    formAlert.onAcknowledge ? (
-                      <MuiButton size="small" color="inherit" onClick={() => { setFormAlert(null); formAlert.onAcknowledge(); }}>
-                        OK
-                      </MuiButton>
-                    ) : undefined
-                  }
-                >
-                  <Box textAlign="center">{formAlert.message}</Box>
-                </Alert>
-              )}
-            </Collapse>
-          </Box>
+          {formAlert && (
+            <Alert
+              severity={formAlert.severity}
+              onClose={formAlert.onAcknowledge ? undefined : () => setFormAlert(null)}
+              action={
+                formAlert.onAcknowledge ? (
+                  <MuiButton size="small" color="inherit" onClick={() => { setFormAlert(null); formAlert.onAcknowledge(); }}>
+                    OK
+                  </MuiButton>
+                ) : undefined
+              }
+            >
+              <Box textAlign="center">{formAlert.message}</Box>
+            </Alert>
+          )}
           <FormActions
             requestData={requestData}
             path={path}

@@ -138,6 +138,7 @@ export default function Calendar() {
 
   const [refresh, setRefresh] = useAtom(refreshAtom); // is refreshing
   const [allEvents, setAllEvents] = useState([]); // calendar event storage of all events
+  const [viewerEvent, setViewerEvent] = useState(null);
   const [agendaViewerEvent, setAgendaViewerEvent] = useState(null);
   const [newAppointmentOpen, setNewAppointmentOpen] = useState(false);
   const schedulerViewRef = React.useRef("week");
@@ -489,7 +490,7 @@ export default function Calendar() {
               return (
                 <Paper
                   key={event.event_id}
-                  onClick={onClick}
+                  onClick={() => setViewerEvent(event)}
                   elevation={1}
                   sx={paperSx}
                 >
@@ -544,7 +545,7 @@ export default function Calendar() {
                 }}
               >
                 <Paper
-                  onClick={onClick}
+                  onClick={() => setViewerEvent(event)}
                   elevation={1}
                   sx={{
                     ...paperSx,
@@ -587,11 +588,14 @@ export default function Calendar() {
             updateRange(date);
           }}
           loading={isLoading}
-          customViewer={(event, closeViewer) => {
-            return <CustomViewer event={event} onClose={closeViewer} />;
-          }}
           customEditor={(event) => <CustomEditor event={event} />}
         />
+        {viewerEvent && (
+          <CustomViewer
+            event={viewerEvent}
+            onClose={() => setViewerEvent(null)}
+          />
+        )}
         {agendaViewerEvent && (
           <CustomViewer
             event={agendaViewerEvent}

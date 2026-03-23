@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Box, Button, Checkbox, FormControlLabel, Stack, TextField, Typography } from "@mui/material";
 import { DateTimeField } from "@mui/x-date-pickers";
 import dayjs from "dayjs";
@@ -18,6 +19,8 @@ function FormActions({
   setDeclineConfirmOpen,
   submitButtonDisabled,
 }) {
+  const [dockNumberValue, setDockNumberValue] = useState("");
+
   const formEnd = (
     <Box>
       <TextField
@@ -29,16 +32,16 @@ function FormActions({
         error={driverPhoneError}
         helperText={driverPhoneError ? "Phone number must be 10 digits" : ""}
         disabled={requestData.check_in_time != null ? true : false}
-        inputcomponent={PhoneMaskCustom}
+        InputProps={{
+          inputComponent: PhoneMaskCustom,
+        }}
       />
-      {
-        requestData.check_in_time == "" && (
-          <Typography>
-            Read to Driver: Do you consent to receive recurring appointment updates
-            via SMS from Candor Logistics? Msg and data rates may apply.
-          </Typography>
-        )
-      }
+      {requestData.check_in_time == null && (
+        <Typography>
+          Read to Driver: Do you consent to receive recurring appointment updates
+          via SMS from Candor Logistics? Msg and data rates may apply.
+        </Typography>
+      )}
       <FormControlLabel
         control={<Checkbox />}
         label="SMS Consent"
@@ -63,7 +66,8 @@ function FormActions({
         id="dock_number"
         label="Dock Number"
         name="dock_number"
-        defaultValue={requestData.dock_number ?? ""}
+        value={requestData.dock_number ?? dockNumberValue}
+        onChange={(e) => setDockNumberValue(e.target.value)}
         autoComplete="off"
         disabled={requestData.dock_number != null ? true : false}
       />
@@ -150,7 +154,7 @@ function FormActions({
         <Box>
           {formEnd}
           {checkedInContent}
-          <Button name="dock_number" variant="contained" onClick={handleButton} disabled={!!formAlert?.onAcknowledge}>
+          <Button name="dock_number" variant="contained" onClick={handleButton} disabled={!dockNumberValue || !!formAlert?.onAcknowledge}>
             Send To Dock
           </Button>
         </Box>
