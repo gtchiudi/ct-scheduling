@@ -528,7 +528,20 @@ export default function Calendar() {
                 key={event.event_id}
                 title={dayjs(event.start).format("HH:mm")}
                 placement="bottom"
+                arrow
                 disableInteractive
+                slotProps={{
+                  popper: {
+                    modifiers: [
+                      {
+                        name: 'offset',
+                        options: {
+                          offset: [0, -8],
+                        },
+                      },
+                    ],
+                  },
+                }}
               >
                 <Paper
                   onClick={onClick}
