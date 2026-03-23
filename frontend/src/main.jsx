@@ -7,6 +7,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import { LocalizationProvider } from "@mui/x-date-pickers";
 import { Provider as JotaiProvider } from "jotai";
+import { ThemeProvider } from "@mui/material/styles";
+import theme from "./theme.js";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
@@ -87,11 +89,13 @@ const LinkBehavior = React.forwardRef((props, ref) => (
 root.render(
   <React.StrictMode>
     <JotaiProvider>
-      <QueryClientProvider client={queryClient}>
-        <LocalizationProvider dateAdapter={AdapterDayjs}>
-          <RouterProvider router={router} />
-        </LocalizationProvider>
-      </QueryClientProvider>
+      <ThemeProvider theme={theme}>
+        <QueryClientProvider client={queryClient}>
+          <LocalizationProvider dateAdapter={AdapterDayjs}>
+            <RouterProvider router={router} />
+          </LocalizationProvider>
+        </QueryClientProvider>
+      </ThemeProvider>
     </JotaiProvider>
   </React.StrictMode>
 );

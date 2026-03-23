@@ -2,6 +2,7 @@ import { atom } from "jotai";
 import axios from "axios";
 import { atomWithStorage} from "jotai/utils";
 import dayjs from "dayjs";
+import { sharedRefreshTokens } from "../utils/refreshTokensShared.js";
 
 export const warehouseDataAtom = atomWithStorage("warehouseData", [], undefined, {getOnInit: true});
 export const warehouseCheckedAtom = atomWithStorage("warehouseChecked", [], undefined, {getOnInit: true});
@@ -36,33 +37,23 @@ const fetchAndSetUserGroups = async (set) => {
 
 const refreshTokens = async (get, set) => {
   try {
-    const response = await axios.post(
-      "/token/refresh/",
-      {
-        refresh: get(refreshTokenAtom),
-      },
-      {
-        headers: {
-          "content-Type": "application/json",
-        },
+    return await sharedRefreshTokens(async () => {
+      const response = await axios.post(
+        "/token/refresh/",
+        { refresh: get(refreshTokenAtom) },
+        { headers: { "content-Type": "application/json" } }
+      );
+      if (response.status === 200) {
+        axios.defaults.headers.common["Authorization"] = `Bearer ${response.data.access}`;
+        set(accessTokenAtom, response.data.access);
+        set(refreshTokenAtom, response.data.refresh);
+        set(lastLoginDatetimeAtom, dayjs());
+        await fetchAndSetUserGroups(set);
+        return true;
       }
-    );
-    if (response.status === 200) {
-      axios.defaults.headers.common[
-        "Authorization"
-      ] = `Bearer ${response.data.access}`;
-      set(accessTokenAtom, response.data.access);
-      set(refreshTokenAtom, response.data.refresh);
-      set(lastLoginDatetimeAtom, dayjs());
-
-      // --- NEW: Fetch user groups after successful token refresh ---
-      await fetchAndSetUserGroups(set);
-
-      return true;
-    } else {
       set(removeTokensAtom);
       return false;
-    }
+    });
   } catch (error) {
     console.log("Error refreshing tokens: ", error);
     set(removeTokensAtom);

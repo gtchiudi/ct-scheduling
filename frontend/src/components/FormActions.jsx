@@ -28,15 +28,17 @@ function FormActions({
         autoComplete="off"
         error={driverPhoneError}
         helperText={driverPhoneError ? "Phone number must be 10 digits" : ""}
-        InputProps={{
-          readOnly: requestData.check_in_time != null ? true : false,
-          inputComponent: PhoneMaskCustom,
-        }}
+        disabled={requestData.check_in_time != null ? true : false}
+        inputcomponent={PhoneMaskCustom}
       />
-      <Typography>
-        Read to Driver: Do you consent to receive recurring appointment updates
-        via SMS from Candor Logistics? Msg and data rates may apply.
-      </Typography>
+      {
+        requestData.check_in_time == "" && (
+          <Typography>
+            Read to Driver: Do you consent to receive recurring appointment updates
+            via SMS from Candor Logistics? Msg and data rates may apply.
+          </Typography>
+        )
+      }
       <FormControlLabel
         control={<Checkbox />}
         label="SMS Consent"
@@ -51,7 +53,7 @@ function FormActions({
   const checkedInContent = (
     <Box>
       <DateTimeField
-        readOnly
+        disabled
         label="Checked-In Time"
         name="check_in_time"
         value={requestData.check_in_time ? dayjs(requestData.check_in_time) : undefined}
@@ -63,9 +65,7 @@ function FormActions({
         name="dock_number"
         defaultValue={requestData.dock_number ?? ""}
         autoComplete="off"
-        InputProps={{
-          readOnly: requestData.dock_number != null ? true : false,
-        }}
+        disabled={requestData.dock_number != null ? true : false}
       />
     </Box>
   );
@@ -74,7 +74,7 @@ function FormActions({
     <Box>
       {checkedInContent}
       <DateTimeField
-        readOnly
+        disabled
         label="Docked Time"
         name="docked_time"
         value={requestData.docked_time ? dayjs(requestData.docked_time) : undefined}
@@ -86,7 +86,7 @@ function FormActions({
     <Box>
       {dockedContent}
       <DateTimeField
-        readOnly
+        disabled
         label="Completed Time"
         name="completed_time"
         value={requestData.completed_time ? dayjs(requestData.completed_time) : undefined}

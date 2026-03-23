@@ -115,7 +115,7 @@ export function CustomEditor({ event }) {
   );
 }
 
-const warningTheme = createTheme({
+const warningTheme = (outerTheme) => createTheme(outerTheme, {
   palette: {
     secondary: {
       main: "#ed6c02",

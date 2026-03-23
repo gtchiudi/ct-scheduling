@@ -1,4 +1,8 @@
 import axios from "axios";
+import { getDefaultStore } from "jotai";
+import { accessTokenAtom, refreshTokenAtom, lastLoginDatetimeAtom, authenticatedAtom } from "../components/atoms.jsx";
+import dayjs from "dayjs";
+import { sharedRefreshTokens } from "./refreshTokensShared.js";
 
 let isRefreshing = false;
 let failedQueue = [];
@@ -55,21 +59,29 @@ export function setupAxiosInterceptor(navigate) {
       }
 
       try {
-        const response = await axios.post("/token/refresh/", { refresh: refreshToken });
-        const { access, refresh } = response.data;
+        const store = getDefaultStore();
+        // sharedRefreshTokens deduplicates: if isAuthAtom is already refreshing,
+        // this awaits that same promise instead of starting a second request
+        const access = await sharedRefreshTokens(async () => {
+          const response = await axios.post("/token/refresh/", { refresh: store.get(refreshTokenAtom) });
+          const { access: newAccess, refresh: newRefresh } = response.data;
+          store.set(accessTokenAtom, newAccess);
+          if (newRefresh) store.set(refreshTokenAtom, newRefresh);
+          store.set(lastLoginDatetimeAtom, dayjs());
+          store.set(authenticatedAtom, true);
+          axios.defaults.headers.common["Authorization"] = `Bearer ${newAccess}`;
+          return newAccess;
+        });
 
-        localStorage.setItem("accessToken", JSON.stringify(access));
-        if (refresh) localStorage.setItem("refreshToken", JSON.stringify(refresh));
-
-        axios.defaults.headers.common["Authorization"] = `Bearer ${access}`;
         originalRequest.headers["Authorization"] = `Bearer ${access}`;
-
         processQueue(null, access);
         return axios(originalRequest);
       } catch (refreshError) {
         processQueue(refreshError, null);
-        localStorage.removeItem("accessToken");
-        localStorage.removeItem("refreshToken");
+        const store = getDefaultStore();
+        store.set(accessTokenAtom, null);
+        store.set(refreshTokenAtom, null);
+        store.set(authenticatedAtom, false);
         delete axios.defaults.headers.common["Authorization"];
         navigate("/logout");
         return Promise.reject(refreshError);

@@ -594,9 +594,7 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
             value={requestData.company_name}
             onChange={handleChange}
             autoComplete="off"
-            InputProps={{
-              readOnly: request && path != "/PendingRequests" && !editAppointment ? true : false,
-            }}
+            disabled={request && path != "/PendingRequests" && !editAppointment ? true : false}
           ></TextField>
 
           <TextField
@@ -608,10 +606,8 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
             autoComplete="off"
             error={phoneError}
             helperText={phoneError ? "Phone number must be 10 digits" : ""}
-            InputProps={{
-              readOnly: request && path != "/PendingRequests" && !editAppointment ? true : false,
-              inputComponent: PhoneMaskCustom,
-            }}
+            inputcomponent={PhoneMaskCustom}
+            disabled={request && path != "/PendingRequests" && !editAppointment ? true : false}
           ></TextField>
 
           <TextField
@@ -623,9 +619,7 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
             autoComplete="off"
             error={emailError}
             helperText={emailError ? "Please enter a valid email address" : ""}
-            InputProps={{
-              readOnly: request && path != "/PendingRequests" && !editAppointment ? true : false,
-            }}
+            disabled={request && path != "/PendingRequests" && !editAppointment ? true : false}
           ></TextField>
 
           <TextField
@@ -635,14 +629,13 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
             value={requestData.ref_number}
             onChange={handleChange}
             autoComplete="off"
-            InputProps={{
-              readOnly:
-                (request && path != "/PendingRequests") ||
-                requestData.load_type == "Container" ||
-                editAppointment
-                  ? true
-                  : false,
-            }}
+            disabled ={
+              (request && path != "/PendingRequests") ||
+              requestData.load_type == "Container" ||
+              editAppointment
+                ? true
+                : false
+            }
           ></TextField>
 
           {path !== "/RequestForm" && (
@@ -653,9 +646,7 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
               value={requestData.customer_name ?? ""}
               onChange={handleChange}
               autoComplete="off"
-              InputProps={{
-                readOnly: request && path != "/PendingRequests" && !editAppointment ? true : false,
-              }}
+              disabled = {request && path != "/PendingRequests" && !editAppointment ? true : false}
             />
           )}
 
@@ -668,9 +659,7 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
             value={requestData.warehouse}
             onChange={handleChange}
             autoComplete="off"
-            InputProps={{
-              readOnly: request && path != "/PendingRequests" && !editAppointment ? true : false,
-            }}
+            disabled= {request && path != "/PendingRequests" && !editAppointment ? true : false}
           >
             {warehouseData.map((option) => (
               <MenuItem key={option.id} value={option.id}>
@@ -689,9 +678,7 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
             value={requestData.load_type}
             onChange={handleChange}
             autoComplete="off"
-            InputProps={{
-              readOnly: request && path != "/PendingRequests" && !editAppointment ? true : false,
-            }}
+            disabled= {request && path != "/PendingRequests" && !editAppointment ? true : false}
           >
             {load_types.map((option) => (
               <MenuItem key={option.value} value={option.value}>
@@ -708,6 +695,7 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
                 name="container_drop"
                 checked={requestData.container_drop}
                 onChange={handleChange}
+                disabled= {request && path != "/PendingRequests" && !editAppointment ? true : false}
               />
               <TextField
                 required={requiredFields.includes("container_number")}
@@ -716,6 +704,7 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
                 value={requestData.container_number ?? ""}
                 onChange={handleChange}
                 autoComplete="off"
+                disabled= {request && path != "/PendingRequests" && !editAppointment ? true : false}
               />
             </Box>
           ) : null}
@@ -735,9 +724,7 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
             }
             onChange={handleChange}
             autoComplete="off"
-            InputProps={{
-              readOnly: request && path != "/PendingRequests" && !editAppointment ? true : false,
-            }}
+            disabled= {request && path != "/PendingRequests" && !editAppointment ? true : false}
           >
             <MenuItem key={"delivery"} value={"delivery"}>
               Delivery
@@ -755,6 +742,7 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
               value={requestData.trailer_number ?? ""}
               onChange={handleChange}
               autoComplete="off"
+              disabled= {request && path != "/PendingRequests" && !editAppointment ? true : false}
             />
           )}
 
@@ -766,14 +754,12 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
             value={requestData.note_section ?? ""}
             onChange={handleChange}
             autoComplete="off"
-            InputProps={{
-              readOnly: request && path != "/PendingRequests" && !editAppointment ? true : false,
-              sx: { whiteSpace: "pre-wrap" },
-            }}
+            disabled= {request && path != "/PendingRequests" && !editAppointment ? true : false}
+            sx = {{ whiteSpace: "pre-wrap" }}
           />
           {requestData.warehouse === "" ? null : request && path != "/PendingRequests" && !editAppointment ? (
             <DateTimeField
-              readOnly
+              disabled
               label="Appointment Date and Time"
               name="date_time"
               value={dayjs(requestData.date_time)}
