@@ -1,0 +1,38 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: flush-expired-tokens
+spec:
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: flush-expired-tokens
+            image: $(CTSCHEDULING_IMAGE)
+            env:
+              - name: MYSQL_DATABASE
+                valueFrom:
+                  secretKeyRef:
+                    name: ctscheduling-env-secret
+                    key: MYSQL_DATABASE
+              - name: MYSQL_USER
+                valueFrom:
+                  secretKeyRef:
+                    name: ctscheduling-env-secret
+                    key: MYSQL_USER
+              - name: MYSQL_PASSWORD
+                valueFrom:
+                  secretKeyRef:
+                    name: ctscheduling-env-secret
+                    key: MYSQL_PASSWORD
+              - name: MYSQL_HOST
+                valueFrom:
+                  secretKeyRef:
+                    name: ctscheduling-env-secret
+                    key: MYSQL_HOST
+              - name: ENABLE_MYSQL
+                valueFrom:
+                  secretKeyRef:
+                    name: ctscheduling-env-secret
+                    key: ENABLE_MYSQL
