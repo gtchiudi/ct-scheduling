@@ -6,10 +6,10 @@ import { sharedRefreshTokens } from "../utils/refreshTokensShared.js";
 
 export const warehouseDataAtom = atomWithStorage("warehouseData", [], undefined, {getOnInit: true});
 export const warehouseCheckedAtom = atomWithStorage("warehouseChecked", [], undefined, {getOnInit: true});
+export const lastWarehouseRefreshAtom = atomWithStorage("lastWarehouseRefresh", null, undefined, {getOnInit: true});
 export const accessTokenAtom = atomWithStorage("accessToken", null, undefined, {getOnInit: true});
 export const refreshTokenAtom = atomWithStorage("refreshToken", null, undefined, {getOnInit: true});
 export const lastLoginDatetimeAtom = atomWithStorage("lastLoginDatetime", dayjs(), undefined, {getOnInit: true});
-export const lastWarehouseRefreshAtom = atomWithStorage("lastWarehouseRefresh", null, undefined, {getOnInit: true});
 export const refreshAtom = atom(false);
 export const authenticatedAtom = atom(false);
 export const userGroupsAtom = atomWithStorage("userGroups", [], undefined, {getOnInit: true}); // already present
@@ -133,6 +133,20 @@ export const removeTokensAtom = atom(null, (get, set) => {
   set(isAuthAtom, false);
   set(userGroupsAtom, []); // clear user groups
 });
+
+export const customerDataAtom = atom([]);
+
+export const customerDataEffectAtom = atom(
+  (get) => get(customerDataAtom),
+  async (_get, set) => {
+    try {
+      const data = await axios.get("/api/customer/");
+      set(customerDataAtom, data.data);
+    } catch (error) {
+      console.log("Error fetching customers:", error);
+    }
+  }
+);
 
 export const updateWarehouseDataAtom = atom(null, async (get, set, updated) => {
   try {

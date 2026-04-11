@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import TextField from "@mui/material/TextField";
 import {
+  Autocomplete,
   Checkbox,
   Box,
   FormControl,
@@ -12,14 +13,33 @@ import {
   DialogActions,
   Button as MuiButton,
   Alert,
-
   Typography,
   Stack,
+  IconButton,
+  InputAdornment,
 } from "@mui/material";
+import EditIcon from "@mui/icons-material/Edit";
+import CheckIcon from "@mui/icons-material/Check";
+import { styled, lighten, darken } from "@mui/system";
 import axios from "axios";
 import { useAtom } from "jotai";
-import { warehouseDataEffectAtom, editAppointmentAtom } from "./atoms.jsx";
+import { warehouseDataEffectAtom, editAppointmentAtom, customerDataEffectAtom } from "./atoms.jsx";
 import FormControlLabel from "@mui/material/FormControlLabel";
+
+const GroupHeader = styled('div')(({ theme }) => ({
+  position: 'sticky',
+  top: '-8px',
+  padding: '4px 10px',
+  color: theme.palette.primary.main,
+  backgroundColor: lighten(theme.palette.primary.light, 0.85),
+  ...theme.applyStyles?.('dark', {
+    backgroundColor: darken(theme.palette.primary.main, 0.8),
+  }),
+}));
+
+const GroupItems = styled('ul')({
+  padding: 0,
+});
 import { DateTimePicker, DateTimeField } from "@mui/x-date-pickers";
 import dayjs from "dayjs";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -27,9 +47,12 @@ import PhoneMaskCustom from "./PhoneMaskCustom.jsx";
 import FormActions from "./FormActions.jsx";
 import { validateEmail, validatePhone } from "../utils/validation.js";
 
+const ADD_CUSTOMER_OPTION = { id: '__add__', customer_name: '+ Add New Customer', email_address: '', send_email_updates: false };
+
 function Form({ request, closeModal, dateTime, onLockChange }) {
   const queryClient = useQueryClient();
   const [warehouseData, refreshWarehouseData] = useAtom(warehouseDataEffectAtom);
+  const [customerData, refreshCustomerData] = useAtom(customerDataEffectAtom);
   const [editAppointment, setEditAppointment] = useAtom(editAppointmentAtom);
   const path = useLocation().pathname;
   const navigate = useNavigate();
@@ -48,6 +71,11 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
   const [cancelConfirmOpen, setCancelConfirmOpen] = useState(false);
   const [declineConfirmOpen, setDeclineConfirmOpen] = useState(false);
   const [formAlert, setFormAlert] = useState(null); // { message, severity, onAcknowledge? }
+  const [addCustomerOpen, setAddCustomerOpen] = useState(false);
+  const [newCustomerData, setNewCustomerData] = useState({ customer_name: '', email_address: '', send_email_updates: false });
+  const [newCustomerEmailError, setNewCustomerEmailError] = useState(false);
+  const [editingCustomerEmail, setEditingCustomerEmail] = useState(false);
+  const [customerEmailDraft, setCustomerEmailDraft] = useState("");
 
   React.useEffect(() => {
     onLockChange?.(formAlert?.onAcknowledge || null);
@@ -55,7 +83,20 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
 
   React.useEffect(() => {
     refreshWarehouseData();
+    refreshCustomerData();
   }, []);
+
+  // Once customerData loads, re-anchor requestData.customer to the matching object
+  // from the options list so the Autocomplete can find it.
+  React.useEffect(() => {
+    if (!customerData.length) return;
+    setRequestData((prev) => {
+      if (!prev.customer) return prev;
+      const match = customerData.find((c) => c.id === prev.customer.id);
+      if (!match || match === prev.customer) return prev;
+      return { ...prev, customer: match };
+    });
+  }, [customerData]);
 
   // gets work day following provided date, optionally in a given IANA timezone
   const nextWorkDay = (date, tz) => {
@@ -86,6 +127,8 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
     approved: false,
     company_name: "",
     customer_name: null,
+    customer: null,
+    send_email_updates: false,
     phone_number: "",
     email: "",
     warehouse: "",
@@ -169,13 +212,10 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
       const convertedRequestData = {
         ...request,
         date_time: dayjs(request.date_time),
-        check_in_time: request.check_in_time
-          ? dayjs(request.check_in_time)
-          : null,
+        check_in_time: request.check_in_time ? dayjs(request.check_in_time) : null,
         docked_time: request.docked_time ? dayjs(request.docked_time) : null,
-        completed_time: request.completed_time
-          ? dayjs(request.completed_time)
-          : null,
+        completed_time: request.completed_time ? dayjs(request.completed_time) : null,
+        send_email_updates: request.customer?.send_email_updates ?? false,
       };
       setRequestData(convertedRequestData);
       setRequiredFieldsCompleted((prev) => {
@@ -184,7 +224,7 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
         // requiredFields yet when this seeding runs.
         const fieldsToSeed = ["company_name", "warehouse", "ref_number", "load_type", "delivery"];
         if (path === "/RequestForm") fieldsToSeed.push("phone_number", "email");
-        if (path === "/PendingRequests" || path === "/Calendar") fieldsToSeed.push("customer_name");
+        if (path === "/PendingRequests" || path === "/Calendar") fieldsToSeed.push("customer_name", "customer");
         if (convertedRequestData.load_type === "Container") fieldsToSeed.push("container_number");
 
         const updated = { ...prev };
@@ -350,6 +390,52 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
     }
   };
 
+  const handleCustomerChange = (event, newValue) => {
+    if (newValue?.id === '__add__') {
+      setAddCustomerOpen(true);
+      return;
+    }
+    const customer = newValue || null;
+    setRequestData((prev) => ({
+      ...prev,
+      customer,
+      customer_name: customer ? customer.customer_name : null,
+      send_email_updates: customer ? customer.send_email_updates : false,
+    }));
+    setRequiredFieldsCompleted((prev) => ({
+      ...prev,
+      customer_name: !!customer,
+    }));
+    setEditingCustomerEmail(false);
+    setCustomerEmailDraft("");
+  };
+
+  const handleCreateCustomer = async () => {
+    try {
+      const response = await axios.post("/api/customer/", newCustomerData);
+      const created = response.data;
+      await refreshCustomerData();
+      setRequestData((prev) => ({
+        ...prev,
+        customer: created,
+        customer_name: created.customer_name,
+        send_email_updates: created.send_email_updates,
+      }));
+      setRequiredFieldsCompleted((prev) => ({ ...prev, customer_name: true }));
+      setAddCustomerOpen(false);
+      setNewCustomerData({ customer_name: '', email_address: '', send_email_updates: false });
+      setNewCustomerEmailError(false);
+    } catch (error) {
+      console.error("Error creating customer:", error);
+      if (error.response?.data) {
+        const errors = error.response.data;
+        if (errors.email_address) {
+          setNewCustomerEmailError(true);
+        }
+      }
+    }
+  };
+
   const handleButton = (e) => {
     const { name } = e.target;
     if (name == "dock_number") {
@@ -389,10 +475,7 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
 
   const handleApprove = () => {
     requestData.approved = true;
-    (requestData.date_time = requestData.date_time.format(
-      "YYYY-MM-DD HH:mm:ss"
-    )),
-      updateRequest();
+    updateRequest();
   };
 
   const handleDialogueClose = () => {
@@ -406,13 +489,19 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
     setFormAlert(null);
   }
 
+  const buildPayload = () => ({
+    ...requestData,
+    customer_id: requestData.customer?.id ?? null,
+    date_time: dayjs(requestData.date_time).format("YYYY-MM-DD HH:mm:ss"),
+  });
+
   const handleNewRequest = async () => {
     if (path === "/Calendar") {
       requestData.approved = true;
     }
 
     try {
-      const response = await axios.post("/api/request/", requestData);
+      const response = await axios.post("/api/request/", buildPayload());
 
       if (path === "/Calendar") {
         queryClient.invalidateQueries(["requests"]);
@@ -443,7 +532,7 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
     try {
       const response = await axios.put(
         `/api/request/${requestData.id}/`,
-        requestData
+        buildPayload()
       );
       queryClient.invalidateQueries(["pendingRequests"]);
       queryClient.invalidateQueries(["requests"]);
@@ -505,6 +594,52 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
 
   return (
     <Box>
+      <Dialog open={addCustomerOpen} onClose={() => { setAddCustomerOpen(false); setNewCustomerEmailError(false); }}>
+        <DialogTitle textAlign="center">Add New Customer</DialogTitle>
+        <DialogContent>
+          <Stack spacing={2} sx={{ mt: 1, "& .MuiTextField-root": { width: "40ch" } }}>
+            <TextField
+              required
+              label="Customer Name"
+              value={newCustomerData.customer_name}
+              onChange={(e) => setNewCustomerData((prev) => ({ ...prev, customer_name: e.target.value }))}
+              autoComplete="off"
+            />
+            <TextField
+              label="Email Address"
+              value={newCustomerData.email_address}
+              error={newCustomerEmailError}
+              helperText={newCustomerEmailError ? "Please enter a valid email address" : ""}
+              onChange={(e) => {
+                const val = e.target.value;
+                setNewCustomerData((prev) => ({ ...prev, email_address: val }));
+                setNewCustomerEmailError(val ? !validateEmail(val) : false);
+              }}
+              autoComplete="off"
+            />
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={newCustomerData.send_email_updates}
+                  onChange={(e) => setNewCustomerData((prev) => ({ ...prev, send_email_updates: e.target.checked }))}
+                />
+              }
+              label="Send email updates"
+            />
+          </Stack>
+        </DialogContent>
+        <DialogActions>
+          <MuiButton onClick={() => { setAddCustomerOpen(false); setNewCustomerEmailError(false); }}>Cancel</MuiButton>
+          <MuiButton
+            variant="contained"
+            disabled={!newCustomerData.customer_name || newCustomerEmailError}
+            onClick={handleCreateCustomer}
+          >
+            Create
+          </MuiButton>
+        </DialogActions>
+      </Dialog>
+
       <Dialog open={declineConfirmOpen} onClose={() => setDeclineConfirmOpen(false)}>
         <DialogTitle textAlign="center">Decline Request</DialogTitle>
         <DialogContent>
@@ -641,15 +776,112 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
           ></TextField>
 
           {path !== "/RequestForm" && (
-            <TextField
-              required={requiredFields.includes("customer_name")}
-              label="Customer Name"
-              name="customer_name"
-              value={requestData.customer_name ?? ""}
-              onChange={handleChange}
-              autoComplete="off"
-              disabled = {request && path != "/PendingRequests" && !editAppointment ? true : false}
-            />
+            <>
+              <Autocomplete
+                disabled={request && path !== "/PendingRequests" && !editAppointment}
+                value={
+                  requestData.customer
+                    ? (customerData.find((c) => c.id === requestData.customer.id) ?? null)
+                    : null
+                }
+                onChange={handleCustomerChange}
+                options={[
+                  ADD_CUSTOMER_OPTION,
+                  ...[...customerData].sort((a, b) =>
+                    a.customer_name.localeCompare(b.customer_name)
+                  ),
+                ]}
+                groupBy={(option) =>
+                  option.id === '__add__'
+                    ? ''
+                    : option.customer_name[0].toUpperCase()
+                }
+                getOptionLabel={(option) => option.customer_name}
+                isOptionEqualToValue={(option, value) => option.id === value?.id}
+                renderOption={(props, option) => (
+                  <li {...props} key={option.id}>
+                    {option.customer_name}
+                  </li>
+                )}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    label="Customer Name"
+                    required={requiredFields.includes("customer_name")}
+                  />
+                )}
+                renderGroup={(params) => (
+                  <li key={params.key}>
+                    {params.group && <GroupHeader>{params.group}</GroupHeader>}
+                    <GroupItems>{params.children}</GroupItems>
+                  </li>
+                )}
+              />
+              {requestData.customer && (
+                <Box sx={{ mx: 1 }}>
+                  <TextField
+                    label="Customer Email"
+                    size="small"
+                    value={editingCustomerEmail ? customerEmailDraft : (requestData.customer.email_address || '')}
+                    disabled={!editingCustomerEmail}
+                    error={editingCustomerEmail && customerEmailDraft.length > 0 && !validateEmail(customerEmailDraft)}
+                    helperText={editingCustomerEmail && customerEmailDraft.length > 0 && !validateEmail(customerEmailDraft) ? "Please enter a valid email address" : ""}
+                    onChange={(e) => setCustomerEmailDraft(e.target.value)}
+                    InputProps={{
+                      endAdornment: (
+                        <InputAdornment position="end">
+                          {editingCustomerEmail ? (
+                            <IconButton
+                              size="small"
+                              disabled={customerEmailDraft.length > 0 && !validateEmail(customerEmailDraft)}
+                              onClick={async () => {
+                                try {
+                                  await axios.patch(`/api/customer/${requestData.customer.id}/`, { email_address: customerEmailDraft });
+                                  await refreshCustomerData();
+                                  setRequestData((prev) => ({
+                                    ...prev,
+                                    customer: { ...prev.customer, email_address: customerEmailDraft },
+                                  }));
+                                  setEditingCustomerEmail(false);
+                                } catch (error) {
+                                  console.error("Error updating customer email:", error);
+                                }
+                              }}
+                            >
+                              <CheckIcon fontSize="small" />
+                            </IconButton>
+                          ) : (
+                            <IconButton
+                              size="small"
+                              disabled={request && path !== "/PendingRequests" && !editAppointment}
+                              onClick={() => {
+                                setCustomerEmailDraft(requestData.customer.email_address || '');
+                                setEditingCustomerEmail(true);
+                              }}
+                            >
+                              <EditIcon fontSize="small" />
+                            </IconButton>
+                          )}
+                        </InputAdornment>
+                      ),
+                    }}
+                  />
+                  {((path === "/Calendar" && !request) || (path === "/PendingRequests" && request && !request.approved)) && (
+                    <FormControlLabel
+                      control={
+                        <Checkbox
+                          checked={requestData.send_email_updates}
+                          onChange={(e) =>
+                            setRequestData((prev) => ({ ...prev, send_email_updates: e.target.checked }))
+                          }
+                        />
+                      }
+                      label="Send email updates to customer"
+                    />
+                  )}
+                </Box>
+              )}
+            </>
           )}
 
           <TextField

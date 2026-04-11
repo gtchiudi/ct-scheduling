@@ -10,11 +10,20 @@ class CustomerSerializer(serializers.ModelSerializer):
 
 
 class RequestSerializer(serializers.ModelSerializer):
+    customer = CustomerSerializer(read_only=True)
+    customer_id = serializers.PrimaryKeyRelatedField(
+        queryset=Customer.objects.all(),
+        source='customer',
+        write_only=True,
+        allow_null=True,
+        required=False,
+    )
+
     class Meta:
         model = Request
-        fields = ('id', 'approved', 'company_name', 'customer_name', 'customer', 'phone_number',
-                  'email', 'warehouse', 'ref_number', 'load_type', 'container_drop', 'container_number',
-                  'note_section', 'date_time', 'delivery', 'trailer_number',
+        fields = ('id', 'approved', 'company_name', 'customer_name', 'customer', 'customer_id',
+                  'phone_number', 'email', 'warehouse', 'ref_number', 'load_type', 'container_drop',
+                  'container_number', 'note_section', 'date_time', 'delivery', 'trailer_number',
                   'driver_phone_number', 'sms_consent', 'dock_number', 'check_in_time', 'docked_time',
                   'completed_time', 'cancelled_time', 'active')
 

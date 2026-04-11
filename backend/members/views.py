@@ -72,6 +72,12 @@ class RequestView(viewsets.ModelViewSet):
         if serializer.is_valid():
             serializer.save()
             updated_data = serializer.data
+            # Sync send_email_updates to the Customer record if provided
+            send_email_updates = request.data.get('send_email_updates')
+            if send_email_updates is not None and updated_data.get('customer'):
+                Customer.objects.filter(id=updated_data['customer']['id']).update(
+                    send_email_updates=send_email_updates
+                )
             altered_fields = [
                 field for field in original_data if original_data[field] != updated_data[field]]
             if 'approved' in altered_fields and updated_data['approved']:
@@ -192,6 +198,7 @@ class WarehouseView(viewsets.ModelViewSet):
     search_fields = ['name']
 
 class CustomerView(viewsets.ModelViewSet):
+    permission_classes = (IsAuthenticated,)
     serializer_class = CustomerSerializer
     queryset = Customer.objects.all()
     filter_backends = [filters.SearchFilter]
