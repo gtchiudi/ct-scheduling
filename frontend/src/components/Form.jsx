@@ -495,10 +495,27 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
     date_time: dayjs(requestData.date_time).format("YYYY-MM-DD HH:mm:ss"),
   });
 
+  const flushCustomerEmailDraft = async () => {
+    if (!editingCustomerEmail || !requestData.customer) return;
+    if (customerEmailDraft.length > 0 && !validateEmail(customerEmailDraft)) return;
+    try {
+      await axios.patch(`/api/customer/${requestData.customer.id}/`, { email_address: customerEmailDraft });
+      setRequestData((prev) => ({
+        ...prev,
+        customer: { ...prev.customer, email_address: customerEmailDraft },
+      }));
+      setEditingCustomerEmail(false);
+    } catch (error) {
+      console.error("Error saving customer email on submit:", error);
+    }
+  };
+
   const handleNewRequest = async () => {
     if (path === "/Calendar") {
       requestData.approved = true;
     }
+
+    await flushCustomerEmailDraft();
 
     try {
       const response = await axios.post("/api/request/", buildPayload());
@@ -529,6 +546,7 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
   };
 
   const updateRequest = async () => {
+    await flushCustomerEmailDraft();
     try {
       const response = await axios.put(
         `/api/request/${requestData.id}/`,
