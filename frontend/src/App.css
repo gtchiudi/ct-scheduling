@@ -22,3 +22,6 @@ body{
       z-index: 1000;
       width: 100%;
     }
+    #calendar:not(.agenda-mode) div[data-testid="grid"] > :last-child {
+      overflow-y: clip;
+    }

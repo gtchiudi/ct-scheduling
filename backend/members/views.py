@@ -191,6 +191,12 @@ class WarehouseView(viewsets.ModelViewSet):
     filter_backends = [filters.SearchFilter]
     search_fields = ['name']
 
+class CustomerView(viewsets.ModelViewSet):
+    serializer_class = CustomerSerializer
+    queryset = Customer.objects.all()
+    filter_backends = [filters.SearchFilter]
+    search_fields = ['customer_name']
+
 
 class ApprovalLogView(viewsets.ModelViewSet):
     permission_classes = (IsAuthenticated, )

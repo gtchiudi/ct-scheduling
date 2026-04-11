@@ -18,6 +18,11 @@ class WarehouseSerializer(serializers.ModelSerializer):
         model = Warehouse
         fields = ('id', 'name', 'address', 'phone_number', 'timezone', 'color', 'appointments_per_slot')
 
+class CustomerSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Customer
+        fields = ('id', 'customer_name', 'email_address', 'send_email_updates')
+
 
 class ApprovalLog(serializers.ModelSerializer):
     class Meta:

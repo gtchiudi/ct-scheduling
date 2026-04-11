@@ -45,6 +45,8 @@ class Request(BaseModel):
     company_name = models.CharField(
         max_length=255)  # changeable only via admin
     customer_name = models.CharField(max_length=255, null=True, blank=True)
+    customer = models.ForeignKey(
+        'Customer', null=True, blank=True, on_delete=models.SET_NULL)
     phone_number = models.CharField(
         max_length=12, null=True, blank=True)  # changeable only via admin
     email = models.EmailField(max_length=254, null=True, blank=True)  # changeable only via admin
@@ -87,6 +89,12 @@ class Request(BaseModel):
     active = models.BooleanField(default=True)
     # BEcomes false after completed delivery
 
+class Customer(BaseModel):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    customer_name = models.CharField(max_length=255)
+    email_address = models.EmailField(max_length=254)
+    send_email_updates = models.BooleanField(default=False)
+    active = models.BooleanField(default=True)
 
 class ApprovalLog(BaseModel):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)

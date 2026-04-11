@@ -15,6 +15,11 @@ class WarehouseListView(admin.ModelAdmin):
     search_fields = ("name", "address")
     list_filter = ("active",)
 
+class CustomerListView(admin.ModelAdmin):
+    list_display = ('customer_name', 'email_address', 'send_email_updates')
+    search_fields = ('customer_name', 'email_address')
+    list_filter = ('active',)
+
 
 class ApprovalLogListView(admin.ModelAdmin):
     list_display = ('approver', 'request_ref_number',
