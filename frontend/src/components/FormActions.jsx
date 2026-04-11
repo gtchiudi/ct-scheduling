@@ -154,6 +154,16 @@ function FormActions({
         <Box>
           {formEnd}
           {checkedInContent}
+          <TextField
+            name="note_section"
+            label="Notes"
+            multiline
+            rows={4}
+            value={requestData.note_section ?? ""}
+            onChange={handleChange}
+            autoComplete="off"
+            sx={{ whiteSpace: "pre-wrap", my: 1 }}
+          />
           <Button name="dock_number" variant="contained" onClick={handleButton} disabled={!dockNumberValue || !!formAlert?.onAcknowledge}>
             Send To Dock
           </Button>
@@ -166,6 +176,16 @@ function FormActions({
         <Box>
           {formEnd}
           {dockedContent}
+          <TextField
+            name="note_section"
+            label="Notes"
+            multiline
+            rows={4}
+            value={requestData.note_section ?? ""}
+            onChange={handleChange}
+            autoComplete="off"
+            sx={{ whiteSpace: "pre-wrap", my: 1 }}
+          />
           <Button name="completed_time" variant="contained" onClick={handleButton}>
             Complete
           </Button>

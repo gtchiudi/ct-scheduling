@@ -12,6 +12,7 @@ export const refreshTokenAtom = atomWithStorage("refreshToken", null, undefined,
 export const lastLoginDatetimeAtom = atomWithStorage("lastLoginDatetime", dayjs(), undefined, {getOnInit: true});
 export const refreshAtom = atom(false);
 export const authenticatedAtom = atom(false);
+export const navigateFnAtom = atom(null); // set by Layout to allow atoms to trigger navigation
 export const userGroupsAtom = atomWithStorage("userGroups", [], undefined, {getOnInit: true}); // already present
 export const userInitialAtom = atomWithStorage("userInitial", "U", undefined, {getOnInit: true});
 export const editAppointmentAtom = atom(false);
@@ -82,7 +83,10 @@ export const isAuthAtom = atom(
           // --- NEW: Fetch user groups after refresh ---
           await fetchAndSetUserGroups(set);
 
-        } else set(authenticatedAtom, false);
+        } else {
+          set(authenticatedAtom, false);
+          get(navigateFnAtom)?.("/");
+        }
       } else if (accessToken !== null) {
         axios.defaults.headers.common[
           "Authorization"
@@ -111,9 +115,8 @@ export const isAuthAtom = atom(
       } else {
         set(refreshAtom, false);
         set(authenticatedAtom, false);
-
-        // --- NEW: Clear user groups on logout ---
         set(userGroupsAtom, []);
+        get(navigateFnAtom)?.("/");
       }
     } else {
       axios.defaults.headers.common["Authorization"] = `Bearer ${accessToken}`;

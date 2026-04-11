@@ -989,29 +989,32 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
             </MenuItem>
           </TextField>
 
-          {requestData.load_type !== "Container" && (
-            <TextField
-              // required
-              label="Trailer Number"
-              name="trailer_number"
-              value={requestData.trailer_number ?? ""}
-              onChange={handleChange}
-              autoComplete="off"
-              disabled= {request && path != "/PendingRequests" && !editAppointment ? true : false}
-            />
+          {/* Trailer Number and Notes in default position — hidden when viewing from Calendar */}
+          {!(path === "/Calendar" && request && !editAppointment) && (
+            <>
+              {requestData.load_type !== "Container" && (
+                <TextField
+                  label="Trailer Number"
+                  name="trailer_number"
+                  value={requestData.trailer_number ?? ""}
+                  onChange={handleChange}
+                  autoComplete="off"
+                  disabled={request && path !== "/PendingRequests" && !editAppointment}
+                />
+              )}
+              <TextField
+                name="note_section"
+                label="Notes"
+                multiline
+                rows={4}
+                value={requestData.note_section ?? ""}
+                onChange={handleChange}
+                autoComplete="off"
+                disabled={request && path !== "/PendingRequests" && !editAppointment}
+                sx={{ whiteSpace: "pre-wrap" }}
+              />
+            </>
           )}
-
-          <TextField
-            name="note_section"
-            label="Notes"
-            multiline
-            rows={4}
-            value={requestData.note_section ?? ""}
-            onChange={handleChange}
-            autoComplete="off"
-            disabled= {request && path != "/PendingRequests" && !editAppointment ? true : false}
-            sx = {{ whiteSpace: "pre-wrap" }}
-          />
           {requestData.warehouse === "" ? null : request && path != "/PendingRequests" && !editAppointment ? (
             <DateTimeField
               disabled
@@ -1094,6 +1097,36 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
                   },
                 }}
               />
+            </>
+          )}
+
+          {/* Calendar view — Trailer Number and Notes repositioned below DateTime */}
+          {path === "/Calendar" && request && !editAppointment && (
+            <>
+              {requestData.load_type !== "Container" && (
+                <TextField
+                  label="Trailer Number"
+                  name="trailer_number"
+                  value={requestData.trailer_number ?? ""}
+                  onChange={handleChange}
+                  autoComplete="off"
+                  disabled={requestData.check_in_time != null}
+                />
+              )}
+              {/* Pre check-in or completed: Notes sits under Trailer Number */}
+              {(requestData.check_in_time == null || requestData.completed_time != null) && (
+                <TextField
+                  name="note_section"
+                  label="Notes"
+                  multiline
+                  rows={4}
+                  value={requestData.note_section ?? ""}
+                  onChange={handleChange}
+                  autoComplete="off"
+                  disabled={requestData.completed_time != null}
+                  sx={{ whiteSpace: "pre-wrap" }}
+                />
+              )}
             </>
           )}
 

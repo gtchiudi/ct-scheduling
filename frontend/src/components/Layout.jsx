@@ -2,11 +2,12 @@
 import React from "react";
 import HeaderBar from "./HeaderBar"; // Import your HeaderBar component here
 import Footer from "./Footer.jsx";
-import { Box, Stack } from "@mui/material";
+import { Box } from "@mui/material";
 import { useAtom } from "jotai";
 import {
   isAuthAtom,
   authenticatedAtom,
+  navigateFnAtom,
 } from "./atoms.jsx";
 import { useNavigate } from "react-router-dom";
 import { setupAxiosInterceptor } from "../utils/axiosInterceptor.js";
@@ -14,10 +15,12 @@ import { setupAxiosInterceptor } from "../utils/axiosInterceptor.js";
 function Layout({ children }) {
   const authenticated = useAtom(authenticatedAtom);
   const [, isAuth] = useAtom(isAuthAtom);
+  const [, setNavigateFn] = useAtom(navigateFnAtom);
   const navigate = useNavigate();
 
   React.useEffect(() => {
     setupAxiosInterceptor(navigate);
+    setNavigateFn(() => navigate);
   }, []);
 
   React.useEffect(() => {
