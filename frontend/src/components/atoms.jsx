@@ -22,11 +22,19 @@ authenticatedAtom.onMount = (set) => {
 };
 
 // --- NEW: Fetch user groups and set atom ---
-const fetchAndSetUserGroups = async (set) => {
+const VALID_GROUPS = ['Dock', 'Dispatch', 'Admin'];
+
+const fetchAndSetUserGroups = async (get, set) => {
   try {
     const response = await axios.get("/api/user-groups/");
     if (response.status === 200) {
-      set(userGroupsAtom, response.data.groups);
+      const groups = response.data.groups;
+      set(userGroupsAtom, groups);
+      if (!groups.some(g => VALID_GROUPS.includes(g))) {
+        set(authenticatedAtom, false);
+        set(userGroupsAtom, []);
+        get(navigateFnAtom)?.("/");
+      }
     } else {
       set(userGroupsAtom, []);
     }
@@ -49,7 +57,7 @@ const refreshTokens = async (get, set) => {
         set(accessTokenAtom, response.data.access);
         set(refreshTokenAtom, response.data.refresh);
         set(lastLoginDatetimeAtom, dayjs());
-        await fetchAndSetUserGroups(set);
+        await fetchAndSetUserGroups(get, set);
         return true;
       }
       set(removeTokensAtom);
@@ -81,7 +89,7 @@ export const isAuthAtom = atom(
           set(authenticatedAtom, true);
 
           // --- NEW: Fetch user groups after refresh ---
-          await fetchAndSetUserGroups(set);
+          await fetchAndSetUserGroups(get, set);
 
         } else {
           set(authenticatedAtom, false);
@@ -94,7 +102,7 @@ export const isAuthAtom = atom(
         set(authenticatedAtom, true);
 
         // --- NEW: Fetch user groups after access token is valid ---
-        await fetchAndSetUserGroups(set);
+        await fetchAndSetUserGroups(get, set);
 
       } else set(authenticatedAtom, false);
     } else if (accessToken === null || refreshToken === null) {
@@ -110,7 +118,7 @@ export const isAuthAtom = atom(
         set(authenticatedAtom, true);
 
         // --- NEW: Fetch user groups after refresh ---
-        await fetchAndSetUserGroups(set);
+        await fetchAndSetUserGroups(get, set);
 
       } else {
         set(refreshAtom, false);
@@ -123,7 +131,7 @@ export const isAuthAtom = atom(
       set(authenticatedAtom, true);
 
       // --- NEW: Fetch user groups after access token is valid ---
-      await fetchAndSetUserGroups(set);
+      await fetchAndSetUserGroups(get, set);
 
     }
   }

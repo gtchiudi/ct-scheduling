@@ -1,11 +1,12 @@
 import * as React from "react";
 import {
-  TextField,
   Box,
   Typography,
-  FormControlLabel,
-  Checkbox,
   Button,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
 } from "@mui/material/";
 import { submitUserData } from "../actions.jsx";
 import { useAtom } from "jotai";
@@ -13,57 +14,54 @@ import {
   accessTokenAtom,
   refreshTokenAtom,
   lastLoginDatetimeAtom,
-  isAuthAtom,
   authenticatedAtom,
   userInitialAtom,
+  removeTokensAtom,
 } from "../components/atoms.jsx";
 import { useNavigate } from "react-router-dom";
-import { useQueryClient } from "@tanstack/react-query";
 import dayjs from "dayjs";
 import { useMutation } from "@tanstack/react-query";
 import axios from "axios";
 
 import IconButton from '@mui/material/IconButton';
-import Input from '@mui/material/Input';
-import FilledInput from '@mui/material/FilledInput';
 import OutlinedInput from '@mui/material/OutlinedInput';
 import InputLabel from '@mui/material/InputLabel';
 import InputAdornment from '@mui/material/InputAdornment';
-import FormHelperText from '@mui/material/FormHelperText';
 import FormControl from '@mui/material/FormControl';
 import Visibility from '@mui/icons-material/Visibility';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
 
 export default function Login() {
-  const queryClient = useQueryClient();
   const navigate = useNavigate();
+
+  const validUserGroups = ['Dock', 'Dispatch', 'Admin']
 
   const [username, setUsername] = React.useState("");
   const [password, setPassword] = React.useState("");
 
-  const [accessToken, setAccessToken] = useAtom(accessTokenAtom);
-  const [refreshToken, setRefreshToken] = useAtom(refreshTokenAtom);
+  const [, setAccessToken] = useAtom(accessTokenAtom);
+  const [, setRefreshToken] = useAtom(refreshTokenAtom);
   const [, setLastLoginDatetime] = useAtom(lastLoginDatetimeAtom);
-  const [, isAuth] = useAtom(isAuthAtom);
   const [authenticated] = useAtom(authenticatedAtom);
   const [, setUserInitial] = useAtom(userInitialAtom);
+  const [, removeTokens] = useAtom(removeTokensAtom);
 
   const [showPassword, setShowPassword] = React.useState(false);
   const [errorMessage, setErrorMessage] = React.useState("");
+  const [groupErrorOpen, setGroupErrorOpen] = React.useState(false);
 
   const handleClickShowPassword = () => setShowPassword((show) => !show);
+  const handleMouseDownPassword = (event) => event.preventDefault();
+  const handleMouseUpPassword = (event) => event.preventDefault();
 
-  const handleMouseDownPassword = (event) => {
-    event.preventDefault();
-  };
-
-  const handleMouseUpPassword = (event) => {
-    event.preventDefault();
+  const handleGroupErrorClose = () => {
+    setGroupErrorOpen(false);
+    removeTokens();
+    navigate("/");
   };
 
   const submitUserDataMutation = useMutation(submitUserData, {
-    onSuccess: (data) => {
-      console.log("Login Successful");
+    onSuccess: async (data) => {
       axios.defaults.headers.common["Authorization"] = `Bearer ${data.access}`;
       setAccessToken(data.access);
       setRefreshToken(data.refresh);
@@ -72,6 +70,19 @@ export default function Login() {
       setUsername("");
       setPassword("");
       setErrorMessage("");
+
+      // Check group membership before proceeding
+      try {
+        const response = await axios.get("/api/user-groups/");
+        if (!response.data.groups || !response.data.groups.some(g => validUserGroups.includes(g))) {
+          setGroupErrorOpen(true);
+          return;
+        }
+      } catch {
+        setGroupErrorOpen(true);
+        return;
+      }
+
       navigate("/Calendar");
     },
     onError: (error) => {
@@ -94,48 +105,55 @@ export default function Login() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     try {
-      const data = await submitUserDataMutation.mutateAsync({
-        username: username,
-        password: password,
-      });
-      // You can access data from the mutation here.
-    } catch (error) {
-      console.error("Error submitting user data:", error);
+      await submitUserDataMutation.mutateAsync({ username, password });
+    } catch {
+      // handled by onError
     }
   };
 
   return (
     <Box
       id="Login"
-      component="form" // Wrap the form in a <form> element
+      component="form"
       display="flex"
       justifyContent="center"
       alignItems="center"
-      sx={{
-        "& > :not(style)": { m: 1, width: "25ch" },
-      }}
+      sx={{ "& > :not(style)": { m: 1, width: "25ch" } }}
       noValidate
       autoComplete="off"
-      onSubmit={handleSubmit} // Add the onSubmit handler here
+      onSubmit={handleSubmit}
     >
+      <Dialog open={groupErrorOpen} onClose={handleGroupErrorClose}>
+        <DialogTitle textAlign="center">Access Error</DialogTitle>
+        <DialogContent>
+          <Typography textAlign="center">
+            Error: User is not assigned to a valid Group. <br />Contact system administrator to resolve.
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button variant="contained" onClick={handleGroupErrorClose}>
+            OK
+          </Button>
+        </DialogActions>
+      </Dialog>
+
       <div>
         <Typography alignContent="center" textAlign="center" variant="h3">
           Login
         </Typography>
-        <br></br>
+        <br />
         <FormControl sx={{ m: 1, width: '25ch' }} variant="outlined">
           <InputLabel htmlFor="username">Username</InputLabel>
           <OutlinedInput
             id="username"
-            type={'text'}
+            type="text"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
             label="Username"
           />
         </FormControl>
-        <br></br>
+        <br />
         <FormControl sx={{ m: 1, width: '25ch' }} variant="outlined">
           <InputLabel htmlFor="outlined-adornment-password">Password</InputLabel>
           <OutlinedInput
@@ -146,9 +164,7 @@ export default function Login() {
             endAdornment={
               <InputAdornment position="end">
                 <IconButton
-                  aria-label={
-                    showPassword ? 'hide the password' : 'display the password'
-                  }
+                  aria-label={showPassword ? 'hide the password' : 'display the password'}
                   onClick={handleClickShowPassword}
                   onMouseDown={handleMouseDownPassword}
                   onMouseUp={handleMouseUpPassword}

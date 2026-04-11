@@ -63,7 +63,7 @@ function HeaderBar() {
     if (location.pathname === '/' || location.pathname === '/RequestForm'){
       if (userGroups.includes('Dock'))
         pagesToRender = [{ text: "Calendar", href: "/Calendar" }];
-      else
+      else if (userGroups.some(g => ['Admin', 'Dispatch'].includes(g)))
         pagesToRender = [
           { 
             text: "Pending Requests", 
@@ -76,7 +76,7 @@ function HeaderBar() {
     else if (location.pathname === '/Calendar'){
       if (userGroups.includes('Dock'))
         pagesToRender = [{text: 'Home', href: '/'}];
-      else
+      else if (userGroups.some(g => ['Admin', 'Dispatch'].includes(g)))
         pagesToRender = [{
           text: 'Pending Requests', 
           href: '/PendingRequests',
