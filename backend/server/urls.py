@@ -30,6 +30,7 @@ router.register(r'warehouse', views.WarehouseView, 'warehouse')
 router.register(r'schedule', views.ApprovalLogView, 'schedule')
 router.register(r'user', views.UserView, 'user')
 router.register(r'group', views.GroupView, 'group')
+router.register(r'customer', views.CustomerView, 'customer')
 
 
 urlpatterns = [

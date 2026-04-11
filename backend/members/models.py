@@ -92,7 +92,7 @@ class Request(BaseModel):
 class Customer(BaseModel):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     customer_name = models.CharField(max_length=255)
-    email_address = models.EmailField(max_length=254)
+    email_address = models.EmailField(max_length=254, null=True, blank=True, default='')
     send_email_updates = models.BooleanField(default=False)
     active = models.BooleanField(default=True)
 

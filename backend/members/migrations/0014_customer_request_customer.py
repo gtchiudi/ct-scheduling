@@ -18,7 +18,7 @@ class Migration(migrations.Migration):
                 ('id', models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
                 ('customer_name', models.CharField(max_length=255)),
                 ('email_address', models.EmailField(
-                    max_length=254, null=True, blank=True)),
+                    max_length=254, null=True, blank=True, default='')),
                 ('send_email_updates', models.BooleanField(default=False)),
                 ('active', models.BooleanField(default=True)),
             ],
