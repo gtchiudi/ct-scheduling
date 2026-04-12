@@ -746,7 +746,7 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
         >
           <TextField
             required={requiredFields.includes("company_name")}
-            label="Company Name"
+            label={path === "/RequestForm" ? "Company Name" : "Carrier Name"}
             name="company_name"
             value={requestData.company_name}
             onChange={handleChange}
