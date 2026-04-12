@@ -23,15 +23,21 @@ authenticatedAtom.onMount = (set) => {
 
 // --- NEW: Fetch user groups and set atom ---
 
-const fetchAndSetUserGroups = async (_get, set) => {
+const fetchAndSetUserGroups = async (get, set) => {
   try {
     const response = await axios.get("/api/user-groups/");
     if (response.status === 200) {
-      set(userGroupsAtom, response.data.groups);
+      const groups = response.data.groups;
+      set(userGroupsAtom, groups);
+      if (!groups || groups.length === 0) {
+        set(authenticatedAtom, false);
+        set(userGroupsAtom, []);
+        get(navigateFnAtom)?.("/logout");
+      }
     } else {
       set(userGroupsAtom, []);
     }
-  } catch (error) {
+  } catch {
     set(userGroupsAtom, []);
   }
 };
