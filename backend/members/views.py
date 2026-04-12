@@ -151,7 +151,8 @@ class RequestView(viewsets.ModelViewSet):
                 requestUpdate.save()
 
 
-            elif 'dock_number' in altered_fields or ('docked_time' in altered_fields and updated_data['container_drop']):
+            elif (original_data.get('dock_number') is None and updated_data.get('dock_number') is not None) or \
+                    (original_data.get('docked_time') is None and updated_data.get('docked_time') is not None and updated_data['container_drop']):
                 number_log = SmsNumberLog.objects.filter(
                     sms_number=updated_data['driver_phone_number'])
                 if number_log.exists() and number_log[0].consent and updated_data['sms_consent']:
