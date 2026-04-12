@@ -101,12 +101,20 @@ class RequestView(viewsets.ModelViewSet):
                 requestUpdate.save()
 
 
-            elif 'dock_number' in altered_fields:
+            elif 'dock_number' in altered_fields or ('docked_time' in altered_fields and updated_data['container_drop']):
                 number_log = SmsNumberLog.objects.filter(
                     sms_number=updated_data['driver_phone_number'])
                 if number_log.exists() and number_log[0].consent and updated_data['sms_consent']:
                     try:
-                        send_text(updated_data['driver_phone_number'],
+                        if updated_data['container_drop']:
+                            send_text(updated_data['driver_phone_number'],
+                                    F'''Thank you for choosing Candor Logistics.
+Please drop in the yard.
+Candor Logistics does not send marketing messages.
+
+Reply 'STOP' to opt out of future notifications.''')
+                        else:
+                            send_text(updated_data['driver_phone_number'],
                                   F'''Thank you for choosing Candor Logistics.
 Please slide tandems back.
 Proceed to dock door {updated_data['dock_number']}.

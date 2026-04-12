@@ -164,7 +164,7 @@ function FormActions({
       );
     }
 
-    if (requestData.dock_number == null) {
+    if (requestData.docked_time == null) {
       return (
         <Box>
           {formEnd}

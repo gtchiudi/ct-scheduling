@@ -439,11 +439,15 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
   const handleButton = (e) => {
     const { name } = e.target;
     if (name == "dock_number") {
-      const dockNum = parseInt(document.getElementById("dock_number").value);
+      const dockNum = requestData.container_drop
+        ? null
+        : parseInt(document.getElementById("dock_number").value);
       const dockedTime = dayjs().format("YYYY-MM-DD HH:mm:ss");
       if (!(requestData.sms_consent && requestData.driver_phone_number)) {
         setFormAlert({
-          message: "Driver did not consent to SMS notifications. Please inform them of dock number.",
+          message: requestData.container_drop
+            ? "Driver did not consent to SMS notifications. Please inform them to drop in the yard."
+            : "Driver did not consent to SMS notifications. Please inform them of dock number.",
           severity: "warning",
           onAcknowledge: () => {
             requestData.dock_number = dockNum;
