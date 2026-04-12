@@ -61,9 +61,7 @@ function HeaderBar() {
 
   if (authenticated){
     if (location.pathname === '/' || location.pathname === '/RequestForm'){
-      if (userGroups.includes('Dock'))
-        pagesToRender = [{ text: "Calendar", href: "/Calendar" }];
-      else if (userGroups.some(g => ['Admin', 'Dispatch'].includes(g)))
+      if (userGroups.some(g => ['Admin', 'Dispatch'].includes(g)))
         pagesToRender = [
           { 
             text: "Pending Requests", 
@@ -72,16 +70,18 @@ function HeaderBar() {
           },
           { text: "Calendar", href: "/Calendar" },
         ];
+      else if (userGroups.includes('Dock'))
+        pagesToRender = [{ text: "Calendar", href: "/Calendar" }];
       }
     else if (location.pathname === '/Calendar'){
-      if (userGroups.includes('Dock'))
-        pagesToRender = [{text: 'Home', href: '/'}];
-      else if (userGroups.some(g => ['Admin', 'Dispatch'].includes(g)))
+      if (userGroups.some(g => ['Admin', 'Dispatch'].includes(g)))
         pagesToRender = [{
           text: 'Pending Requests', 
           href: '/PendingRequests',
           color: hasUrgentRequests ? "error" : "warning"
         }];
+      else if (userGroups.includes('Dock'))
+        pagesToRender = [{text: 'Home', href: '/'}];
     }
     else if (location.pathname === '/PendingRequests')
       pagesToRender = [{text: 'Calendar', href: '/Calendar'}];

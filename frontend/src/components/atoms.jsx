@@ -22,19 +22,12 @@ authenticatedAtom.onMount = (set) => {
 };
 
 // --- NEW: Fetch user groups and set atom ---
-const VALID_GROUPS = ['Dock', 'Dispatch', 'Admin'];
 
-const fetchAndSetUserGroups = async (get, set) => {
+const fetchAndSetUserGroups = async (_get, set) => {
   try {
     const response = await axios.get("/api/user-groups/");
     if (response.status === 200) {
-      const groups = response.data.groups;
-      set(userGroupsAtom, groups);
-      if (!groups.some(g => VALID_GROUPS.includes(g))) {
-        set(authenticatedAtom, false);
-        set(userGroupsAtom, []);
-        get(navigateFnAtom)?.("/");
-      }
+      set(userGroupsAtom, response.data.groups);
     } else {
       set(userGroupsAtom, []);
     }
