@@ -72,7 +72,7 @@ function FormActions({
           value={requestData.dock_number ?? dockNumberValue}
           onChange={(e) => setDockNumberValue(e.target.value)}
           autoComplete="off"
-          disabled={requestData.dock_number != null || requestData.container_drop}
+          disabled={requestData.dock_number != null || requestData.container_drop || requestData.docked_time != null}
         />
         <FormControlLabel
           control={
@@ -80,7 +80,7 @@ function FormActions({
               checked={requestData.container_drop}
               onChange={handleChange}
               name="container_drop"
-              disabled={requestData.dock_number != null}
+              disabled={requestData.dock_number != null || requestData.docked_time != null}
             />
           }
           label="Drop in Yard"
