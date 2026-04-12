@@ -148,7 +148,7 @@ def customer_appointment_email_template(ref_number, company_name, date_time):
 
         <div class="success-box">
             <p><strong>Reference Number:</strong> {ref_number}</p>
-            <p><strong>Company:</strong> {company_name}</p>
+            <p><strong>Carrier:</strong> {company_name}</p>
             <p><strong>Date &amp; Time:</strong> {date_time}</p>
         </div>
 
