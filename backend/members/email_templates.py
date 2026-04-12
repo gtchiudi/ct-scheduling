@@ -139,6 +139,43 @@ def new_request_email_template(ref_number, company_name, date_time):
     {get_email_footer()}
     '''
 
+def customer_appointment_email_template(ref_number, company_name, date_time):
+    """Template for notifying a customer of their scheduled appointment"""
+    return f'''
+    {get_email_header()}
+        <h1>Appointment Scheduled</h1>
+        <p>An appointment has been scheduled for your account. Please review the details below.</p>
+
+        <div class="success-box">
+            <p><strong>Reference Number:</strong> {ref_number}</p>
+            <p><strong>Company:</strong> {company_name}</p>
+            <p><strong>Date &amp; Time:</strong> {date_time}</p>
+        </div>
+
+        <p>Please email <a href="mailto:appointments@candortransport.com">appointments@candortransport.com</a> with any questions or concerns.</p>
+
+        <p>Thank you for choosing Candor Logistics.</p>
+    {get_email_footer()}
+    '''
+
+def appointment_declined_email_template(ref_number, date_time):
+    """Template for notifying the submitter that their request was declined"""
+    return f'''
+    {get_email_header()}
+        <h1>Appointment Request Declined</h1>
+        <p>Unfortunately, your appointment request has been declined.</p>
+
+        <div class="alert-box">
+            <p><strong>Reference Number:</strong> {ref_number}</p>
+            <p><strong>Date &amp; Time:</strong> {date_time}</p>
+        </div>
+
+        <p>Please email <a href="mailto:appointments@candortransport.com">appointments@candortransport.com</a> to discuss alternative arrangements.</p>
+
+        <p>Thank you for choosing Candor Logistics.</p>
+    {get_email_footer()}
+    '''
+
 def request_confirmation_email_template(ref_number, date_time):
     """Template for customer request confirmation"""
     return f'''

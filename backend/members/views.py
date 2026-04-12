@@ -10,7 +10,14 @@ from django.db.models import Q
 
 from .messages import send_email, send_text
 from twilio.base.exceptions import TwilioRestException
-from .email_templates import *
+from .email_templates import (
+    appointment_approved_email_template,
+    calendar_event_confirmation_email_template,
+    new_request_email_template,
+    request_confirmation_email_template,
+    customer_appointment_email_template,
+    appointment_declined_email_template,
+)
 
 from datetime import datetime
 
@@ -89,13 +96,44 @@ class RequestView(viewsets.ModelViewSet):
                     updated_data["date_time"].replace('Z', '+00:00'))
                 date_time = date_time.astimezone(
                     pytz.timezone('America/New_York'))
+                date_time_str = date_time.strftime('%Y-%m-%d %H:%M:%S')
+
                 send_email(
                     updated_data['email'],
                     'Appointment Request Approved',
                     appointment_approved_email_template(
                         updated_data["ref_number"],
-                        date_time.strftime('%Y-%m-%d %H:%M:%S')
+                        date_time_str,
                     ))
+
+                # Notify customer if send_email_updates is set and customer has an email
+                customer_data = updated_data.get('customer')
+                send_updates = request.data.get('send_email_updates', False)
+                if send_updates and customer_data and customer_data.get('email_address'):
+                    send_email(
+                        customer_data['email_address'],
+                        'Appointment Scheduled',
+                        customer_appointment_email_template(
+                            updated_data["ref_number"],
+                            updated_data["company_name"],
+                            date_time_str,
+                        ))
+
+            elif 'active' in altered_fields and not updated_data['active'] and not updated_data.get('cancelled_time'):
+                # Declined (active set to false without a cancelled_time — from Decline button)
+                date_time = datetime.fromisoformat(
+                    updated_data["date_time"].replace('Z', '+00:00'))
+                date_time = date_time.astimezone(
+                    pytz.timezone('America/New_York'))
+                if updated_data.get('email'):
+                    send_email(
+                        updated_data['email'],
+                        'Appointment Request Declined',
+                        appointment_declined_email_template(
+                            updated_data["ref_number"],
+                            date_time.strftime('%Y-%m-%d %H:%M:%S'),
+                        ))
+
             elif 'cancelled_time' in altered_fields:
                 requestUpdate.active = False
                 requestUpdate.save()
@@ -165,14 +203,34 @@ Reply 'STOP' to opt out of future notifications.''')
                 request.data["date_time"].replace('Z', '+00:00'))
             date_time = date_time.astimezone(
                 pytz.timezone('America/New_York'))
+            date_time_str = date_time.strftime('%Y-%m-%d %H:%M:%S')
+
             send_email(
                 candorEmailRecipient,
                 'New Calendar Event Confirmation',
                 calendar_event_confirmation_email_template(
                     request.data["ref_number"],
                     request.data["company_name"],
-                    date_time.strftime('%Y-%m-%d %H:%M:%S')
+                    date_time_str,
                 ))
+
+            # Notify customer if send_email_updates and customer email provided
+            customer_id = request.data.get('customer_id')
+            send_updates = request.data.get('send_email_updates', False)
+            if send_updates and customer_id:
+                try:
+                    customer = Customer.objects.get(id=customer_id)
+                    if customer.email_address:
+                        send_email(
+                            customer.email_address,
+                            'Appointment Scheduled',
+                            customer_appointment_email_template(
+                                request.data["ref_number"],
+                                request.data["company_name"],
+                                date_time_str,
+                            ))
+                except Customer.DoesNotExist:
+                    pass
 
         else:  # created from the request page
             date_time = datetime.fromisoformat(
