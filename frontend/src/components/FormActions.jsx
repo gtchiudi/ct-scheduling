@@ -23,33 +23,35 @@ function FormActions({
 
   const formEnd = (
     <Box>
-      <TextField
-        label="Driver Phone Number"
-        name="driver_phone_number"
-        value={requestData.driver_phone_number ?? ""}
-        onChange={handleChange}
-        autoComplete="off"
-        error={driverPhoneError}
-        helperText={driverPhoneError ? "Phone number must be 10 digits" : ""}
-        disabled={requestData.check_in_time != null ? true : false}
-        InputProps={{
-          inputComponent: PhoneMaskCustom,
-        }}
-      />
+      <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+        <TextField
+          label="Driver Phone Number"
+          name="driver_phone_number"
+          value={requestData.driver_phone_number ?? ""}
+          onChange={handleChange}
+          autoComplete="off"
+          error={driverPhoneError}
+          helperText={driverPhoneError ? "Phone number must be 10 digits" : ""}
+          disabled={requestData.check_in_time != null}
+          InputProps={{
+            inputComponent: PhoneMaskCustom,
+          }}
+        />
+        <FormControlLabel
+          control={<Checkbox />}
+          label="SMS Consent"
+          name="sms_consent"
+          checked={requestData.sms_consent}
+          onChange={handleChange}
+          disabled={requestData.check_in_time != null}
+        />
+      </Box>
       {requestData.check_in_time == null && (
-        <Typography>
+        <Typography variant="caption" color="text.secondary">
           Read to Driver: Do you consent to receive recurring appointment updates
           via SMS from Candor Logistics? Msg and data rates may apply.
         </Typography>
       )}
-      <FormControlLabel
-        control={<Checkbox />}
-        label="SMS Consent"
-        name="sms_consent"
-        checked={requestData.sms_consent}
-        onChange={handleChange}
-        disabled={requestData.check_in_time != null ? true : false}
-      />
     </Box>
   );
 
@@ -61,16 +63,29 @@ function FormActions({
         name="check_in_time"
         value={requestData.check_in_time ? dayjs(requestData.check_in_time) : undefined}
       />
-      <TextField
-        required
-        id="dock_number"
-        label="Dock Number"
-        name="dock_number"
-        value={requestData.dock_number ?? dockNumberValue}
-        onChange={(e) => setDockNumberValue(e.target.value)}
-        autoComplete="off"
-        disabled={requestData.dock_number != null ? true : false}
-      />
+      <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+        <TextField
+          required
+          id="dock_number"
+          label="Dock Number"
+          name="dock_number"
+          value={requestData.dock_number ?? dockNumberValue}
+          onChange={(e) => setDockNumberValue(e.target.value)}
+          autoComplete="off"
+          disabled={requestData.dock_number != null || requestData.container_drop}
+        />
+        <FormControlLabel
+          control={
+            <Checkbox
+              checked={requestData.container_drop}
+              onChange={handleChange}
+              name="container_drop"
+              disabled={requestData.dock_number != null}
+            />
+          }
+          label="Drop in Yard"
+        />
+      </Box>
     </Box>
   );
 
@@ -164,8 +179,8 @@ function FormActions({
             autoComplete="off"
             sx={{ whiteSpace: "pre-wrap", my: 1 }}
           />
-          <Button name="dock_number" variant="contained" onClick={handleButton} disabled={!dockNumberValue || !!formAlert?.onAcknowledge}>
-            Send To Dock
+          <Button name="dock_number" variant="contained" onClick={handleButton} disabled={(!dockNumberValue && !requestData.container_drop) || !!formAlert?.onAcknowledge}>
+            {requestData.container_drop ? "Send To Yard" : "Send To Dock"}
           </Button>
         </Box>
       );
