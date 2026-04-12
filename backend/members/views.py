@@ -85,8 +85,20 @@ class RequestView(viewsets.ModelViewSet):
                 Customer.objects.filter(id=updated_data['customer']['id']).update(
                     send_email_updates=send_email_updates
                 )
+            # Normalize datetime fields to strings before comparing to avoid
+            # false positives from model_to_dict (datetime) vs serializer (ISO string)
+            datetime_fields = ['date_time', 'check_in_time', 'docked_time', 'completed_time', 'cancelled_time']
+            normalized_original = {
+                k: v.isoformat() if hasattr(v, 'isoformat') else v
+                for k, v in original_data.items()
+            }
+            normalized_updated = {
+                k: v.replace('Z', '+00:00') if isinstance(v, str) and k in datetime_fields and v else v
+                for k, v in updated_data.items()
+            }
             altered_fields = [
-                field for field in original_data if original_data[field] != updated_data[field]]
+                field for field in normalized_original
+                if normalized_original[field] != normalized_updated.get(field)]
             if 'approved' in altered_fields and updated_data['approved']:
                 approval_log = ApprovalLog(
                     approver=request.user, request=requestUpdate)
