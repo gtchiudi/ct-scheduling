@@ -150,7 +150,7 @@ export const customerDataEffectAtom = atom(
   (get) => get(customerDataAtom),
   async (_get, set) => {
     try {
-      const data = await axios.get("/api/customer/");
+      const data = await axios.get("/api/customer/", { _skipAuthRedirect: true });
       set(customerDataAtom, data.data);
     } catch (error) {
       console.log("Error fetching customers:", error);
