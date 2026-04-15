@@ -176,6 +176,24 @@ def appointment_declined_email_template(ref_number, date_time):
     {get_email_footer()}
     '''
 
+def appointment_cancelled_email_template(ref_number, date_time):
+    """Template for notifying the submitter that their appointment was cancelled"""
+    return f'''
+    {get_email_header()}
+        <h1>Appointment Cancelled</h1>
+        <p>Your appointment has been cancelled.</p>
+
+        <div class="alert-box">
+            <p><strong>Reference Number:</strong> {ref_number}</p>
+            <p><strong>Date &amp; Time:</strong> {date_time}</p>
+        </div>
+
+        <p>Please email <a href="mailto:appointments@candortransport.com">appointments@candortransport.com</a> to reschedule or discuss alternative arrangements.</p>
+
+        <p>Thank you for choosing Candor Logistics.</p>
+    {get_email_footer()}
+    '''
+
 def request_confirmation_email_template(ref_number, date_time):
     """Template for customer request confirmation"""
     return f'''

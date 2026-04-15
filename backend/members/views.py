@@ -12,6 +12,7 @@ from .messages import send_email, send_text
 from twilio.base.exceptions import TwilioRestException
 from .email_templates import (
     appointment_approved_email_template,
+    appointment_cancelled_email_template,
     calendar_event_confirmation_email_template,
     new_request_email_template,
     request_confirmation_email_template,
@@ -149,6 +150,19 @@ class RequestView(viewsets.ModelViewSet):
             elif 'cancelled_time' in altered_fields:
                 requestUpdate.active = False
                 requestUpdate.save()
+
+                if updated_data.get('email'):
+                    date_time = datetime.fromisoformat(
+                        updated_data["date_time"].replace('Z', '+00:00'))
+                    date_time = date_time.astimezone(
+                        pytz.timezone('America/New_York'))
+                    send_email(
+                        updated_data['email'],
+                        'Appointment Cancelled',
+                        appointment_cancelled_email_template(
+                            updated_data["ref_number"],
+                            date_time.strftime('%Y-%m-%d %H:%M:%S'),
+                        ))
 
 
             elif (original_data.get('dock_number') is None and updated_data.get('dock_number') is not None) or \
