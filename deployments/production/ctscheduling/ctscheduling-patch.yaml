@@ -39,11 +39,11 @@ spec:
               secretKeyRef:
                 name: ctscheduling-env-secret
                 key: CSRF_TRUSTED_ORIGIN
-          - name: SENDGRID_API_KEY
+          - name: SMTP_API_KEY
             valueFrom:
               secretKeyRef:
                 name: ctscheduling-env-secret
-                key: SENDGRID_API_KEY
+                key: SMTP_API_KEY
           - name: TWILIO_ACCOUNT_SID
             valueFrom:
               secretKeyRef:

@@ -84,7 +84,7 @@ def get_email_footer():
             </div>
             <div class="email-footer">
                 <p>This is an automated message from Candor Logistics CT-Scheduling System.</p>
-                <p>Please do not reply to this email.</p>
+                <p>You may reply directly to this email — replies go to <a href="mailto:appointments@candortransport.com">appointments@candortransport.com</a>.</p>
             </div>
         </div>
     </body>
@@ -105,7 +105,7 @@ def appointment_approved_email_template(ref_number, date_time, delivery):
             <p><strong>Date Time:</strong> {date_time}</p>
         </div>
         
-        <p>Please email <a href="mailto:appointments@candortransport.com">appointments@candortransport.com</a> with any questions or concerns.</p>
+        <p>Reply to this email or contact <a href="mailto:appointments@candortransport.com">appointments@candortransport.com</a> with any questions or concerns.</p>
         
         <p>Thank you for choosing Candor Logistics.</p>
     {get_email_footer()}
@@ -122,7 +122,7 @@ def calendar_event_confirmation_email_template(ref_number, company_name, date_ti
         <div class="info-box">
             <p><strong>Reference Number:</strong> {ref_number}</p>
             <p><strong>Type:</strong> {appointment_type}</p>
-            <p><strong>Customer:</strong> {company_name}</p>
+            <p><strong>Carrier:</strong> {company_name}</p>
             <p><strong>Date Time:</strong> {date_time}</p>
         </div>
     {get_email_footer()}
@@ -139,7 +139,7 @@ def new_request_email_template(ref_number, company_name, date_time, delivery):
         <div class="alert-box">
             <p><strong>Reference Number:</strong> {ref_number}</p>
             <p><strong>Type:</strong> {appointment_type}</p>
-            <p><strong>Customer:</strong> {company_name}</p>
+            <p><strong>Carrier:</strong> {company_name}</p>
             <p><strong>Date Time:</strong> {date_time}</p>
         </div>
     {get_email_footer()}
@@ -160,7 +160,7 @@ def customer_appointment_email_template(ref_number, company_name, date_time, del
             <p><strong>Date &amp; Time:</strong> {date_time}</p>
         </div>
 
-        <p>Please email <a href="mailto:appointments@candortransport.com">appointments@candortransport.com</a> with any questions or concerns.</p>
+        <p>Reply to this email or contact <a href="mailto:appointments@candortransport.com">appointments@candortransport.com</a> with any questions or concerns.</p>
 
         <p>Thank you for choosing Candor Logistics.</p>
     {get_email_footer()}
@@ -180,7 +180,7 @@ def appointment_declined_email_template(ref_number, date_time, delivery):
             <p><strong>Date &amp; Time:</strong> {date_time}</p>
         </div>
 
-        <p>Please email <a href="mailto:appointments@candortransport.com">appointments@candortransport.com</a> to discuss alternative arrangements.</p>
+        <p>Reply to this email or contact <a href="mailto:appointments@candortransport.com">appointments@candortransport.com</a> to discuss alternative arrangements.</p>
 
         <p>Thank you for choosing Candor Logistics.</p>
     {get_email_footer()}
@@ -200,7 +200,7 @@ def appointment_cancelled_email_template(ref_number, date_time, delivery):
             <p><strong>Date &amp; Time:</strong> {date_time}</p>
         </div>
 
-        <p>Please email <a href="mailto:appointments@candortransport.com">appointments@candortransport.com</a> to reschedule or discuss alternative arrangements.</p>
+        <p>Reply to this email or contact <a href="mailto:appointments@candortransport.com">appointments@candortransport.com</a> to reschedule or discuss alternative arrangements.</p>
 
         <p>Thank you for choosing Candor Logistics.</p>
     {get_email_footer()}
@@ -220,7 +220,7 @@ def request_confirmation_email_template(ref_number, date_time, delivery):
             <p><strong>Date Time:</strong> {date_time}</p>
         </div>
         
-        <p>Email <a href="mailto:appointments@candortransport.com">appointments@candortransport.com</a> for any issues.</p>
+        <p>Reply to this email or contact <a href="mailto:appointments@candortransport.com">appointments@candortransport.com</a> for any issues.</p>
         
         <p>Thank you for choosing Candor Logistics.</p>
     {get_email_footer()}

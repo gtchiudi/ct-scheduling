@@ -1,26 +1,24 @@
 import os
-from sendgrid import SendGridAPIClient
-from sendgrid.helpers.mail import Mail
+from django.core.mail import EmailMessage
 from twilio.rest import Client
+
+SENDER = 'appointments@candortransport.com'
+REPLY_TO = 'appointments@candortransport.com'
 
 
 def send_email(to_email, subject, body):
-    SENDER = 'candor.scheduling@gmail.com'
-    message = Mail(
-        from_email=SENDER,
-        to_emails=to_email,
-        subject=subject,
-        html_content=body
-    )
     try:
-        sg = SendGridAPIClient(os.getenv('SENDGRID_API_KEY'))
-        response = sg.send(message)
-        print(response.status_code)
-        print(response.body)
-        print(response.headers)
+        email = EmailMessage(
+            subject=subject,
+            body=body,
+            from_email=SENDER,
+            to=[to_email],
+            reply_to=[REPLY_TO],
+        )
+        email.content_subtype = 'html'
+        email.send(fail_silently=False)
     except Exception as e:
         print(e)
-        message = None
 
 
 def send_text(to_number, body):

@@ -113,7 +113,7 @@ class RequestView(viewsets.ModelViewSet):
 
                 send_email(
                     updated_data['email'],
-                    'Appointment Request Approved',
+                    f'Appointment Request Approved - #{updated_data["ref_number"]}',
                     appointment_approved_email_template(
                         updated_data["ref_number"],
                         date_time_str,
@@ -126,7 +126,7 @@ class RequestView(viewsets.ModelViewSet):
                 if send_updates and customer_data and customer_data.get('email_address'):
                     send_email(
                         customer_data['email_address'],
-                        'Appointment Scheduled',
+                        f'Appointment Scheduled - #{updated_data["ref_number"]}',
                         customer_appointment_email_template(
                             updated_data["ref_number"],
                             updated_data["company_name"],
@@ -143,7 +143,7 @@ class RequestView(viewsets.ModelViewSet):
                 if updated_data.get('email'):
                     send_email(
                         updated_data['email'],
-                        'Appointment Request Declined',
+                        f'Appointment Request Declined - #{updated_data["ref_number"]}',
                         appointment_declined_email_template(
                             updated_data["ref_number"],
                             date_time.strftime('%Y-%m-%d %H:%M:%S'),
@@ -161,7 +161,7 @@ class RequestView(viewsets.ModelViewSet):
                         pytz.timezone('America/New_York'))
                     send_email(
                         updated_data['email'],
-                        'Appointment Cancelled',
+                        f'Appointment Cancelled - #{updated_data["ref_number"]}',
                         appointment_cancelled_email_template(
                             updated_data["ref_number"],
                             date_time.strftime('%Y-%m-%d %H:%M:%S'),
@@ -238,7 +238,7 @@ Reply 'STOP' to opt out of future notifications.''')
 
             send_email(
                 candorEmailRecipient,
-                'New Calendar Event Confirmation',
+                f'New Calendar Event - #{request.data["ref_number"]}',
                 calendar_event_confirmation_email_template(
                     request.data["ref_number"],
                     request.data["company_name"],
@@ -255,7 +255,7 @@ Reply 'STOP' to opt out of future notifications.''')
                     if customer.email_address:
                         send_email(
                             customer.email_address,
-                            'Appointment Scheduled',
+                            f'Appointment Scheduled - #{request.data["ref_number"]}',
                             customer_appointment_email_template(
                                 request.data["ref_number"],
                                 request.data["company_name"],
@@ -272,7 +272,7 @@ Reply 'STOP' to opt out of future notifications.''')
                 pytz.timezone('America/New_York'))
             send_email(  # to sales team
                 candorEmailRecipient,
-                'New Pending Request',
+                f'New Pending Request - #{request.data["ref_number"]}',
                 new_request_email_template(
                     request.data["ref_number"],
                     request.data["company_name"],
@@ -282,7 +282,7 @@ Reply 'STOP' to opt out of future notifications.''')
 
             send_email(  # to customer
                 request.data['email'],
-                'Appointment Request Confirmation',
+                f'Appointment Request Confirmation - #{request.data["ref_number"]}',
                 request_confirmation_email_template(
                     request.data["ref_number"],
                     date_time.strftime('%Y-%m-%d %H:%M:%S'),
