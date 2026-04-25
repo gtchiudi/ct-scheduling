@@ -91,15 +91,17 @@ def get_email_footer():
     </html>
     '''
 
-def appointment_approved_email_template(ref_number, date_time):
+def appointment_approved_email_template(ref_number, date_time, delivery):
     """Template for appointment approval notification to customer"""
+    appointment_type = 'Delivery' if delivery else 'Pickup'
     return f'''
     {get_email_header()}
         <h1>Appointment Request Approved</h1>
         <p>Your appointment request has been approved. Please review details below.</p>
-        
+
         <div class="success-box">
             <p><strong>Reference Number:</strong> {ref_number}</p>
+            <p><strong>Type:</strong> {appointment_type}</p>
             <p><strong>Date Time:</strong> {date_time}</p>
         </div>
         
@@ -109,38 +111,43 @@ def appointment_approved_email_template(ref_number, date_time):
     {get_email_footer()}
     '''
 
-def calendar_event_confirmation_email_template(ref_number, company_name, date_time):
+def calendar_event_confirmation_email_template(ref_number, company_name, date_time, delivery):
     """Template for calendar event confirmation"""
+    appointment_type = 'Delivery' if delivery else 'Pickup'
     return f'''
     {get_email_header()}
         <h1>New Appointment Created</h1>
         <p>A new appointment has been created. Please review.</p>
-        
+
         <div class="info-box">
             <p><strong>Reference Number:</strong> {ref_number}</p>
+            <p><strong>Type:</strong> {appointment_type}</p>
             <p><strong>Customer:</strong> {company_name}</p>
             <p><strong>Date Time:</strong> {date_time}</p>
         </div>
     {get_email_footer()}
     '''
 
-def new_request_email_template(ref_number, company_name, date_time):
+def new_request_email_template(ref_number, company_name, date_time, delivery):
     """Template for new pending request notification to team"""
+    appointment_type = 'Delivery' if delivery else 'Pickup'
     return f'''
     {get_email_header()}
         <h1>New Pending Request</h1>
         <p>A new request is now pending. Please review.</p>
-        
+
         <div class="alert-box">
             <p><strong>Reference Number:</strong> {ref_number}</p>
+            <p><strong>Type:</strong> {appointment_type}</p>
             <p><strong>Customer:</strong> {company_name}</p>
             <p><strong>Date Time:</strong> {date_time}</p>
         </div>
     {get_email_footer()}
     '''
 
-def customer_appointment_email_template(ref_number, company_name, date_time):
+def customer_appointment_email_template(ref_number, company_name, date_time, delivery):
     """Template for notifying a customer of their scheduled appointment"""
+    appointment_type = 'Delivery' if delivery else 'Pickup'
     return f'''
     {get_email_header()}
         <h1>Appointment Scheduled</h1>
@@ -148,6 +155,7 @@ def customer_appointment_email_template(ref_number, company_name, date_time):
 
         <div class="success-box">
             <p><strong>Reference Number:</strong> {ref_number}</p>
+            <p><strong>Type:</strong> {appointment_type}</p>
             <p><strong>Carrier:</strong> {company_name}</p>
             <p><strong>Date &amp; Time:</strong> {date_time}</p>
         </div>
@@ -158,8 +166,9 @@ def customer_appointment_email_template(ref_number, company_name, date_time):
     {get_email_footer()}
     '''
 
-def appointment_declined_email_template(ref_number, date_time):
+def appointment_declined_email_template(ref_number, date_time, delivery):
     """Template for notifying the submitter that their request was declined"""
+    appointment_type = 'Delivery' if delivery else 'Pickup'
     return f'''
     {get_email_header()}
         <h1>Appointment Request Declined</h1>
@@ -167,6 +176,7 @@ def appointment_declined_email_template(ref_number, date_time):
 
         <div class="alert-box">
             <p><strong>Reference Number:</strong> {ref_number}</p>
+            <p><strong>Type:</strong> {appointment_type}</p>
             <p><strong>Date &amp; Time:</strong> {date_time}</p>
         </div>
 
@@ -176,8 +186,9 @@ def appointment_declined_email_template(ref_number, date_time):
     {get_email_footer()}
     '''
 
-def appointment_cancelled_email_template(ref_number, date_time):
+def appointment_cancelled_email_template(ref_number, date_time, delivery):
     """Template for notifying the submitter that their appointment was cancelled"""
+    appointment_type = 'Delivery' if delivery else 'Pickup'
     return f'''
     {get_email_header()}
         <h1>Appointment Cancelled</h1>
@@ -185,6 +196,7 @@ def appointment_cancelled_email_template(ref_number, date_time):
 
         <div class="alert-box">
             <p><strong>Reference Number:</strong> {ref_number}</p>
+            <p><strong>Type:</strong> {appointment_type}</p>
             <p><strong>Date &amp; Time:</strong> {date_time}</p>
         </div>
 
@@ -194,15 +206,17 @@ def appointment_cancelled_email_template(ref_number, date_time):
     {get_email_footer()}
     '''
 
-def request_confirmation_email_template(ref_number, date_time):
+def request_confirmation_email_template(ref_number, date_time, delivery):
     """Template for customer request confirmation"""
+    appointment_type = 'Delivery' if delivery else 'Pickup'
     return f'''
     {get_email_header()}
         <h1>Appointment Request Confirmation</h1>
         <p>Your appointment request has been received. Please allow 24 hours for approval.</p>
-        
+
         <div class="info-box">
             <p><strong>Reference Number:</strong> {ref_number}</p>
+            <p><strong>Type:</strong> {appointment_type}</p>
             <p><strong>Date Time:</strong> {date_time}</p>
         </div>
         

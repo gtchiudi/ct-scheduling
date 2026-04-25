@@ -117,6 +117,7 @@ class RequestView(viewsets.ModelViewSet):
                     appointment_approved_email_template(
                         updated_data["ref_number"],
                         date_time_str,
+                        updated_data.get("delivery", False),
                     ))
 
                 # Notify customer if send_email_updates is set and customer has an email
@@ -130,6 +131,7 @@ class RequestView(viewsets.ModelViewSet):
                             updated_data["ref_number"],
                             updated_data["company_name"],
                             date_time_str,
+                            updated_data.get("delivery", False),
                         ))
 
             elif 'active' in altered_fields and not updated_data['active'] and not updated_data.get('cancelled_time'):
@@ -145,6 +147,7 @@ class RequestView(viewsets.ModelViewSet):
                         appointment_declined_email_template(
                             updated_data["ref_number"],
                             date_time.strftime('%Y-%m-%d %H:%M:%S'),
+                            updated_data.get("delivery", False),
                         ))
 
             elif 'cancelled_time' in altered_fields:
@@ -162,6 +165,7 @@ class RequestView(viewsets.ModelViewSet):
                         appointment_cancelled_email_template(
                             updated_data["ref_number"],
                             date_time.strftime('%Y-%m-%d %H:%M:%S'),
+                            updated_data.get("delivery", False),
                         ))
 
 
@@ -239,6 +243,7 @@ Reply 'STOP' to opt out of future notifications.''')
                     request.data["ref_number"],
                     request.data["company_name"],
                     date_time_str,
+                    request.data.get("delivery", False),
                 ))
 
             # Notify customer if send_email_updates and customer email provided
@@ -255,6 +260,7 @@ Reply 'STOP' to opt out of future notifications.''')
                                 request.data["ref_number"],
                                 request.data["company_name"],
                                 date_time_str,
+                                request.data.get("delivery", False),
                             ))
                 except Customer.DoesNotExist:
                     pass
@@ -270,7 +276,8 @@ Reply 'STOP' to opt out of future notifications.''')
                 new_request_email_template(
                     request.data["ref_number"],
                     request.data["company_name"],
-                    date_time.strftime('%Y-%m-%d %H:%M:%S')
+                    date_time.strftime('%Y-%m-%d %H:%M:%S'),
+                    request.data.get("delivery", False),
                 ))
 
             send_email(  # to customer
@@ -278,7 +285,8 @@ Reply 'STOP' to opt out of future notifications.''')
                 'Appointment Request Confirmation',
                 request_confirmation_email_template(
                     request.data["ref_number"],
-                    date_time.strftime('%Y-%m-%d %H:%M:%S')
+                    date_time.strftime('%Y-%m-%d %H:%M:%S'),
+                    request.data.get("delivery", False),
                 ))
 
         return response
