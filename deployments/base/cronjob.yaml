@@ -1,0 +1,22 @@
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: flush-expired-tokens
+spec:
+  schedule: "0 2 * * *"
+  timeZone: "America/New_York"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: OnFailure
+          containers:
+          - name: flush-expired-tokens
+            image: localhost:5000/ctscheduling:latest
+            command: ["python", "manage.py", "flushexpiredtokens"]
+          imagePullSecrets:
+            - name: oracle-docker-registry
