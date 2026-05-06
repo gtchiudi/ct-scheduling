@@ -76,7 +76,7 @@ export function CustomViewer({ event, onClose }) {
             <Form request={event.request} closeModal={closeDialog} onLockChange={handleLockChange} />
           </DialogContent>
           <DialogActions>
-            {!editAppointment && event.request.check_in_time == null && userGroups.includes("Admin", "Dispatch") && (
+            {!editAppointment && event.request.check_in_time == null && userGroups.some(g => ["Admin", "Dispatch"].includes(g)) && (
               <Button onClick={enableEdit}> Edit Appointment</Button>
             )}
             <Button onClick={closeDialog}>Close</Button>
