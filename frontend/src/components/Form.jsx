@@ -49,7 +49,7 @@ import { validateEmail, validatePhone } from "../utils/validation.js";
 
 const ADD_CUSTOMER_OPTION = { id: '__add__', customer_name: '+ Add New Customer', email_address: '', send_email_updates: false };
 
-const APPOINTMENT_LENGTH_OPTIONS = [
+export const APPOINTMENT_LENGTH_OPTIONS = [
   { label: '15 Minutes', value: 15 },
   { label: '30 Minutes', value: 30 },
   { label: '45 Minutes', value: 45 },

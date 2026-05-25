@@ -30,7 +30,7 @@ import {
   editAppointmentAtom,
 } from "../components/atoms.jsx";
 import axios from "axios";
-import Form from "../components/Form.jsx";
+import Form, { APPOINTMENT_LENGTH_OPTIONS } from "../components/Form.jsx";
 
 function isWarehouseChecked(id, warehousesChecked, allWarehouses) {
   if (!warehousesChecked || warehousesChecked.length === 0) {
@@ -454,34 +454,27 @@ export default function Calendar() {
                   <Typography variant="subtitle2" fontWeight="bold">
                     Reference Number: {event.title}
                   </Typography>
-                  <Typography
-                    variant="caption"
-                    color="text.secondary"
-                    display="block"
-                  >
-                    Customer: {event.request.customer_name ? event.request.customer_name : event.request.company_name }
-                  </Typography>
-                  <Typography
-                    variant="caption"
-                    color="text.secondary"
-                    display="block"
-                    sx={{ lineHeight: 1.2 }}
-                  >
-                    Appointment Status: {getEventStatus(event)}
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary" display="block">
-                    Appointment Time: {dayjs(event.start).format("HH:mm")}
-                  </Typography>
+                  {[
+                    `Customer: ${event.request.customer_name ?? event.request.company_name}`,
+                    `Appointment Time: ${dayjs(event.start).format("HH:mm")}`,
+                    `Appointment Status: ${getEventStatus(event)}`,
+                    `Appointment Window: ${APPOINTMENT_LENGTH_OPTIONS.find(opt => opt.value === event.request.appointment_length)?.label}`,
+                  ].map((line) => (
+                    <Typography key={line} variant="caption" color="text.secondary" display="block" sx={{ lineHeight: 1.2 }}>
+                      {line}
+                    </Typography>
+                  ))}
                   {event.request.note_section && (
                     <Box>
                       <Typography
                         variant="caption"
                         color="text.secondary"
                         display="block"
+                        sx={{ lineHeight: 1.2 }}
                       >
                         Notes:
                       </Typography>
-                      <Typography variant="body2" sx={{ whiteSpace: "pre-wrap" }}>
+                      <Typography variant="caption" sx={{ whiteSpace: "pre-wrap", lineHeight: 1.2 }}>
                         {event.request.note_section}
                       </Typography>
                     </Box>
