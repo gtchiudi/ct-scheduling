@@ -2,7 +2,7 @@
 
 import sys, os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
-from playwright.config import BASE_URL  # noqa: E402
+from e2e_config import BASE_URL  # noqa: E402
 
 
 class BasePage:

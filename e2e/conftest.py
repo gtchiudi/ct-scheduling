@@ -19,15 +19,15 @@ from playwright.sync_api import sync_playwright
 
 import sys
 sys.path.insert(0, os.path.dirname(__file__))
-from playwright.config import BASE_URL, HEADLESS, SLOW_MO, BROWSER  # noqa: E402
+from e2e_config import BASE_URL, HEADLESS, SLOW_MO, BROWSER  # noqa: E402
 
 # ---------------------------------------------------------------------------
 # Credentials for seeded test users (created by seed_test_data)
 # ---------------------------------------------------------------------------
 DISPATCH_USERNAME = os.environ.get("E2E_DISPATCH_USER", "e2e_dispatch")
-DISPATCH_PASSWORD = os.environ.get("E2E_DISPATCH_PASS", "E2eDispatch123!")
+DISPATCH_PASSWORD = os.environ.get("E2E_DISPATCH_PASS", "TestE2eD!spatch123!")
 DOCK_USERNAME = os.environ.get("E2E_DOCK_USER", "e2e_dock")
-DOCK_PASSWORD = os.environ.get("E2E_DOCK_PASS", "E2eDock123!")
+DOCK_PASSWORD = os.environ.get("E2E_DOCK_PASS", "TestE2eD0ck123!")
 
 
 # ---------------------------------------------------------------------------
