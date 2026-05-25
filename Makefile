@@ -44,7 +44,39 @@ rollback-history:
 clean:
 	rm -f deployments/production/.replacements.bak
 
-.PHONY: build diff deploy rollback clean migrate
+# ─── Test targets ─────────────────────────────────────────────────────────────
+
+# Backend unit tests (fast, in-memory SQLite, no network)
+test:
+	@echo "Running backend unit tests..."
+	python -m pytest \
+		--cov=members \
+		--cov-report=term-missing \
+		--cov-report=html:backend/htmlcov \
+		-q
+	@echo "Coverage report: backend/htmlcov/index.html"
+
+# Frontend component/unit tests (Vitest + React Testing Library)
+test-frontend:
+	@echo "Running frontend tests..."
+	cd frontend && npm run test
+	@echo "Frontend tests complete."
+
+# E2E tests against a running app instance
+# Override target: make test-e2e E2E_BASE_URL=https://staging.example.com
+test-e2e:
+	@echo "Running E2E tests against $${E2E_BASE_URL:-http://localhost:8000}..."
+	python -m pytest e2e/tests/ -v --tb=short -x
+
+# Run backend + frontend unit tests, then build+deploy
+# E2E tests are excluded from the deploy gate — run them post-deploy against staging
+deploy-tested: test test-frontend
+	@echo "All unit tests passed. Proceeding with deployment..."
+	$(MAKE) build
+	$(MAKE) diff
+	$(MAKE) deploy
+
+.PHONY: build diff deploy rollback clean migrate test test-frontend test-e2e deploy-tested
 
 # Get most recent pod name (sorted by creation timestamp)
 GET_POD = kubectl -n ctscheduling get pods --sort-by=.metadata.creationTimestamp -o jsonpath='{.items[-1:].metadata.name}'

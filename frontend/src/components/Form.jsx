@@ -402,20 +402,21 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
     ) {
       // if the value of load type is not container, but the container drop is true or container number is not empty,
       // reset the container drop, container number, ref number, trailer number
-      setRefNumbers([""]);
+      const firstRef = refNumbers[0] ?? "";
+      setRefNumbers([firstRef]);
       setRequestData({
         ...requestData,
         [name]: processedValue,
         container_drop: false,
         container_number: "",
         trailer_number: "",
-        ref_number: "",
+        ref_number: firstRef,
       });
       setRequiredFieldsCompleted((prevCompleted) => ({
         // reset required fields that we erased.
         ...prevCompleted,
         trailer_number: false,
-        ref_number: false,
+        ref_number: !!firstRef,
       }));
     } else setRequestData({ ...requestData, [name]: processedValue });
 
