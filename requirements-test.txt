@@ -1,0 +1,14 @@
+-r backend/requirements.txt
+
+# Test runner and Django integration
+pytest==8.3.3
+pytest-django==4.8.0
+pytest-cov==5.0.0
+pytest-mock==3.14.0
+
+# Test data factories
+factory-boy==3.3.0
+faker==24.0.0
+
+# E2E tests
+playwright==1.44.0
