@@ -453,9 +453,14 @@ export default function Calendar() {
                   elevation={1}
                   sx={{ ...paperSx, height: "auto", padding: "6px 10px" }}
                 >
-                  <Typography variant="subtitle2" fontWeight="bold">
-                    Reference Number: {event.title}
-                  </Typography>
+                  {(event.request.ref_number
+                    ? event.request.ref_number.split(";").map(s => s.trim()).filter(Boolean)
+                    : [event.title]
+                  ).map((ref, i, arr) => (
+                    <Typography key={ref} variant="subtitle2" fontWeight="bold">
+                      {arr.length === 1 ? "Reference / PO Number" : `Reference / PO Number ${i + 1}`}: {ref}
+                    </Typography>
+                  ))}
                   <Typography
                     variant="caption"
                     color="text.secondary"

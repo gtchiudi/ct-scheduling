@@ -867,6 +867,7 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
                 onChange={(e) => handleRefNumberChange(index, e.target.value)}
                 autoComplete="off"
                 disabled={isReadOnly}
+                inputProps={{ maxLength: 49 }}
                 InputProps={{
                   endAdornment: (showAddNew || showRemove) ? (
                     <InputAdornment position="end">
@@ -1058,6 +1059,7 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
                 onChange={(e) => handleRefNumberChange(0, e.target.value)}
                 autoComplete="off"
                 disabled={request && path !== "/PendingRequests" && !editAppointment}
+                inputProps={{ maxLength: 49 }}
               />
               <FormControlLabel
                 control={<Checkbox />}
