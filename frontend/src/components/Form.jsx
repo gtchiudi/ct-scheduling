@@ -49,6 +49,18 @@ import { validateEmail, validatePhone } from "../utils/validation.js";
 
 const ADD_CUSTOMER_OPTION = { id: '__add__', customer_name: '+ Add New Customer', email_address: '', send_email_updates: false };
 
+const APPOINTMENT_LENGTH_OPTIONS = [
+  { label: '15 Minutes', value: 15 },
+  { label: '30 Minutes', value: 30 },
+  { label: '45 Minutes', value: 45 },
+  { label: '1 Hour',     value: 60 },
+  { label: '1.5 Hours',  value: 90 },
+  { label: '2 Hours',    value: 120 },
+  { label: '2.5 Hours',    value: 150 },
+  { label: '3 Hours',    value: 180 },
+  { label: '4 Hours',    value: 240 },
+];
+
 function Form({ request, closeModal, dateTime, onLockChange }) {
   const queryClient = useQueryClient();
   const [warehouseData, refreshWarehouseData] = useAtom(warehouseDataEffectAtom);
@@ -141,6 +153,7 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
     container_number: "",
     note_section: "",
     date_time: nextWorkDay(),
+    appointment_length: 15,
     delivery: "",
     trailer_number: "",
     driver_phone_number: null,
@@ -198,15 +211,9 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
 
   // Load type selections
   const load_types = [
-    {
-      value: "Full",
-    },
-    {
-      value: "LTL",
-    },
-    {
-      value: "Container",
-    },
+    { value: "Full", },
+    { value: "LTL",  },
+    { value: "Container", },
   ];
 
   React.useMemo(() => {
@@ -1028,12 +1035,29 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
             </>
           )}
           {requestData.warehouse === "" ? null : request && path != "/PendingRequests" && !editAppointment ? (
-            <DateTimeField
-              disabled
-              label="Appointment Date and Time"
-              name="date_time"
-              value={dayjs(requestData.date_time)}
-            />
+            <>
+              <DateTimeField
+                disabled
+                label="Appointment Date and Time"
+                name="date_time"
+                value={dayjs(requestData.date_time)}
+              />
+              <TextField
+                select
+                label="Appointment Length"
+                value={requestData.appointment_length ?? 15}
+                disabled
+                size="small"
+                SelectProps={{ MenuProps: { disablePortal: true } }}
+                onChange={() => {}}
+              >
+                {APPOINTMENT_LENGTH_OPTIONS.map((opt) => (
+                  <MenuItem key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </MenuItem>
+                ))}
+              </TextField>
+            </>
           ) : (
             <>
               <DateTimePicker
@@ -1109,6 +1133,23 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
                   },
                 }}
               />
+              {path !== "/RequestForm" && (
+                <TextField
+                  select
+                  label="Appointment Length"
+                  value={requestData.appointment_length ?? 15}
+                  onChange={(e) => setRequestData({ ...requestData, appointment_length: e.target.value })}
+                  disabled={request && path !== "/PendingRequests" && !editAppointment}
+                  size="small"
+                  SelectProps={{ MenuProps: { disablePortal: true } }}
+                >
+                  {APPOINTMENT_LENGTH_OPTIONS.map((opt) => (
+                    <MenuItem key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </MenuItem>
+                  ))}
+                </TextField>
+              )}
             </>
           )}
 
