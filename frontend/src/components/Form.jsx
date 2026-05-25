@@ -752,7 +752,7 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
           margine="normal"
           sx={{
             "& .MuiTextField-root": { m: 1, width: "60ch" },
-            "& > :not(style)": { m: 1, width: "60ch" },
+            "& > :not(style)": { mx: 1, width: "60ch" },
             maxWidth: "70vw",
           }}
         >
@@ -764,7 +764,7 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
             onChange={handleChange}
             autoComplete="off"
             disabled={request && path != "/PendingRequests" && !editAppointment ? true : false}
-          ></TextField>
+          />
 
           <TextField
             required={requiredFields.includes("phone_number")}
@@ -779,7 +779,7 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
             InputProps={{
               inputComponent: PhoneMaskCustom,
             }}
-          ></TextField>
+          />
 
           <TextField
             required={requiredFields.includes("email")}
@@ -791,7 +791,7 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
             error={emailError}
             helperText={emailError ? "Please enter a valid email address" : ""}
             disabled={request && path != "/PendingRequests" && !editAppointment ? true : false}
-          ></TextField>
+          />
 
           <TextField
             required={requiredFields.includes("ref_number")}
@@ -807,7 +807,7 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
                 ? true
                 : false
             }
-          ></TextField>
+          />
 
           {path !== "/RequestForm" && (
             <>
@@ -1044,7 +1044,7 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
               />
               <TextField
                 select
-                label="Appointment Length"
+                label="Appointment Window"
                 value={requestData.appointment_length ?? 15}
                 disabled
                 size="small"
@@ -1136,7 +1136,7 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
               {path !== "/RequestForm" && (
                 <TextField
                   select
-                  label="Appointment Length"
+                  label="Appointment Window"
                   value={requestData.appointment_length ?? 15}
                   onChange={(e) => setRequestData({ ...requestData, appointment_length: e.target.value })}
                   disabled={request && path !== "/PendingRequests" && !editAppointment}

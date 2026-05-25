@@ -457,8 +457,8 @@ export default function Calendar() {
                   {[
                     `Customer: ${event.request.customer_name ?? event.request.company_name}`,
                     `Appointment Time: ${dayjs(event.start).format("HH:mm")}`,
-                    `Appointment Status: ${getEventStatus(event)}`,
                     `Appointment Window: ${APPOINTMENT_LENGTH_OPTIONS.find(opt => opt.value === event.request.appointment_length)?.label}`,
+                    `Appointment Status: ${getEventStatus(event)}`,
                   ].map((line) => (
                     <Typography key={line} variant="caption" color="text.secondary" display="block" sx={{ lineHeight: 1.2 }}>
                       {line}
