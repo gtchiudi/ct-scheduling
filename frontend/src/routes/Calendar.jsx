@@ -356,7 +356,7 @@ export default function Calendar() {
         event_id: request.id,
         title: request.ref_number,
         start: new Date(request.date_time),
-        end: new Date(dayjs(request.date_time).add(15, "minutes")),
+        end: new Date(dayjs(request.date_time).add(request.appointment_length, "minutes")), // Use the .add here to add appt window length to start time.
         request: request,
         editable: false,
         deletable: false,

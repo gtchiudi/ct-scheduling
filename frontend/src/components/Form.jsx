@@ -76,6 +76,9 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
   const [newCustomerEmailError, setNewCustomerEmailError] = useState(false);
   const [editingCustomerEmail, setEditingCustomerEmail] = useState(false);
   const [customerEmailDraft, setCustomerEmailDraft] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isCreatingCustomer, setIsCreatingCustomer] = useState(false);
+  const [isSavingCustomerEmail, setIsSavingCustomerEmail] = useState(false);
 
   React.useEffect(() => {
     onLockChange?.(formAlert?.onAcknowledge || null);
@@ -411,6 +414,7 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
   };
 
   const handleCreateCustomer = async () => {
+    setIsCreatingCustomer(true);
     try {
       const response = await axios.post("/api/customer/", newCustomerData);
       const created = response.data;
@@ -433,6 +437,8 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
           setNewCustomerEmailError(true);
         }
       }
+    } finally {
+      setIsCreatingCustomer(false);
     }
   };
 
@@ -450,23 +456,19 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
             : "Driver did not consent to SMS notifications. Please inform them of dock number.",
           severity: "warning",
           onAcknowledge: () => {
-            requestData.dock_number = dockNum;
-            requestData.docked_time = dockedTime;
-            updateRequest();
+            updateRequest({ dock_number: dockNum, docked_time: dockedTime });
           },
         });
         return;
       }
-      requestData[name] = dockNum;
-      requestData["docked_time"] = dockedTime;
+      updateRequest({ dock_number: dockNum, docked_time: dockedTime });
     } else if (name == "check_in_time") {
-      requestData[name] = dayjs().format("YYYY-MM-DD HH:mm:ss");
-    } else if (name == 'completed_time'){
-      requestData[name] = dayjs().format("YYYY-MM-DD HH:mm:ss");
-    } else if (name == 'remove_from_calendar') {
-      requestData.active = false;
+      updateRequest({ check_in_time: dayjs().format("YYYY-MM-DD HH:mm:ss") });
+    } else if (name == "completed_time") {
+      updateRequest({ completed_time: dayjs().format("YYYY-MM-DD HH:mm:ss") });
+    } else if (name == "remove_from_calendar") {
+      updateRequest({ active: false });
     }
-    updateRequest();
   };
 
   const handleDateChange = (date) => {
@@ -478,8 +480,7 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
 
 
   const handleApprove = () => {
-    requestData.approved = true;
-    updateRequest();
+    updateRequest({ approved: true });
   };
 
   const handleDialogueClose = () => {
@@ -515,18 +516,17 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
   };
 
   const handleNewRequest = async () => {
-    if (path === "/Calendar") {
-      requestData.approved = true;
-    }
+    const extraFields = path === "/Calendar" ? { approved: true } : {};
 
+    setIsSubmitting(true);
     await flushCustomerEmailDraft();
 
     try {
-      const response = await axios.post("/api/request/", buildPayload());
+      const response = await axios.post("/api/request/", { ...buildPayload(), ...extraFields });
 
       if (path === "/Calendar") {
-        queryClient.invalidateQueries(["requests"]);
         closeModal();
+        queryClient.invalidateQueries(["requests"]);
       } else {
         setSuccessOpen(true);
       }
@@ -546,20 +546,23 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
           setFormAlert({ message: `Phone Error: ${errors.phone_number.join(', ')}`, severity: "error" });
         }
       }
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
-  const updateRequest = async () => {
+  const updateRequest = async (extraFields = {}) => {
+    setIsSubmitting(true);
     await flushCustomerEmailDraft();
     try {
       const response = await axios.put(
         `/api/request/${requestData.id}/`,
-        buildPayload()
+        { ...buildPayload(), ...extraFields }
       );
-      queryClient.invalidateQueries(["pendingRequests"]);
-      queryClient.invalidateQueries(["requests"]);
       setEditAppointment(false);
       closeModal();
+      queryClient.invalidateQueries(["pendingRequests"]);
+      queryClient.invalidateQueries(["requests"]);
     } catch (error) {
       console.error("Error updating request:", error);
 
@@ -585,6 +588,8 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
 
       setEditAppointment(false);
       closeModal();
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -654,7 +659,7 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
           <MuiButton onClick={() => { setAddCustomerOpen(false); setNewCustomerEmailError(false); }}>Cancel</MuiButton>
           <MuiButton
             variant="contained"
-            disabled={!newCustomerData.customer_name || newCustomerEmailError}
+            disabled={!newCustomerData.customer_name || newCustomerEmailError || isCreatingCustomer}
             onClick={handleCreateCustomer}
           >
             Create
@@ -677,10 +682,10 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
             autoFocus
             variant="contained"
             color="error"
+            disabled={isSubmitting}
             onClick={() => {
               setDeclineConfirmOpen(false);
-              requestData.active = false;
-              updateRequest();
+              updateRequest({ active: false });
             }}
           >
             Decline
@@ -706,10 +711,10 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
             autoFocus
             variant="contained"
             color="error"
+            disabled={isSubmitting}
             onClick={() => {
               setCancelConfirmOpen(false);
-              requestData.cancelled_time = dayjs().format("YYYY-MM-DD HH:mm:ss");
-              updateRequest();
+              updateRequest({ cancelled_time: dayjs().format("YYYY-MM-DD HH:mm:ss") });
             }}
           >
             Cancel Appointment
@@ -855,8 +860,9 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
                           {editingCustomerEmail ? (
                             <IconButton
                               size="small"
-                              disabled={customerEmailDraft.length > 0 && !validateEmail(customerEmailDraft)}
+                              disabled={isSavingCustomerEmail || (customerEmailDraft.length > 0 && !validateEmail(customerEmailDraft))}
                               onClick={async () => {
+                                setIsSavingCustomerEmail(true);
                                 try {
                                   await axios.patch(`/api/customer/${requestData.customer.id}/`, { email_address: customerEmailDraft });
                                   await refreshCustomerData();
@@ -867,6 +873,8 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
                                   setEditingCustomerEmail(false);
                                 } catch (error) {
                                   console.error("Error updating customer email:", error);
+                                } finally {
+                                  setIsSavingCustomerEmail(false);
                                 }
                               }}
                             >
@@ -1163,6 +1171,7 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
             setCancelConfirmOpen={setCancelConfirmOpen}
             setDeclineConfirmOpen={setDeclineConfirmOpen}
             submitButtonDisabled={submitButtonDisabled}
+            isSubmitting={isSubmitting}
           />
         </Stack>
       </FormControl>

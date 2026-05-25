@@ -65,6 +65,7 @@ class Request(BaseModel):
     note_section = models.CharField(
         max_length=512, null=True, blank=True)  # changable via emp
     date_time = models.DateTimeField("Request Date")  # changable via emp
+    appointment_length = models.IntegerField(default=15)
     delivery = models.BooleanField(default=False)  # changable via emp
     # Initial Request
     trailer_number = models.CharField(

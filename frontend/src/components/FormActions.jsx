@@ -18,6 +18,7 @@ function FormActions({
   setCancelConfirmOpen,
   setDeclineConfirmOpen,
   submitButtonDisabled,
+  isSubmitting,
 }) {
   const [dockNumberValue, setDockNumberValue] = useState("");
 
@@ -78,7 +79,10 @@ function FormActions({
           control={
             <Checkbox
               checked={requestData.container_drop}
-              onChange={handleChange}
+              onChange={(e) => {
+                if (e.target.checked) setDockNumberValue("");
+                handleChange(e);
+              }}
               name="container_drop"
               disabled={requestData.dock_number != null || requestData.docked_time != null}
             />
@@ -116,10 +120,10 @@ function FormActions({
   if (path === "/PendingRequests") {
     return (
       <Stack display="flex" justifyContent="center" spacing={2} direction="row">
-        <Button color="error" variant="contained" onClick={() => setDeclineConfirmOpen(true)}>
+        <Button color="error" variant="contained" onClick={() => setDeclineConfirmOpen(true)} disabled={isSubmitting}>
           Decline
         </Button>
-        <Button color="success" variant="contained" onClick={handleApprove} disabled={submitButtonDisabled}>
+        <Button color="success" variant="contained" onClick={handleApprove} disabled={submitButtonDisabled || isSubmitting}>
           Approve
         </Button>
       </Stack>
@@ -129,7 +133,7 @@ function FormActions({
   if (path === "/RequestForm" || !requestData.approved) {
     return (
       <Box>
-        <Button name="submit" variant="contained" onClick={handleNewRequest} disabled={submitButtonDisabled}>
+        <Button name="submit" variant="contained" onClick={handleNewRequest} disabled={submitButtonDisabled || isSubmitting}>
           Submit
         </Button>
       </Box>
@@ -141,10 +145,10 @@ function FormActions({
       if (editAppointment) {
         return (
           <Box sx={{ display: "flex", gap: 1, justifyContent: "center" }}>
-            <Button variant="contained" color="error" onClick={() => setCancelConfirmOpen(true)}>
+            <Button variant="contained" color="error" onClick={() => setCancelConfirmOpen(true)} disabled={isSubmitting}>
               Cancel Appointment
             </Button>
-            <Button variant="contained" color="success" onClick={updateRequest} disabled={submitButtonDisabled}>
+            <Button variant="contained" color="success" onClick={updateRequest} disabled={submitButtonDisabled || isSubmitting}>
               Save Changes
             </Button>
           </Box>
@@ -157,7 +161,7 @@ function FormActions({
       return (
         <Box>
           {formEnd}
-          <Button name="check_in_time" variant="contained" onClick={handleButton} disabled={!isDriverPhoneValid}>
+          <Button name="check_in_time" variant="contained" onClick={handleButton} disabled={!isDriverPhoneValid || isSubmitting}>
             Check-In
           </Button>
         </Box>
@@ -179,7 +183,7 @@ function FormActions({
             autoComplete="off"
             sx={{ whiteSpace: "pre-wrap", my: 1 }}
           />
-          <Button name="dock_number" variant="contained" onClick={handleButton} disabled={(!dockNumberValue && !requestData.container_drop) || !!formAlert?.onAcknowledge}>
+          <Button name="dock_number" variant="contained" onClick={handleButton} disabled={(!dockNumberValue && !requestData.container_drop) || !!formAlert?.onAcknowledge || isSubmitting}>
             {requestData.container_drop ? "Send To Yard" : "Send To Dock"}
           </Button>
         </Box>
@@ -201,7 +205,7 @@ function FormActions({
             autoComplete="off"
             sx={{ whiteSpace: "pre-wrap", my: 1 }}
           />
-          <Button name="completed_time" variant="contained" onClick={handleButton}>
+          <Button name="completed_time" variant="contained" onClick={handleButton} disabled={isSubmitting}>
             Complete
           </Button>
         </Box>
@@ -212,7 +216,7 @@ function FormActions({
       <Box>
         {formEnd}
         {completionContent}
-        <Button name="remove_from_calendar" variant="contained" onClick={handleButton}>
+        <Button name="remove_from_calendar" variant="contained" onClick={handleButton} disabled={isSubmitting}>
           Remove from Calendar
         </Button>
       </Box>
