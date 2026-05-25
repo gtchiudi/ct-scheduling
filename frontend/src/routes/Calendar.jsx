@@ -8,6 +8,7 @@ import {
   Box,
   Checkbox,
   Dialog,
+  LinearProgress,
   DialogActions,
   DialogContent,
   DialogTitle,
@@ -255,9 +256,9 @@ export default function Calendar() {
   );
 
   const isLoading = React.useMemo(() => {
-    // check if query is loading
+    // check if query is loading or refetching
     if (result) {
-      return result.isLoading;
+      return result.isLoading || result.isFetching;
     }
     return true;
   }, [result]);
@@ -367,6 +368,8 @@ export default function Calendar() {
     },
   });
 
+  const isCalendarLoading = result.isLoading || result.isFetching;
+
   return (
     <Box id="body">
       <Dialog open={newAppointmentOpen} onClose={() => setNewAppointmentOpen(false)}>
@@ -415,10 +418,11 @@ export default function Calendar() {
         ))}
         </Box>
       </Box>
-      <Box id="calendar" 
+      <Box id="calendar"
         paddingTop={isAgendaMode ? `${calendarTopOffset-48}px` : ( currentView === "month" ? `${calendarTopOffset-14}px` : `${calendarTopOffset}px`)}
         className={isAgendaMode ? "agenda-mode" : ""}
       >
+        {isCalendarLoading && <LinearProgress sx={{ mb: 0.5 }} />}
         <ThemeProvider theme={warningTheme}>
         <Scheduler
           ref={ref}
@@ -587,7 +591,6 @@ export default function Calendar() {
           onSelectedDateChange={(date) => {
             updateRange(date);
           }}
-          loading={isLoading}
           customEditor={(event) => <CustomEditor event={event} />}
         />
         {viewerEvent && (
