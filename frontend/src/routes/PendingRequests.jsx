@@ -86,7 +86,7 @@ const headCells = [
     id: "ref_number",
     numeric: true,
     disablePadding: false,
-    label: "Reference Number",
+    label: "Reference / PO Number",
   },
   {
     id: "warehouse",
@@ -385,7 +385,11 @@ export default function PendingRequests() {
                             {row.company_name}
                           </TableCell>
                           <TableCell align="left">{row.email}</TableCell>
-                          <TableCell align="left">{row.ref_number}</TableCell>
+                          <TableCell align="left">
+                            {row.ref_number
+                              ? row.ref_number.split(";").map(s => s.trim()).filter(Boolean).join(", ")
+                              : ""}
+                          </TableCell>
                           <TableCell align="left">
                             {getWarehouseNameById(row.warehouse)}
                           </TableCell>

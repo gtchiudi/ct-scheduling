@@ -29,6 +29,11 @@ from rest_framework import status, permissions
 from rest_framework.parsers import JSONParser
 from django.forms.models import model_to_dict
 from datetime import datetime
+
+
+def _first_ref(ref_number):
+    """Returns the first semicolon-delimited reference number for use in email subjects."""
+    return str(ref_number).split(";")[0].strip() if ref_number else ""
 import pytz
 
 if settings.DEBUG:
@@ -113,7 +118,7 @@ class RequestView(viewsets.ModelViewSet):
 
                 send_email(
                     updated_data['email'],
-                    f'Appointment Request Approved - #{updated_data["ref_number"]}',
+                    f'Appointment Request Approved - #{_first_ref(updated_data["ref_number"])}',
                     appointment_approved_email_template(
                         updated_data["ref_number"],
                         date_time_str,
@@ -126,7 +131,7 @@ class RequestView(viewsets.ModelViewSet):
                 if send_updates and customer_data and customer_data.get('email_address'):
                     send_email(
                         customer_data['email_address'],
-                        f'Appointment Scheduled - #{updated_data["ref_number"]}',
+                        f'Appointment Scheduled - #{_first_ref(updated_data["ref_number"])}',
                         customer_appointment_email_template(
                             updated_data["ref_number"],
                             updated_data["company_name"],
@@ -143,7 +148,7 @@ class RequestView(viewsets.ModelViewSet):
                 if updated_data.get('email'):
                     send_email(
                         updated_data['email'],
-                        f'Appointment Request Declined - #{updated_data["ref_number"]}',
+                        f'Appointment Request Declined - #{_first_ref(updated_data["ref_number"])}',
                         appointment_declined_email_template(
                             updated_data["ref_number"],
                             date_time.strftime('%Y-%m-%d %H:%M:%S'),
@@ -161,7 +166,7 @@ class RequestView(viewsets.ModelViewSet):
                         pytz.timezone('America/New_York'))
                     send_email(
                         updated_data['email'],
-                        f'Appointment Cancelled - #{updated_data["ref_number"]}',
+                        f'Appointment Cancelled - #{_first_ref(updated_data["ref_number"])}',
                         appointment_cancelled_email_template(
                             updated_data["ref_number"],
                             date_time.strftime('%Y-%m-%d %H:%M:%S'),
@@ -238,7 +243,7 @@ Reply 'STOP' to opt out of future notifications.''')
 
             send_email(
                 candorEmailRecipient,
-                f'New Calendar Event - #{request.data["ref_number"]}',
+                f'New Calendar Event - #{_first_ref(request.data["ref_number"])}',
                 calendar_event_confirmation_email_template(
                     request.data["ref_number"],
                     request.data["company_name"],
@@ -255,7 +260,7 @@ Reply 'STOP' to opt out of future notifications.''')
                     if customer.email_address:
                         send_email(
                             customer.email_address,
-                            f'Appointment Scheduled - #{request.data["ref_number"]}',
+                            f'Appointment Scheduled - #{_first_ref(request.data["ref_number"])}',
                             customer_appointment_email_template(
                                 request.data["ref_number"],
                                 request.data["company_name"],
@@ -272,7 +277,7 @@ Reply 'STOP' to opt out of future notifications.''')
                 pytz.timezone('America/New_York'))
             send_email(  # to sales team
                 candorEmailRecipient,
-                f'New Pending Request - #{request.data["ref_number"]}',
+                f'New Pending Request - #{_first_ref(request.data["ref_number"])}',
                 new_request_email_template(
                     request.data["ref_number"],
                     request.data["company_name"],
@@ -282,7 +287,7 @@ Reply 'STOP' to opt out of future notifications.''')
 
             send_email(  # to customer
                 request.data['email'],
-                f'Appointment Request Confirmation - #{request.data["ref_number"]}',
+                f'Appointment Request Confirmation - #{_first_ref(request.data["ref_number"])}',
                 request_confirmation_email_template(
                     request.data["ref_number"],
                     date_time.strftime('%Y-%m-%d %H:%M:%S'),

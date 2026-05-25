@@ -71,7 +71,9 @@ export function CustomViewer({ event, onClose }) {
       {open && (
         <Dialog open={open} onClose={closeDialog}>
           <DialogTitle textAlign={"center"}>
-            Reference number: {event.request.ref_number}
+            Reference / PO Number: {event.request.ref_number
+              ? event.request.ref_number.split(";").map(s => s.trim()).filter(Boolean).join(", ")
+              : ""}
           </DialogTitle>
           <DialogContent>
             <Form request={event.request} closeModal={closeDialog} onLockChange={handleLockChange} />
@@ -355,7 +357,7 @@ export default function Calendar() {
     onSuccess: (data) => {
       const newEvents = data.data.map((request) => ({
         event_id: request.id,
-        title: request.ref_number,
+        title: request.ref_number ? request.ref_number.split(";")[0].trim() : "",
         start: new Date(request.date_time),
         end: new Date(dayjs(request.date_time).add(request.appointment_length, "minutes")), // Use the .add here to add appt window length to start time.
         request: request,

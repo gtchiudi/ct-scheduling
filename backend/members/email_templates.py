@@ -1,3 +1,11 @@
+def _ref_number_lines(ref_number):
+    """Returns one HTML <p> line per reference number from a semicolon-delimited string."""
+    parts = [r.strip() for r in str(ref_number).split(";") if r.strip()]
+    return "".join(
+        f'<p><strong>Reference / PO Number:</strong> {part}</p>' for part in parts
+    )
+
+
 def get_email_header():
     """Returns the email header with Candor logo and styling"""
     return '''
@@ -100,13 +108,13 @@ def appointment_approved_email_template(ref_number, date_time, delivery):
         <p>Your appointment request has been approved. Please review details below.</p>
 
         <div class="success-box">
-            <p><strong>Reference Number:</strong> {ref_number}</p>
+            {_ref_number_lines(ref_number)}
             <p><strong>Type:</strong> {appointment_type}</p>
             <p><strong>Date Time:</strong> {date_time}</p>
         </div>
-        
+
         <p>Reply to this email or contact <a href="mailto:appointments@candortransport.com">appointments@candortransport.com</a> with any questions or concerns.</p>
-        
+
         <p>Thank you for choosing Candor Logistics.</p>
     {get_email_footer()}
     '''
@@ -120,7 +128,7 @@ def calendar_event_confirmation_email_template(ref_number, company_name, date_ti
         <p>A new appointment has been created. Please review.</p>
 
         <div class="info-box">
-            <p><strong>Reference Number:</strong> {ref_number}</p>
+            {_ref_number_lines(ref_number)}
             <p><strong>Type:</strong> {appointment_type}</p>
             <p><strong>Carrier:</strong> {company_name}</p>
             <p><strong>Date Time:</strong> {date_time}</p>
@@ -137,7 +145,7 @@ def new_request_email_template(ref_number, company_name, date_time, delivery):
         <p>A new request is now pending. Please review.</p>
 
         <div class="alert-box">
-            <p><strong>Reference Number:</strong> {ref_number}</p>
+            {_ref_number_lines(ref_number)}
             <p><strong>Type:</strong> {appointment_type}</p>
             <p><strong>Carrier:</strong> {company_name}</p>
             <p><strong>Date Time:</strong> {date_time}</p>
@@ -154,7 +162,7 @@ def customer_appointment_email_template(ref_number, company_name, date_time, del
         <p>An appointment has been scheduled for your account. Please review the details below.</p>
 
         <div class="success-box">
-            <p><strong>Reference Number:</strong> {ref_number}</p>
+            {_ref_number_lines(ref_number)}
             <p><strong>Type:</strong> {appointment_type}</p>
             <p><strong>Carrier:</strong> {company_name}</p>
             <p><strong>Date &amp; Time:</strong> {date_time}</p>
@@ -175,7 +183,7 @@ def appointment_declined_email_template(ref_number, date_time, delivery):
         <p>Unfortunately, your appointment request has been declined.</p>
 
         <div class="alert-box">
-            <p><strong>Reference Number:</strong> {ref_number}</p>
+            {_ref_number_lines(ref_number)}
             <p><strong>Type:</strong> {appointment_type}</p>
             <p><strong>Date &amp; Time:</strong> {date_time}</p>
         </div>
@@ -195,7 +203,7 @@ def appointment_cancelled_email_template(ref_number, date_time, delivery):
         <p>Your appointment has been cancelled.</p>
 
         <div class="alert-box">
-            <p><strong>Reference Number:</strong> {ref_number}</p>
+            {_ref_number_lines(ref_number)}
             <p><strong>Type:</strong> {appointment_type}</p>
             <p><strong>Date &amp; Time:</strong> {date_time}</p>
         </div>
@@ -215,7 +223,7 @@ def request_confirmation_email_template(ref_number, date_time, delivery):
         <p>Your appointment request has been received. Please allow 24 hours for approval.</p>
 
         <div class="info-box">
-            <p><strong>Reference Number:</strong> {ref_number}</p>
+            {_ref_number_lines(ref_number)}
             <p><strong>Type:</strong> {appointment_type}</p>
             <p><strong>Date Time:</strong> {date_time}</p>
         </div>

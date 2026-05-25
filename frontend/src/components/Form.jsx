@@ -20,6 +20,7 @@ import {
 } from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
 import CheckIcon from "@mui/icons-material/Check";
+import CloseIcon from "@mui/icons-material/Close";
 import { styled, lighten, darken } from "@mui/system";
 import axios from "axios";
 import { useAtom } from "jotai";
@@ -79,6 +80,8 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isCreatingCustomer, setIsCreatingCustomer] = useState(false);
   const [isSavingCustomerEmail, setIsSavingCustomerEmail] = useState(false);
+  const [customerEmailSaveError, setCustomerEmailSaveError] = useState(false);
+  const [containerWarnOpen, setContainerWarnOpen] = useState(false);
 
   React.useEffect(() => {
     onLockChange?.(formAlert?.onAcknowledge || null);
@@ -152,6 +155,7 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
     active: true,
   };
   const [requestData, setRequestData] = useState(initialRequestData);
+  const [refNumbers, setRefNumbers] = useState([""]);
 
   React.useEffect(() => {
     if (!request && requestData.warehouse === "") {
@@ -175,9 +179,6 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
     }
     if (path === "/PendingRequests" || path === "/Calendar") {
       fields = [...fields, "customer_name"];
-    }
-    if (requestData.load_type === "Container") {
-      fields = [...fields, "container_number"];
     }
     return fields;
   }, [path, requestData.load_type]);
@@ -221,14 +222,13 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
         send_email_updates: request.customer?.send_email_updates ?? false,
       };
       setRequestData(convertedRequestData);
+      const parsedRefNumbers = (request.ref_number || "").split(";").map(s => s.trim()).filter(Boolean);
+      setRefNumbers(parsedRefNumbers.length > 0 ? parsedRefNumbers : [""]);
       setRequiredFieldsCompleted((prev) => {
-        // Compute fields based on the loaded data, not the current requiredFields,
-        // since load_type-dependent fields (e.g. container_number) aren't in
-        // requiredFields yet when this seeding runs.
+        // Compute fields based on the loaded data, not the current requiredFields.
         const fieldsToSeed = ["company_name", "warehouse", "ref_number", "load_type", "delivery"];
         if (path === "/RequestForm") fieldsToSeed.push("phone_number", "email");
         if (path === "/PendingRequests" || path === "/Calendar") fieldsToSeed.push("customer_name", "customer");
-        if (convertedRequestData.load_type === "Container") fieldsToSeed.push("container_number");
 
         const updated = { ...prev };
         fieldsToSeed.forEach((field) => {
@@ -307,6 +307,63 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
     }
   };
 
+  const syncRefNumbers = (newArr) => {
+    setRefNumbers(newArr);
+    const joined = newArr.filter(Boolean).join(";");
+    const updates = { ref_number: joined };
+    if (requestData.load_type === "Container") {
+      updates.container_number = newArr[0] ?? "";
+      updates.trailer_number = newArr[0] ?? "";
+    }
+    setRequestData(prev => ({ ...prev, ...updates }));
+    setRequiredFieldsCompleted(prev => ({
+      ...prev,
+      ref_number: newArr.some(v => v.trim() !== ""),
+      ...(requestData.load_type === "Container" && {
+        container_number: !!(newArr[0]?.trim()),
+        trailer_number: !!(newArr[0]?.trim()),
+      }),
+    }));
+  };
+
+  const handleRefNumberChange = (index, value) => {
+    const updated = [...refNumbers];
+    updated[index] = value;
+    syncRefNumbers(updated);
+  };
+
+  const handleAddRefNumber = () => {
+    if (refNumbers.length >= 10) return;
+    syncRefNumbers([...refNumbers, ""]);
+  };
+
+  const handleRemoveRefNumber = (index) => {
+    const updated = refNumbers.filter((_, i) => i !== index);
+    syncRefNumbers(updated);
+  };
+
+  const refNumberLabel = (index) =>
+    refNumbers.length === 1 ? "Reference / PO Number" : `Reference / PO Number ${index + 1}`;
+
+  const confirmContainerSwitch = () => {
+    const first = refNumbers[0] ?? "";
+    setRefNumbers([first]);
+    setRequestData(prev => ({
+      ...prev,
+      load_type: "Container",
+      ref_number: first,
+      container_number: first,
+      trailer_number: first,
+    }));
+    setRequiredFieldsCompleted(prev => ({
+      ...prev,
+      ref_number: !!first.trim(),
+      container_number: !!first.trim(),
+      trailer_number: !!first.trim(),
+    }));
+    setContainerWarnOpen(false);
+  };
+
   const handleChange = (e) => {
     const { name, value, checked, type } = e.target;
     
@@ -334,25 +391,18 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
       setRequestData({ ...requestData, [name]: processedValue === "delivery" });
     } else if (type === "checkbox") {
       setRequestData({ ...requestData, [name]: checked });
-    } else if (name === "container_number") {
-      setRequestData({
-        ...requestData,
-        [name]: processedValue,
-        ref_number: processedValue,
-        trailer_number: processedValue,
-      });
-      setRequiredFieldsCompleted((prevCompleted) => ({
-        ...prevCompleted,
-        ref_number: !!processedValue,
-        trailer_number: !!processedValue,
-      }));
+    } else if (name === "load_type" && processedValue === "Container" && refNumbers.length > 1) {
+      // Warn user that extra ref numbers will be dropped
+      setContainerWarnOpen(true);
+      return;
     } else if (
       name === "load_type" &&
-      processedValue != "Container" &&
+      processedValue !== "Container" &&
       (requestData.container_drop || requestData.container_number)
     ) {
       // if the value of load type is not container, but the container drop is true or container number is not empty,
       // reset the container drop, container number, ref number, trailer number
+      setRefNumbers([""]);
       setRequestData({
         ...requestData,
         [name]: processedValue,
@@ -374,13 +424,6 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
         setRequiredFieldsCompleted((prevCompleted) => ({
           ...prevCompleted,
           [name]: true,
-        }));
-      else if (name === "container_number")
-        setRequiredFieldsCompleted((prevCompleted) => ({
-          ...prevCompleted,
-          ref_number: !!processedValue,
-          trailer_number: !!processedValue,
-          [name]: !!processedValue,
         }));
       else
         setRequiredFieldsCompleted((prevCompleted) => ({
@@ -486,6 +529,7 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
   const handleDialogueClose = () => {
     setSuccessOpen(false);
     setRequestData(initialRequestData);
+    setRefNumbers([""]);
     setRequiredFieldsCompleted(requiredFields.reduce((acc, field) => { acc[field] = false; return acc; }, {}));
     setEmailError(false);
     setPhoneError(false);
@@ -512,14 +556,18 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
       setEditingCustomerEmail(false);
     } catch (error) {
       console.error("Error saving customer email on submit:", error);
+      setCustomerEmailSaveError(true);
+      setFormAlert({ message: "Failed to save customer email. Please correct it and try again.", severity: "error" });
+      return false;
     }
+    return true;
   };
 
   const handleNewRequest = async () => {
     const extraFields = path === "/Calendar" ? { approved: true } : {};
 
     setIsSubmitting(true);
-    await flushCustomerEmailDraft();
+    if (await flushCustomerEmailDraft() === false) { setIsSubmitting(false); return; }
 
     try {
       const response = await axios.post("/api/request/", { ...buildPayload(), ...extraFields });
@@ -553,7 +601,7 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
 
   const updateRequest = async (extraFields = {}) => {
     setIsSubmitting(true);
-    await flushCustomerEmailDraft();
+    if (await flushCustomerEmailDraft() === false) { setIsSubmitting(false); return; }
     try {
       const response = await axios.put(
         `/api/request/${requestData.id}/`,
@@ -620,7 +668,7 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
 
 
   return (
-    <Box>
+    <Box sx={{mx: 1}}>
       <Dialog open={addCustomerOpen} onClose={() => { setAddCustomerOpen(false); setNewCustomerEmailError(false); }}>
         <DialogTitle textAlign="center">Add New Customer</DialogTitle>
         <DialogContent>
@@ -722,6 +770,24 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
         </DialogActions>
       </Dialog>
 
+      <Dialog open={containerWarnOpen} onClose={() => setContainerWarnOpen(false)}>
+        <DialogTitle textAlign="center">Switch to Container?</DialogTitle>
+        <DialogContent>
+          <Typography textAlign="center">
+            Only the first Reference / PO Number will be kept when switching to Container load type.
+            The remaining entries will be removed.
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <MuiButton variant="contained" onClick={() => setContainerWarnOpen(false)}>
+            Go Back
+          </MuiButton>
+          <MuiButton variant="contained" color="error" onClick={confirmContainerSwitch}>
+            Proceed
+          </MuiButton>
+        </DialogActions>
+      </Dialog>
+
       <Dialog open={successOpen} onClose={handleDialogueClose}>
         <DialogTitle textAlign="center">Request Submitted</DialogTitle>
         <DialogContent>
@@ -736,11 +802,10 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
           <MuiButton variant="contained" onClick={() => navigate("/")}>Dismiss</MuiButton>
         </DialogActions>
       </Dialog>
-    <Box marginBottom={"20px"}>
+    <Box marginBottom={"20px"} display="flex" justifyContent="center">
       <FormControl>
         <Stack
           spacing={2}
-          alignContent={"center"}
           textAlign={"center"}
           margine="normal"
           sx={{
@@ -786,21 +851,51 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
             disabled={request && path != "/PendingRequests" && !editAppointment ? true : false}
           ></TextField>
 
-          <TextField
-            required={requiredFields.includes("ref_number")}
-            label="Reference Number"
-            name="ref_number"
-            value={requestData.ref_number}
-            onChange={handleChange}
-            autoComplete="off"
-            disabled ={
-              (request && path != "/PendingRequests") ||
-              requestData.load_type == "Container" ||
-              editAppointment
-                ? true
-                : false
-            }
-          ></TextField>
+          {refNumbers.map((val, index) => {
+            const isReadOnly = !!(request && path !== "/PendingRequests" && !editAppointment);
+            const showAddNew = index === refNumbers.length - 1
+              && requestData.load_type !== "Container"
+              && path !== "/RequestForm"
+              && !isReadOnly;
+            const showRemove = index > 0 && !isReadOnly;
+            return (
+              <TextField
+                key={index}
+                required={index === 0 && requiredFields.includes("ref_number")}
+                label={refNumberLabel(index)}
+                value={val}
+                onChange={(e) => handleRefNumberChange(index, e.target.value)}
+                autoComplete="off"
+                disabled={isReadOnly}
+                InputProps={{
+                  endAdornment: (showAddNew || showRemove) ? (
+                    <InputAdornment position="end">
+                      {showAddNew && (
+                        <MuiButton
+                          size="small"
+                          variant="text"
+                          onClick={handleAddRefNumber}
+                          disabled={refNumbers.length >= 10}
+                          sx={{ whiteSpace: "nowrap" }}
+                        >
+                          Add New
+                        </MuiButton>
+                      )}
+                      {showRemove && (
+                        <IconButton
+                          size="small"
+                          onClick={() => handleRemoveRefNumber(index)}
+                          aria-label={`Remove reference number ${index + 1}`}
+                        >
+                          <CloseIcon fontSize="small" />
+                        </IconButton>
+                      )}
+                    </InputAdornment>
+                  ) : undefined,
+                }}
+              />
+            );
+          })}
 
           {path !== "/RequestForm" && (
             <>
@@ -851,9 +946,9 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
                     size="small"
                     value={editingCustomerEmail ? customerEmailDraft : (requestData.customer.email_address || '')}
                     disabled={!editingCustomerEmail}
-                    error={editingCustomerEmail && customerEmailDraft.length > 0 && !validateEmail(customerEmailDraft)}
-                    helperText={editingCustomerEmail && customerEmailDraft.length > 0 && !validateEmail(customerEmailDraft) ? "Please enter a valid email address" : ""}
-                    onChange={(e) => setCustomerEmailDraft(e.target.value)}
+                    error={customerEmailSaveError || (editingCustomerEmail && customerEmailDraft.length > 0 && !validateEmail(customerEmailDraft))}
+                    helperText={customerEmailSaveError ? "Failed to save. Please try again." : (editingCustomerEmail && customerEmailDraft.length > 0 && !validateEmail(customerEmailDraft) ? "Please enter a valid email address" : "")}
+                    onChange={(e) => { setCustomerEmailDraft(e.target.value); setCustomerEmailSaveError(false); }}
                     InputProps={{
                       endAdornment: (
                         <InputAdornment position="end">
@@ -870,9 +965,11 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
                                     ...prev,
                                     customer: { ...prev.customer, email_address: customerEmailDraft },
                                   }));
+                                  setCustomerEmailSaveError(false);
                                   setEditingCustomerEmail(false);
                                 } catch (error) {
                                   console.error("Error updating customer email:", error);
+                                  setCustomerEmailSaveError(true);
                                 } finally {
                                   setIsSavingCustomerEmail(false);
                                 }
@@ -955,22 +1052,20 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
 
           {requestData.load_type === "Container" ? (
             <Box>
+              <TextField
+                label="Intermodal Container Number"
+                value={refNumbers[0] || ""}
+                onChange={(e) => handleRefNumberChange(0, e.target.value)}
+                autoComplete="off"
+                disabled={request && path !== "/PendingRequests" && !editAppointment}
+              />
               <FormControlLabel
                 control={<Checkbox />}
                 label="Select for Container Drop"
                 name="container_drop"
                 checked={requestData.container_drop}
                 onChange={handleChange}
-                disabled= {request && path != "/PendingRequests" && !editAppointment ? true : false}
-              />
-              <TextField
-                required={requiredFields.includes("container_number")}
-                label="Intermodal Container Number"
-                name="container_number"
-                value={requestData.container_number ?? ""}
-                onChange={handleChange}
-                autoComplete="off"
-                disabled= {request && path != "/PendingRequests" && !editAppointment ? true : false}
+                disabled={request && path !== "/PendingRequests" && !editAppointment}
               />
             </Box>
           ) : null}

@@ -148,7 +148,7 @@ function FormActions({
             <Button variant="contained" color="error" onClick={() => setCancelConfirmOpen(true)} disabled={isSubmitting}>
               Cancel Appointment
             </Button>
-            <Button variant="contained" color="success" onClick={updateRequest} disabled={submitButtonDisabled || isSubmitting}>
+            <Button variant="contained" color="success" onClick={() => updateRequest()} disabled={submitButtonDisabled || isSubmitting}>
               Save Changes
             </Button>
           </Box>
