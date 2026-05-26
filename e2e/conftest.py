@@ -69,6 +69,27 @@ def _get_jwt_tokens(username, password):
     return data["access"], data["refresh"]
 
 
+def _get_warehouse_data(access_token):
+    """Fetch warehouse list from the API to pre-seed localStorage.
+
+    The Calendar component maps warehouseData to checkboxes in a useEffect with
+    [] deps (runs once on mount). On a fresh session the atom is empty because the
+    async warehouse fetch hasn't resolved yet, so parsedWarehouseData stays []
+    and the events filter returns nothing. Pre-populating warehouseData in
+    localStorage before navigating to /Calendar avoids this race.
+    """
+    try:
+        resp = requests.get(
+            f"{BASE_URL}/api/warehouse/",
+            headers={"Authorization": f"Bearer {access_token}"},
+            timeout=10,
+        )
+        resp.raise_for_status()
+        return resp.json()
+    except Exception:
+        return []
+
+
 def _inject_auth(page, access_token, refresh_token, groups, user_initial):
     """
     Inject JWT tokens and user metadata into localStorage so the React app
@@ -76,17 +97,26 @@ def _inject_auth(page, access_token, refresh_token, groups, user_initial):
 
     The app (atoms.jsx) reads these keys from localStorage on mount:
       accessToken, refreshToken, userGroups, userInitial, lastLoginDatetime
+
+    Also pre-populates warehouseData + lastWarehouseRefresh so the Calendar's
+    useEffect finds the warehouse list on first render and events can be filtered.
     """
+    warehouse_data = _get_warehouse_data(access_token)
     page.goto(BASE_URL)
     page.evaluate(
-        """([access, refresh, groups, initial]) => {
+        """([access, refresh, groups, initial, warehouses]) => {
             localStorage.setItem('accessToken', JSON.stringify(access));
             localStorage.setItem('refreshToken', JSON.stringify(refresh));
             localStorage.setItem('userGroups', JSON.stringify(groups));
             localStorage.setItem('userInitial', JSON.stringify(initial));
             localStorage.setItem('lastLoginDatetime', JSON.stringify(new Date().toISOString()));
+            // Pre-populate warehouse cache so Calendar renders events on first mount
+            if (warehouses && warehouses.length > 0) {
+                localStorage.setItem('warehouseData', JSON.stringify(warehouses));
+                localStorage.setItem('lastWarehouseRefresh', JSON.stringify(new Date().toISOString()));
+            }
         }""",
-        [access_token, refresh_token, groups, user_initial],
+        [access_token, refresh_token, groups, user_initial, warehouse_data],
     )
     page.goto(f"{BASE_URL}/Calendar")
     page.wait_for_load_state("networkidle")

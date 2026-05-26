@@ -16,7 +16,7 @@ Usage examples:
 
 import os
 
-BASE_URL = os.environ.get("E2E_BASE_URL", "http://localhost:8000")
-HEADLESS = os.environ.get("E2E_HEADLESS", "true").lower() == "true"
+BASE_URL = os.environ.get("E2E_BASE_URL", "http://localhost:5173")
+HEADLESS = os.environ.get("E2E_HEADLESS", "true").lower() == "false"
 SLOW_MO = int(os.environ.get("E2E_SLOW_MO", "0"))
 BROWSER = os.environ.get("E2E_BROWSER", "chromium")

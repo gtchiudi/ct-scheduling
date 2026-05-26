@@ -345,18 +345,138 @@ class PendingRequestStatsView(APIView):
             approved=False,
             active=True
         ).count()
-        
+
         # Check if there are requests for today or older
         now = timezone.now()
         today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
-        
+
         has_urgent_requests = Request.objects.filter(
             approved=False,
             active=True,
             date_time__lte=now  # Requests on or before current time
         ).exists()
-        
+
         return Response({
             'pending_count': pending_count,
             'has_urgent_requests': has_urgent_requests
         })
+
+
+class E2ESeedView(APIView):
+    """
+    Seed the database with E2E test fixtures.
+    Only available when DEBUG=True — returns 403 in production.
+
+    POST /api/e2e-seed/
+    Body: { dispatch_username, dispatch_password, dock_username, dock_password }
+
+    Creates (idempotent):
+      - Dispatch user in the Dispatch group
+      - Dock user in the Dock group
+      - One warehouse named "E2E Test Warehouse"
+      - One pending (unapproved) request
+      - One approved request (dated one week from now so it appears on the calendar)
+
+    Returns 201 on first seed, 200 if already seeded (idempotent).
+    Returns 403 outside of DEBUG mode.
+    """
+    permission_classes = []  # No auth required — test setup only
+
+    def post(self, request):
+        if not settings.DEBUG:
+            return Response(
+                {'detail': 'Seed endpoint is only available in DEBUG mode.'},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        data = request.data
+        dispatch_username = data.get('dispatch_username', 'e2e_dispatch')
+        dispatch_password = data.get('dispatch_password', 'TestE2eD!spatch123!')
+        dock_username = data.get('dock_username', 'e2e_dock')
+        dock_password = data.get('dock_password', 'TestE2eD0ck123!')
+
+        # Groups
+        g_dispatch, _ = Group.objects.get_or_create(name='Dispatch')
+        g_dock, _ = Group.objects.get_or_create(name='Dock')
+
+        # Users
+        dispatch_user, dispatch_created = User.objects.get_or_create(
+            username=dispatch_username,
+            defaults={'is_staff': False},
+        )
+        dispatch_user.set_password(dispatch_password)
+        dispatch_user.save()
+        dispatch_user.groups.add(g_dispatch)
+
+        dock_user, dock_created = User.objects.get_or_create(
+            username=dock_username,
+            defaults={'is_staff': False},
+        )
+        dock_user.set_password(dock_password)
+        dock_user.save()
+        dock_user.groups.add(g_dock)
+
+        # Warehouse
+        warehouse, wh_created = Warehouse.objects.get_or_create(
+            name='E2E Test Warehouse',
+            defaults={
+                'address': '123 Test St, Cleveland, OH 44101',
+                'phone_number': '2165550000',
+                'timezone': 'America/New_York',
+            },
+        )
+
+        # Pending request (unapproved) — dated one week from now
+        future_dt = timezone.now() + timezone.timedelta(days=7)
+        pending_qs = Request.objects.filter(
+            company_name='E2E Pending Co',
+            approved=False,
+            active=True,
+        )
+        if not pending_qs.exists():
+            Request.objects.create(
+                company_name='E2E Pending Co',
+                customer_name='E2E Customer',
+                email='e2e-pending@example.com',
+                warehouse=warehouse,
+                ref_number='E2E-PENDING-001',
+                load_type='Full',
+                delivery=True,
+                date_time=future_dt,
+                approved=False,
+                active=True,
+            )
+
+        # Approved request — dated 2 days from now so it appears in the
+        # scheduler's default week view (which shows Tue-Sat of the current week).
+        approved_dt = timezone.now() + timezone.timedelta(days=2)
+        approved_qs = Request.objects.filter(
+            company_name='E2E Approved Co',
+            approved=True,
+            active=True,
+        )
+        if not approved_qs.exists():
+            Request.objects.create(
+                company_name='E2E Approved Co',
+                customer_name='E2E Customer',
+                email='e2e-approved@example.com',
+                warehouse=warehouse,
+                ref_number='E2E-APPROVED-001',
+                load_type='Full',
+                delivery=True,
+                date_time=approved_dt,
+                approved=True,
+                active=True,
+            )
+
+        # Customer record — used by the Autocomplete in the calendar create form
+        Customer.objects.get_or_create(
+            customer_name='E2E Customer',
+            defaults={'email_address': 'e2e-customer@test.com', 'send_email_updates': False},
+        )
+
+        already_seeded = not (dispatch_created or dock_created or wh_created)
+        return Response(
+            {'seeded': True},
+            status=status.HTTP_200_OK if already_seeded else status.HTTP_201_CREATED,
+        )

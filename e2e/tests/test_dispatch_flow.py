@@ -10,8 +10,10 @@ Dispatch users can:
 """
 
 import pytest
+from playwright.sync_api import expect
 from e2e.pages.pending_requests_page import PendingRequestsPage
 from e2e.pages.calendar_page import CalendarPage
+from e2e_config import BASE_URL
 
 
 @pytest.mark.e2e
@@ -51,11 +53,10 @@ def test_approve_request_removes_from_list(dispatch_page):
     pr.navigate_to()
     pr.wait_for_table()
     initial_count = pr.get_row_count()
-    pr.click_first_request()
+    pr.click_request_by_company("E2E Pending Co")
     pr.approve_current_request()
-    # After approval, the row should be removed from the unapproved list
-    dispatch_page.wait_for_load_state("networkidle")
-    assert pr.get_row_count() < initial_count
+    # Wait for React to re-render the table after the query refetch
+    expect(dispatch_page.locator("tbody tr")).not_to_have_count(initial_count, timeout=10000)
 
 
 @pytest.mark.e2e
@@ -67,8 +68,8 @@ def test_decline_request_removes_from_list(dispatch_page, seed_test_data):
     initial_count = pr.get_row_count()
     pr.click_first_request()
     pr.decline_current_request()
-    dispatch_page.wait_for_load_state("networkidle")
-    assert pr.get_row_count() < initial_count
+    # Wait for React to re-render the table after the query refetch
+    expect(dispatch_page.locator("tbody tr")).not_to_have_count(initial_count, timeout=10000)
 
 
 @pytest.mark.e2e
@@ -82,10 +83,19 @@ def test_calendar_shows_approved_appointments(dispatch_page):
 
 @pytest.mark.e2e
 def test_logout_clears_session(dispatch_page):
-    """After logging out, the user sees the Login button (no longer authenticated)."""
+    """After logging out, the user sees the Login button (no longer authenticated).
+
+    After the Logout component clears tokens and navigates to '/', the browser
+    may end up on a different dev-server origin. We explicitly return to BASE_URL
+    to verify tokens were cleared — if they weren't, auth would restore from
+    localStorage and 'Pending Requests' would still be visible.
+    """
     dispatch_page.get_by_role("button", name="User Menu").click()
     dispatch_page.get_by_text("Logout").click()
     dispatch_page.wait_for_load_state("networkidle")
+    # Return to the app origin to verify auth state was cleared
+    dispatch_page.goto(f"{BASE_URL}/")
+    dispatch_page.wait_for_load_state("networkidle")
+    dispatch_page.get_by_text("Login").wait_for(timeout=5000)
     assert dispatch_page.get_by_text("Login").is_visible()
-    # Navigation links for authenticated users should be gone
     assert not dispatch_page.get_by_text("Pending Requests").is_visible()

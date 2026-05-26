@@ -11,6 +11,7 @@ Anonymous users cannot:
 """
 
 import pytest
+from datetime import date, timedelta
 from e2e.pages.request_form_page import RequestFormPage
 
 
@@ -21,7 +22,9 @@ def test_home_page_loads(page):
     page.wait_for_load_state("networkidle")
     assert page.title() != ""
     # The REQUEST PICKUP/DELIVERY link is present for anonymous users
-    assert page.get_by_text("REQUEST PICKUP/DELIVERY").is_visible()
+    # (rendered twice: desktop nav + mobile menu — first is sufficient)
+    page.get_by_text("REQUEST PICKUP/DELIVERY").first.wait_for(timeout=5000)
+    assert page.get_by_text("REQUEST PICKUP/DELIVERY").first.is_visible()
 
 
 @pytest.mark.e2e
@@ -46,12 +49,17 @@ def test_submit_request_successfully(page):
     form.fill_email("driver@acmetrucking.com")
     form.fill_phone("5551234567")
     form.fill_ref_number("PO-E2E-001")
-    form.select_warehouse("E2E Test Warehouse")
+    form.select_warehouse("123 Test St, Cleveland, OH 44101")
     form.select_load_type("Full")
     form.select_delivery(delivery=True)
-
-    # Select a time slot (scheduler must have at least one available option)
-    page.locator("[data-testid='time-selector'], .time-option, button:has-text(':00')").first.click()
+    target = date.today() + timedelta(weeks=1)
+    form.fill_datetime(
+        month=f"{target.month:02d}",
+        day=f"{target.day:02d}",
+        year=str(target.year),
+        hour="09",
+        minute="00",
+    )
 
     form.submit()
     form.assert_success_visible()
@@ -74,6 +82,7 @@ def test_login_link_visible_for_anonymous_user(page):
     """The Login button is visible in the header when not authenticated."""
     page.goto("/")
     page.wait_for_load_state("networkidle")
+    page.get_by_text("Login").wait_for(timeout=5000)
     assert page.get_by_text("Login").is_visible()
     # Calendar and Pending Requests are not shown
     assert not page.get_by_text("Calendar", exact=True).is_visible()
