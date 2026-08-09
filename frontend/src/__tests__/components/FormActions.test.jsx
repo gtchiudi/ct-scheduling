@@ -9,7 +9,8 @@
  */
 
 import { describe, it, expect, vi } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import { LocalizationProvider } from '@mui/x-date-pickers'
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs'
@@ -29,6 +30,7 @@ const defaultHandlers = {
   handleApprove: vi.fn(),
   setCancelConfirmOpen: vi.fn(),
   setDeclineConfirmOpen: vi.fn(),
+  onPaperworkScannedChange: vi.fn(),
 }
 
 const baseRequestData = {
@@ -51,6 +53,7 @@ function renderFormActions(overrides = {}) {
     formAlert: overrides.formAlert ?? null,
     submitButtonDisabled: overrides.submitButtonDisabled ?? false,
     isSubmitting: overrides.isSubmitting ?? false,
+    paperworkScanned: overrides.paperworkScanned ?? false,
     ...defaultHandlers,
     ...overrides.handlers,
   }
@@ -164,6 +167,40 @@ describe('/Calendar checked in, not docked', () => {
     })
     expect(screen.getByRole('button', { name: /send to dock/i })).toBeDisabled()
   })
+
+  it('checking Drop in Yard opens a warning dialog instead of calling handleChange immediately', async () => {
+    const handlers = { handleChange: vi.fn() }
+    const user = userEvent.setup()
+    renderFormActions({ requestData: checkedIn, handlers })
+    await user.click(screen.getByLabelText(/drop in yard/i))
+    expect(screen.getByText(/move the appointment to the all-day section/i)).toBeInTheDocument()
+    expect(handlers.handleChange).not.toHaveBeenCalled()
+  })
+
+  it('"Go Back" dismisses the yard-drop warning without calling handleChange', async () => {
+    const handlers = { handleChange: vi.fn() }
+    const user = userEvent.setup()
+    renderFormActions({ requestData: checkedIn, handlers })
+    await user.click(screen.getByLabelText(/drop in yard/i))
+    await user.click(screen.getByRole('button', { name: /go back/i }))
+    await waitFor(() => {
+      expect(screen.queryByText(/move the appointment to the all-day section/i)).not.toBeInTheDocument()
+    })
+    expect(handlers.handleChange).not.toHaveBeenCalled()
+  })
+
+  it('"Proceed" confirms the yard-drop warning and calls handleChange with container_drop=true', async () => {
+    const handlers = { handleChange: vi.fn() }
+    const user = userEvent.setup()
+    renderFormActions({ requestData: checkedIn, handlers })
+    await user.click(screen.getByLabelText(/drop in yard/i))
+    await user.click(screen.getByRole('button', { name: /proceed/i }))
+    expect(handlers.handleChange).toHaveBeenCalledWith(
+      expect.objectContaining({
+        target: expect.objectContaining({ name: 'container_drop', checked: true }),
+      })
+    )
+  })
 })
 
 // ---------------------------------------------------------------------------
@@ -171,11 +208,34 @@ describe('/Calendar checked in, not docked', () => {
 // ---------------------------------------------------------------------------
 
 describe('/Calendar docked, not completed', () => {
+  const docked = { ...baseRequestData, check_in_time: NOW, docked_time: NOW }
+
   it('renders Complete button', () => {
-    renderFormActions({
-      requestData: { ...baseRequestData, check_in_time: NOW, docked_time: NOW },
-    })
+    renderFormActions({ requestData: docked })
     expect(screen.getByRole('button', { name: /complete/i })).toBeInTheDocument()
+  })
+
+  it('renders a Paperwork Scanned checkbox', () => {
+    renderFormActions({ requestData: docked })
+    expect(screen.getByLabelText(/paperwork scanned/i)).toBeInTheDocument()
+  })
+
+  it('Complete is disabled until Paperwork Scanned is checked', () => {
+    renderFormActions({ requestData: docked, paperworkScanned: false })
+    expect(screen.getByRole('button', { name: /complete/i })).toBeDisabled()
+  })
+
+  it('Complete is enabled once Paperwork Scanned is checked', () => {
+    renderFormActions({ requestData: docked, paperworkScanned: true })
+    expect(screen.getByRole('button', { name: /complete/i })).not.toBeDisabled()
+  })
+
+  it('checking Paperwork Scanned calls onPaperworkScannedChange', async () => {
+    const handlers = { onPaperworkScannedChange: vi.fn() }
+    const user = userEvent.setup()
+    renderFormActions({ requestData: docked, handlers })
+    await user.click(screen.getByLabelText(/paperwork scanned/i))
+    expect(handlers.onPaperworkScannedChange).toHaveBeenCalledTimes(1)
   })
 })
 

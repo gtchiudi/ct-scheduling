@@ -83,6 +83,130 @@ def test_create_approved_with_customer_updates_sends_two_emails(
 
 
 @pytest.mark.django_db
+def test_create_approved_email_includes_created_by(dispatch_client, warehouse, customer, mock_email):
+    """The internal team email for a calendar-created appointment names the
+    authenticated user who created it (falls back to username when the user
+    has no first/last name set, as with the dispatch_test fixture user)."""
+    payload = {
+        "approved": True,
+        "company_name": "Calendar Co",
+        "email": "calendar@example.com",
+        "warehouse": str(warehouse.id),
+        "ref_number": "PO-CAL",
+        "load_type": "LTL",
+        "date_time": _dt(3),
+        "delivery": False,
+        "customer_id": str(customer.id),
+    }
+    response = dispatch_client.post("/api/request/", payload, format="json")
+    assert response.status_code == 201
+    assert mock_email.call_count == 1
+    body = mock_email.call_args[0][2]
+    assert "Created By" in body
+    assert "dispatch_test" in body
+
+
+@pytest.mark.django_db
+def test_create_unapproved_email_omits_created_by(api_client, warehouse, mock_email):
+    """The public/unauthenticated request-page flow never renders a
+    'Created By' line (it doesn't call the calendar confirmation template)."""
+    payload = {
+        "approved": False,
+        "company_name": "New Request Co",
+        "email": "requester@example.com",
+        "warehouse": str(warehouse.id),
+        "ref_number": "PO-NEW",
+        "load_type": "Full",
+        "date_time": _dt(5),
+        "delivery": True,
+    }
+    response = api_client.post("/api/request/", payload, format="json")
+    assert response.status_code == 201
+    bodies = [call[0][2] for call in mock_email.call_args_list]
+    assert all("Created By" not in body for body in bodies)
+
+
+@pytest.mark.django_db
+def test_search_by_customer_name(dispatch_client, warehouse):
+    """?search=... matches on customer_name."""
+    Request.objects.create(
+        id=uuid.uuid4(), company_name="Carrier A", customer_name="Acme Logistics",
+        warehouse=warehouse, ref_number="S1", load_type="Full",
+        date_time=timezone.now() + timedelta(days=1),
+        delivery=True, active=True, approved=True,
+    )
+    Request.objects.create(
+        id=uuid.uuid4(), company_name="Carrier B", customer_name="Other Customer",
+        warehouse=warehouse, ref_number="S2", load_type="Full",
+        date_time=timezone.now() + timedelta(days=2),
+        delivery=True, active=True, approved=True,
+    )
+    response = dispatch_client.get("/api/request/?search=Acme")
+    assert response.status_code == 200
+    assert len(response.data) == 1
+    assert response.data[0]["customer_name"] == "Acme Logistics"
+
+
+@pytest.mark.django_db
+def test_search_by_company_name(dispatch_client, warehouse):
+    """?search=... matches on company_name (carrier)."""
+    Request.objects.create(
+        id=uuid.uuid4(), company_name="Speedy Freight", warehouse=warehouse,
+        ref_number="S3", load_type="Full", date_time=timezone.now() + timedelta(days=1),
+        delivery=True, active=True, approved=True,
+    )
+    Request.objects.create(
+        id=uuid.uuid4(), company_name="Other Carrier", warehouse=warehouse,
+        ref_number="S4", load_type="Full", date_time=timezone.now() + timedelta(days=2),
+        delivery=True, active=True, approved=True,
+    )
+    response = dispatch_client.get("/api/request/?search=Speedy")
+    assert response.status_code == 200
+    assert len(response.data) == 1
+    assert response.data[0]["company_name"] == "Speedy Freight"
+
+
+@pytest.mark.django_db
+def test_search_by_ref_number(dispatch_client, warehouse):
+    """?search=... matches inside the semicolon-delimited ref_number field."""
+    Request.objects.create(
+        id=uuid.uuid4(), company_name="Carrier C", warehouse=warehouse,
+        ref_number="ABC123; DEF456", load_type="Full",
+        date_time=timezone.now() + timedelta(days=1),
+        delivery=True, active=True, approved=True,
+    )
+    Request.objects.create(
+        id=uuid.uuid4(), company_name="Carrier D", warehouse=warehouse,
+        ref_number="ZZZ999", load_type="Full",
+        date_time=timezone.now() + timedelta(days=2),
+        delivery=True, active=True, approved=True,
+    )
+    response = dispatch_client.get("/api/request/?search=DEF456")
+    assert response.status_code == 200
+    assert len(response.data) == 1
+    assert response.data[0]["ref_number"] == "ABC123; DEF456"
+
+
+@pytest.mark.django_db
+def test_search_combined_with_approved_filter(dispatch_client, warehouse):
+    """?search=...&approved=true still respects the approved filter."""
+    Request.objects.create(
+        id=uuid.uuid4(), company_name="Match Approved", warehouse=warehouse,
+        ref_number="S5", load_type="Full", date_time=timezone.now() + timedelta(days=1),
+        delivery=True, active=True, approved=True,
+    )
+    Request.objects.create(
+        id=uuid.uuid4(), company_name="Match Pending", warehouse=warehouse,
+        ref_number="S5", load_type="Full", date_time=timezone.now() + timedelta(days=2),
+        delivery=True, active=True, approved=False,
+    )
+    response = dispatch_client.get("/api/request/?search=S5&approved=true")
+    assert response.status_code == 200
+    assert len(response.data) == 1
+    assert response.data[0]["company_name"] == "Match Approved"
+
+
+@pytest.mark.django_db
 def test_list_excludes_inactive(dispatch_client, warehouse, customer):
     """Inactive requests (active=False) are excluded from the list."""
     Request.objects.create(

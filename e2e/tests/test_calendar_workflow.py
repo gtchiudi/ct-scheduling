@@ -44,18 +44,21 @@ def _e2e_warehouse_id(access):
 
 
 def _next_visible_date():
-    """Return a date that falls on Tue–Sat in the scheduler's current week view.
+    """Return a date that falls within the scheduler's current week view.
 
-    The scheduler uses weekDays=[2,3,4,5,6] (Tue–Sat) and weekStartOn=6 (Sat).
-    Sunday (weekday 6) and Monday (weekday 0) are not shown; advance to Tuesday.
+    <Scheduler week={{ weekDays: [2,3,4,5,6], weekStartOn: 6 }}> — weekDays
+    values are *offsets* from weekStartOn (Saturday), not absolute
+    day-of-week numbers, so this combination renders Mon-Fri (Sat+2..Sat+6),
+    not Tue-Sat. Weekends (Sat/Sun) aren't shown; advance to the following
+    Monday.
     """
     today = date.today()
-    weekday = today.weekday()   # 0=Mon, 1=Tue, ..., 5=Sat, 6=Sun
-    if weekday == 6:            # Sunday  → +2 days → Tuesday
+    weekday = today.weekday()   # 0=Mon, ..., 5=Sat, 6=Sun
+    if weekday == 5:            # Saturday → +2 days → Monday
         return today + timedelta(days=2)
-    if weekday == 0:            # Monday  → +1 day  → Tuesday
+    if weekday == 6:            # Sunday   → +1 day  → Monday
         return today + timedelta(days=1)
-    return today                # Already Tue–Sat, use today
+    return today                # Already Mon-Fri, use today
 
 
 def _create_approved_request(access, warehouse_id, company_name, ref_number, hour=10):
@@ -157,6 +160,8 @@ def test_checkin_dock_complete_workflow(dispatch_page, checkin_appointment):
     # ── Stage 3: Complete ────────────────────────────────────────────────────
     calendar.wait_for_event("WF-CHECKIN-001")
     calendar.click_event_by_ref("WF-CHECKIN-001")
+    # "Complete" is disabled until the Paperwork Scanned acknowledgement is checked
+    dispatch_page.get_by_label("Paperwork Scanned").check()
     dispatch_page.get_by_role("button", name="Complete").click()
     dispatch_page.wait_for_selector("[role='dialog']", state="hidden", timeout=10000)
     dispatch_page.wait_for_load_state("networkidle")
@@ -263,5 +268,21 @@ def test_create_appointment_with_multiple_ref_numbers(dispatch_page):
 
     # The new event appears on the calendar; title shows the first ref number
     expect(
-        dispatch_page.locator(".rs__event__item").filter(has_text="CR-001")
+        dispatch_page.locator(".rs__event__item").filter(has_text="CR-001").first
     ).to_be_visible(timeout=15000)
+
+    # This test creates a real record through the UI (not via a fixture), so
+    # it has to clean up after itself directly through the API — otherwise
+    # every re-run leaves another "CR-001" event on the calendar, and the
+    # strict-mode assertion above starts failing once more than one exists.
+    access = _dispatch_token()
+    resp = req_lib.get(
+        f"{BASE_URL}/api/request/",
+        params={"search": "CR-002"},
+        headers={"Authorization": f"Bearer {access}"},
+        timeout=10,
+    )
+    resp.raise_for_status()
+    for r in resp.json():
+        if r["company_name"] == "E2E Calendar Create Co":
+            _soft_delete(access, r["id"])

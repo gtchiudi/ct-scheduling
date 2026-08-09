@@ -94,6 +94,8 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
   const [isSavingCustomerEmail, setIsSavingCustomerEmail] = useState(false);
   const [customerEmailSaveError, setCustomerEmailSaveError] = useState(false);
   const [containerWarnOpen, setContainerWarnOpen] = useState(false);
+  // Local-only acknowledgement; never added to requestData, so it can never be sent to the backend.
+  const [paperworkScanned, setPaperworkScanned] = useState(false);
 
   React.useEffect(() => {
     onLockChange?.(formAlert?.onAcknowledge || null);
@@ -397,7 +399,18 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
     if (name === "delivery") {
       setRequestData({ ...requestData, [name]: processedValue === "delivery" });
     } else if (type === "checkbox") {
-      setRequestData({ ...requestData, [name]: checked });
+      if (name === "container_drop" && checked && path !== "/RequestForm") {
+        // All-day appointments shouldn't occupy a specific appointment time.
+        // On /RequestForm the customer still needs to pick a preferred time
+        // for dispatch to review, regardless of Container Drop.
+        setRequestData({
+          ...requestData,
+          [name]: checked,
+          date_time: dayjs(requestData.date_time).hour(0).minute(0).second(0),
+        });
+      } else {
+        setRequestData({ ...requestData, [name]: checked });
+      }
     } else if (name === "load_type" && processedValue === "Container" && refNumbers.length > 1) {
       // Warn user that extra ref numbers will be dropped
       setContainerWarnOpen(true);
@@ -1160,10 +1173,11 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
             <>
               <DateTimePicker
                 disabled={requestData.warehouse === ""}
+                views={requestData.container_drop && path !== "/RequestForm" ? ["year", "month", "day"] : undefined}
                 ampm={false}
                 thresholdToRenderTimeInASingleColumn={30}
                 skipDisabled={true}
-                label="Select Appointment Date and Time"
+                label={requestData.container_drop && path !== "/RequestForm" ? "Select Appointment Date" : "Select Appointment Date and Time"}
                 value={dayjs(requestData.date_time)}
                 shouldDisableTime={(path == "/RequestForm") ? getTimesToDisable : null}
                 onChange={(date) => {
@@ -1311,6 +1325,8 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
             setDeclineConfirmOpen={setDeclineConfirmOpen}
             submitButtonDisabled={submitButtonDisabled}
             isSubmitting={isSubmitting}
+            paperworkScanned={paperworkScanned}
+            onPaperworkScannedChange={(e) => setPaperworkScanned(e.target.checked)}
           />
         </Stack>
       </FormControl>

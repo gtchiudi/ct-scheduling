@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useLayoutEffect } from "react";
 import dayjs from "dayjs";
 import { Scheduler } from "@aldabil/react-scheduler";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -8,6 +8,7 @@ import {
   Box,
   Checkbox,
   Dialog,
+  IconButton,
   LinearProgress,
   DialogActions,
   DialogContent,
@@ -18,6 +19,7 @@ import {
   Tooltip,
   Divider,
 } from "@mui/material";
+import SearchIcon from "@mui/icons-material/Search";
 import { alpha, createTheme, ThemeProvider } from "@mui/material/styles";
 import { useAtom } from "jotai";
 import {
@@ -31,6 +33,7 @@ import {
 } from "../components/atoms.jsx";
 import axios from "axios";
 import Form, { APPOINTMENT_LENGTH_OPTIONS } from "../components/Form.jsx";
+import AppointmentSearchDrawer from "../components/AppointmentSearchDrawer.jsx";
 
 function isWarehouseChecked(id, warehousesChecked, allWarehouses) {
   if (!warehousesChecked || warehousesChecked.length === 0) {
@@ -144,6 +147,7 @@ export default function Calendar() {
   const [viewerEvent, setViewerEvent] = useState(null);
   const [agendaViewerEvent, setAgendaViewerEvent] = useState(null);
   const [newAppointmentOpen, setNewAppointmentOpen] = useState(false);
+  const [searchDrawerOpen, setSearchDrawerOpen] = useState(false);
   const schedulerViewRef = React.useRef("week");
   const [currentView, setCurrentView] = useState("week");
   const [isAgendaMode, setIsAgendaMode] = useState(false);
@@ -156,6 +160,7 @@ export default function Calendar() {
 
   const ref = React.useRef(null);
   const checkboxesRef = React.useRef(null);
+  const calendarBoxRef = React.useRef(null);
   const [calendarTopOffset, setCalendarTopOffset] = React.useState(135);
   // check authentication
   useEffect(() => {
@@ -163,16 +168,6 @@ export default function Calendar() {
     queryClient.invalidateQueries(["requests", "date"]);
   }, []);
 
-  // useEffect(() => {
-  //   const node = checkboxesRef.current;
-  //   if (!node) return;
-  //   const measure = () => setCalendarTopOffset(node.getBoundingClientRect().bottom);
-  //   measure();
-  //   const observer = new ResizeObserver(measure);
-  //   observer.observe(node);
-  //   return () => observer.disconnect();
-  // }, []);
-  
   useEffect(() => {
     pauseQuery = true; // pause query
 
@@ -278,6 +273,61 @@ export default function Calendar() {
     });
   }, [allEvents, parsedWarehouseData]);
 
+  // The scheduler renders its own toolbar/day-header as a fixed-position
+  // block whose height grows with the number of stacked all-day appointments
+  // for the visible period — it isn't affected by our own padding, so that
+  // padding has to be measured from the actual rendered header rather than a
+  // static guess, and re-measured whenever the rendered appointments (or the
+  // view) change.
+  useLayoutEffect(() => {
+    const node = calendarBoxRef.current;
+    if (!node) return;
+
+    // `.rs__header` also matches the per-row time-gutter cells inside the
+    // scrollable grid body (e.g. the "06:00" labels) — those live inside a
+    // normally-positioned scroll container, not the toolbar/day-header block,
+    // which is `position: fixed`. Restrict to elements whose nearest
+    // positioned ancestor (within the calendar box) is actually fixed, or the
+    // measurement runs away chasing hour rows far down the scrollable body.
+    const isInFixedHeader = (el) => {
+      let ancestor = el;
+      while (ancestor && ancestor !== node) {
+        if (getComputedStyle(ancestor).position === "fixed") return true;
+        ancestor = ancestor.parentElement;
+      }
+      return false;
+    };
+
+    const getHeaderEls = () =>
+      Array.from(node.querySelectorAll(".rs__header, .rs__view_navigator")).filter(isInFixedHeader);
+
+    const measure = () => {
+      const headerEls = getHeaderEls();
+      if (!headerEls.length) return;
+      const calendarTop = node.getBoundingClientRect().top;
+      let maxBottom = 0;
+      headerEls.forEach((el) => {
+        const bottom = el.getBoundingClientRect().bottom;
+        if (bottom > maxBottom) maxBottom = bottom;
+      });
+      if (maxBottom > 0) {
+        setCalendarTopOffset(Math.ceil(maxBottom - calendarTop) + 0.25);
+      }
+    };
+
+    measure();
+    const raf = requestAnimationFrame(measure); // catch layout that settles a tick later
+
+    const observer = new ResizeObserver(measure);
+    observer.observe(node);
+    getHeaderEls().forEach((el) => observer.observe(el));
+
+    return () => {
+      cancelAnimationFrame(raf);
+      observer.disconnect();
+    };
+  }, [events, currentView, isAgendaMode]);
+
   const isLate = (requestDateTime, requestCheckInTime = null) => {
     if (requestDateTime === null) {
       return false
@@ -355,17 +405,35 @@ export default function Calendar() {
       }
     },
     onSuccess: (data) => {
-      const newEvents = data.data.map((request) => ({
-        event_id: request.id,
-        title: request.ref_number ? request.ref_number.split(";")[0].trim() : "",
-        start: new Date(request.date_time),
-        end: new Date(dayjs(request.date_time).add(request.appointment_length, "minutes")), // Use the .add here to add appt window length to start time.
-        request: request,
-        editable: false,
-        deletable: false,
-        draggable: false,
-        color: getEventColor(request),
-      }));
+      const newEvents = data.data.map((request) => {
+        const color = getEventColor(request);
+        const isAllDay = request.container_drop === true;
+        return {
+          event_id: request.id,
+          title: request.ref_number ? request.ref_number.split(";")[0].trim() : "",
+          start: new Date(request.date_time),
+          end: new Date(dayjs(request.date_time).add(request.appointment_length, "minutes")), // Use the .add here to add appt window length to start time.
+          request: request,
+          editable: false,
+          deletable: false,
+          draggable: false,
+          color,
+          allDay: isAllDay,
+          // The scheduler's own default chip is used for all-day/multi-day
+          // events (our custom eventRenderer is skipped for those) — this sx
+          // is merged into that default rendering, so style it to match the
+          // tinted/left-border look our eventRenderer uses everywhere else.
+          ...(isAllDay && {
+            sx: {
+              bgcolor: alpha(color, 0.08),
+              color: "rgba(0, 0, 0, 0.87)",
+              borderLeft: `4px solid ${color}`,
+              borderRadius: "0 4px 4px 0",
+              boxShadow: "none",
+            },
+          }),
+        };
+      });
       setAllEvents(newEvents);
     },
   });
@@ -401,9 +469,14 @@ export default function Calendar() {
         zIndex={1000}
         width="100%"
       >
-        <Button variant="contained" sx={{ ml: 2 }} onClick={() => setNewAppointmentOpen(true)}>
-          New Appointment
-        </Button>
+        <Box display="flex" alignItems="center">
+          <Button variant="contained" sx={{ ml: 2 }} onClick={() => setNewAppointmentOpen(true)}>
+            New Appointment
+          </Button>
+          <IconButton aria-label="Search appointments" onClick={() => setSearchDrawerOpen(true)} sx={{ ml: 1 }}>
+            <SearchIcon />
+          </IconButton>
+        </Box>
         <Box display="flex" alignItems="center">
         {parsedWarehouseData.map((warehouse) => (
           <Box key={warehouse.id} marginRight={2}>
@@ -420,8 +493,17 @@ export default function Calendar() {
         ))}
         </Box>
       </Box>
+      <AppointmentSearchDrawer
+        open={searchDrawerOpen}
+        onClose={() => setSearchDrawerOpen(false)}
+        onSelectRequest={(row) => {
+          setSearchDrawerOpen(false);
+          setViewerEvent({ request: row });
+        }}
+      />
       <Box id="calendar"
-        paddingTop={isAgendaMode ? `${calendarTopOffset-48}px` : ( currentView === "month" ? `${calendarTopOffset-14}px` : `${calendarTopOffset}px`)}
+        ref={calendarBoxRef}
+        paddingTop={`${calendarTopOffset}px`}
         className={isAgendaMode ? "agenda-mode" : ""}
       >
         {isCalendarLoading && <LinearProgress sx={{ mb: 0.5 }} />}
@@ -430,6 +512,8 @@ export default function Calendar() {
           ref={ref}
           hourFormat="24"
           events={events}
+          disableViewer
+          onEventClick={(event) => setViewerEvent(event)}
           eventRenderer={({ event, onClick, draggable }) => {
             const isAgenda = draggable === undefined;
 
@@ -463,7 +547,9 @@ export default function Calendar() {
                   ))}
                   {[
                     `Customer: ${event.request.customer_name ?? event.request.company_name}`,
-                    `Appointment Time: ${dayjs(event.start).format("HH:mm")}`,
+                    event.request.container_drop
+                      ? "Appointment Time: All Day"
+                      : `Appointment Time: ${dayjs(event.start).format("HH:mm")}`,
                     `Appointment Window: ${APPOINTMENT_LENGTH_OPTIONS.find(opt => opt.value === event.request.appointment_length)?.label}`,
                     `Appointment Status: ${getEventStatus(event)}`,
                   ].map((line) => (

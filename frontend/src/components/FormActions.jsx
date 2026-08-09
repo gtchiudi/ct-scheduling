@@ -1,5 +1,17 @@
 import { useState } from "react";
-import { Box, Button, Checkbox, FormControlLabel, Stack, TextField, Typography } from "@mui/material";
+import {
+  Box,
+  Button,
+  Checkbox,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  FormControlLabel,
+  Stack,
+  TextField,
+  Typography,
+} from "@mui/material";
 import { DateTimeField } from "@mui/x-date-pickers";
 import dayjs from "dayjs";
 import PhoneMaskCustom from "./PhoneMaskCustom.jsx";
@@ -19,8 +31,17 @@ function FormActions({
   setDeclineConfirmOpen,
   submitButtonDisabled,
   isSubmitting,
+  paperworkScanned,
+  onPaperworkScannedChange,
 }) {
   const [dockNumberValue, setDockNumberValue] = useState("");
+  const [yardDropWarnOpen, setYardDropWarnOpen] = useState(false);
+
+  const confirmYardDrop = () => {
+    setDockNumberValue("");
+    handleChange({ target: { name: "container_drop", type: "checkbox", checked: true } });
+    setYardDropWarnOpen(false);
+  };
 
   const formEnd = (
     <Box>
@@ -80,8 +101,11 @@ function FormActions({
             <Checkbox
               checked={requestData.container_drop}
               onChange={(e) => {
-                if (e.target.checked) setDockNumberValue("");
-                handleChange(e);
+                if (e.target.checked) {
+                  setYardDropWarnOpen(true);
+                } else {
+                  handleChange(e);
+                }
               }}
               name="container_drop"
               disabled={requestData.dock_number != null || requestData.docked_time != null}
@@ -90,6 +114,22 @@ function FormActions({
           label="Drop in Yard"
         />
       </Box>
+      <Dialog open={yardDropWarnOpen} onClose={() => setYardDropWarnOpen(false)}>
+        <DialogTitle textAlign="center">Drop in Yard?</DialogTitle>
+        <DialogContent>
+          <Typography textAlign="center">
+            This will move the appointment to the All-Day section of the calendar.
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button variant="contained" color="error" onClick={() => setYardDropWarnOpen(false)}>
+            Go Back
+          </Button>
+          <Button variant="contained" onClick={confirmYardDrop}>
+            Proceed
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 
@@ -205,7 +245,16 @@ function FormActions({
             autoComplete="off"
             sx={{ whiteSpace: "pre-wrap", my: 1 }}
           />
-          <Button name="completed_time" variant="contained" onClick={handleButton} disabled={isSubmitting}>
+          <FormControlLabel
+            control={
+              <Checkbox
+                checked={paperworkScanned}
+                onChange={onPaperworkScannedChange}
+              />
+            }
+            label="Paperwork Scanned"
+          />
+          <Button name="completed_time" variant="contained" onClick={handleButton} disabled={!paperworkScanned || isSubmitting}>
             Complete
           </Button>
         </Box>

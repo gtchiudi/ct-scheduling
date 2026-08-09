@@ -53,6 +53,8 @@ class RequestView(viewsets.ModelViewSet):
 
     serializer_class = RequestSerializer
     queryset = Request.objects.all()
+    filter_backends = [filters.SearchFilter]
+    search_fields = ['company_name', 'customer_name', 'ref_number']
 
     def get_queryset(self):
         queryset = super().get_queryset()
@@ -241,6 +243,10 @@ Reply 'STOP' to opt out of future notifications.''')
                 pytz.timezone('America/New_York'))
             date_time_str = date_time.strftime('%Y-%m-%d %H:%M:%S')
 
+            created_by = None
+            if request.user and request.user.is_authenticated:
+                created_by = request.user.get_full_name() or request.user.username
+
             send_email(
                 candorEmailRecipient,
                 f'New Calendar Event - #{_first_ref(request.data["ref_number"])}',
@@ -249,6 +255,7 @@ Reply 'STOP' to opt out of future notifications.''')
                     request.data["company_name"],
                     date_time_str,
                     request.data.get("delivery", False),
+                    created_by=created_by,
                 ))
 
             # Notify customer if send_email_updates and customer email provided

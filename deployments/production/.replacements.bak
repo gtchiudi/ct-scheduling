@@ -1,3 +1,3 @@
-CTSCHEDULING_IMAGE=ocir.us-ashburn-1.oci.oraclecloud.com/idzly7o5dhnt/ctscheduling/ctscheduling:0.0.47
+CTSCHEDULING_IMAGE=ocir.us-ashburn-1.oci.oraclecloud.com/idzly7o5dhnt/ctscheduling/ctscheduling:0.0.48
 CERTIFICATE_EMAIL=bill@zeligson.com
 CERTIFICATE_SERVER=https://acme-v02.api.letsencrypt.org/directory

@@ -119,9 +119,10 @@ def appointment_approved_email_template(ref_number, date_time, delivery):
     {get_email_footer()}
     '''
 
-def calendar_event_confirmation_email_template(ref_number, company_name, date_time, delivery):
+def calendar_event_confirmation_email_template(ref_number, company_name, date_time, delivery, created_by=None):
     """Template for calendar event confirmation"""
     appointment_type = 'Delivery' if delivery else 'Pickup'
+    created_by_line = f'<p><strong>Created By:</strong> {created_by}</p>' if created_by else ''
     return f'''
     {get_email_header()}
         <h1>New Appointment Created</h1>
@@ -132,6 +133,7 @@ def calendar_event_confirmation_email_template(ref_number, company_name, date_ti
             <p><strong>Type:</strong> {appointment_type}</p>
             <p><strong>Carrier:</strong> {company_name}</p>
             <p><strong>Date Time:</strong> {date_time}</p>
+            {created_by_line}
         </div>
     {get_email_footer()}
     '''
