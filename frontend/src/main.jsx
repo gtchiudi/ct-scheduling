@@ -15,13 +15,23 @@ import utc from "dayjs/plugin/utc";
 import timezone from "dayjs/plugin/timezone";
 dayjs.extend(utc);
 dayjs.extend(timezone);
-import Login from "./routes/Login.jsx";
-import Logout from "./routes/Logout.jsx";
 import Home from "./routes/Home.jsx";
-import RequestForm from "./routes/RequestForm.jsx";
-import PendingRequests from "./routes/PendingRequests.jsx";
 import Layout from "./components/Layout.jsx";
-import Calendar from "./routes/Calendar.jsx";
+import { CircularProgress, Box } from "@mui/material";
+
+const Login = React.lazy(() => import("./routes/Login.jsx"));
+const Logout = React.lazy(() => import("./routes/Logout.jsx"));
+const RequestForm = React.lazy(() => import("./routes/RequestForm.jsx"));
+const PendingRequests = React.lazy(() => import("./routes/PendingRequests.jsx"));
+const Calendar = React.lazy(() => import("./routes/Calendar.jsx"));
+
+function RouteFallback() {
+  return (
+    <Box sx={{ display: "flex", justifyContent: "center", mt: 8 }}>
+      <CircularProgress />
+    </Box>
+  );
+}
 
 const queryClient = new QueryClient();
 const root = ReactDOM.createRoot(document.getElementById("root"));
@@ -40,7 +50,9 @@ const router = createBrowserRouter([
     path: "RequestForm",
     element: (
       <Layout>
-        <RequestForm />
+        <React.Suspense fallback={<RouteFallback />}>
+          <RequestForm />
+        </React.Suspense>
       </Layout>
     ), // Wrap RequestForm with Layout
     errorElement: <ErrorPage />,
@@ -49,7 +61,9 @@ const router = createBrowserRouter([
     path: "login",
     element: (
       <Layout>
-        <Login />
+        <React.Suspense fallback={<RouteFallback />}>
+          <Login />
+        </React.Suspense>
       </Layout>
     ), // Wrap Login with Layout
     errorElement: <ErrorPage />,
@@ -58,7 +72,9 @@ const router = createBrowserRouter([
     path: "logout",
     element: (
       <Layout>
-        <Logout />
+        <React.Suspense fallback={<RouteFallback />}>
+          <Logout />
+        </React.Suspense>
       </Layout>
     ), // Wrap Logout with Layout
     errorElement: <ErrorPage />,
@@ -67,7 +83,9 @@ const router = createBrowserRouter([
     path: "PendingRequests",
     element: (
       <Layout>
-        <PendingRequests />
+        <React.Suspense fallback={<RouteFallback />}>
+          <PendingRequests />
+        </React.Suspense>
       </Layout>
     ), // Wrap PendingRequests with Layout
     errorElement: <ErrorPage />,
@@ -76,15 +94,13 @@ const router = createBrowserRouter([
     path: "Calendar",
     element: (
       <Layout>
-        <Calendar />
+        <React.Suspense fallback={<RouteFallback />}>
+          <Calendar />
+        </React.Suspense>
       </Layout>
     ),
   },
 ]);
-
-const LinkBehavior = React.forwardRef((props, ref) => (
-  <RouterLink ref={ref} to="/" {...props} role={undefined} />
-));
 
 root.render(
   <React.StrictMode>

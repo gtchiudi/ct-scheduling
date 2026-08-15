@@ -61,6 +61,7 @@ CORS_ORIGIN_ALLOW_ALL = True
 REACT_APP_BUILD_PATH="../frontend/build"
 
 MIDDLEWARE = [
+    'django.middleware.gzip.GZipMiddleware',
     'django.middleware.security.SecurityMiddleware',
     "whitenoise.middleware.WhiteNoiseMiddleware",
     'django.contrib.sessions.middleware.SessionMiddleware',

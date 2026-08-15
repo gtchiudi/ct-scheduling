@@ -10,18 +10,18 @@ export default function Logout() {
   const navigate = useNavigate();
 
   React.useEffect(() => {
-    const doLogout = async () => {
-      if (refreshToken) {
-        try {
-          await axios.post("/token/blacklist/", { refresh: refreshToken });
-        } catch {
-          // Blacklist call failed (token may already be invalid) — continue logout
-        }
-      }
-      removeTokens();
-      navigate("/");
-    };
-    doLogout();
+    // Clear local auth state synchronously, before any await, so a fast
+    // subsequent navigation can't abort this effect mid-flight and leave
+    // stale tokens in localStorage (the server-side blacklist call below is
+    // fire-and-forget — logout must not be gated on a network round trip).
+    removeTokens();
+    navigate("/");
+    if (refreshToken) {
+      axios.post("/token/blacklist/", { refresh: refreshToken }).catch(() => {
+        // Blacklist call failed (token may already be invalid) — client-side
+        // logout already completed, nothing more to do.
+      });
+    }
   }, []);
 
   return <div></div>;

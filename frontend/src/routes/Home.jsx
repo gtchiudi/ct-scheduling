@@ -5,10 +5,9 @@ import { Grid, Backdrop } from "@mui/material";
 import Button from "@mui/material/Button";
 import Link from "@mui/material/Link";
 import { Link as RouterLink } from "react-router-dom";
+import heroImage from "../assets/hero-background.jpg";
 
 export default function Home() {
-  let image =
-    "https://img1.wsimg.com/isteam/ip/f69d92aa-cce5-4851-89e5-56380f14d8f1/blob.png";
   return (
     <Backdrop
       open={true}
@@ -18,14 +17,25 @@ export default function Home() {
         mb: 4,
         minHeight: "calc(100vh - 45xpx)",
         height: "auto", // Allow content to expand
-        backgroundSize: "cover",
-        backgroundRepeat: "no-repeat",
-        backgroundPosition: "center",
-        backgroundImage: `url(${image})`,
       }}
     >
-      {/* Increase the priority of the hero background image */}
-      {<img style={{ display: "none" }} src={image} alt="Truck Background" />}
+      <img
+        src={heroImage}
+        alt="Candor Logistics truck and warehouse"
+        width={1704}
+        height={1920}
+        fetchpriority="high"
+        loading="eager"
+        style={{
+          position: "absolute",
+          inset: 0,
+          width: "100%",
+          height: "100%",
+          objectFit: "cover",
+          objectPosition: "center",
+          zIndex: -1,
+        }}
+      />
       <Box
         sx={{
           position: "absolute",

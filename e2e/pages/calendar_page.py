@@ -100,9 +100,12 @@ class CalendarPage(BasePage):
         assert events.count() > 0, "Expected at least one calendar event"
 
     def assert_no_pending_requests_link(self):
-        assert not self.page.get_by_text("Pending Requests").is_visible(), \
+        # .first: the mobile nav Menu keeps its MenuItems mounted (keepMounted) even
+        # when closed, so "Pending Requests" can match both the desktop button and
+        # the hidden mobile menu item — .first pins this to DOM order (desktop first).
+        assert not self.page.get_by_text("Pending Requests").first.is_visible(), \
             "Pending Requests link should not be visible for Dock users"
 
     def assert_pending_requests_link_visible(self):
-        assert self.page.get_by_text("Pending Requests").is_visible(), \
+        assert self.page.get_by_text("Pending Requests").first.is_visible(), \
             "Pending Requests link should be visible for Dispatch/Admin users"

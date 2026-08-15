@@ -57,7 +57,7 @@ class RequestView(viewsets.ModelViewSet):
     search_fields = ['company_name', 'customer_name', 'ref_number']
 
     def get_queryset(self):
-        queryset = super().get_queryset()
+        queryset = super().get_queryset().select_related('customer', 'warehouse')
         isApproved = self.request.query_params.get('approved')
         start_date = self.request.query_params.get('start_date')
         end_date = self.request.query_params.get('end_date')
@@ -179,8 +179,8 @@ class RequestView(viewsets.ModelViewSet):
             elif (original_data.get('dock_number') is None and updated_data.get('dock_number') is not None) or \
                     (original_data.get('docked_time') is None and updated_data.get('docked_time') is not None and updated_data['container_drop']):
                 number_log = SmsNumberLog.objects.filter(
-                    sms_number=updated_data['driver_phone_number'])
-                if number_log.exists() and number_log[0].consent and updated_data['sms_consent']:
+                    sms_number=updated_data['driver_phone_number']).first()
+                if number_log and number_log.consent and updated_data['sms_consent']:
                     try:
                         if updated_data['container_drop']:
                             send_text(updated_data['driver_phone_number'],
@@ -202,24 +202,24 @@ Reply 'STOP' to opt out of future notifications.''')
 
             elif 'driver_phone_number' in altered_fields:
                 number_log = SmsNumberLog.objects.filter(
-                    sms_number=updated_data['driver_phone_number'])
+                    sms_number=updated_data['driver_phone_number']).first()
                 consent = updated_data['sms_consent']
                 should_send_sms = False
-                if number_log.exists() and not number_log[0].consent and consent:
+                if number_log and not number_log.consent and consent:
                     # Consent was just granted for an existing number
                     SmsNumberLog.objects.filter(
                         sms_number=updated_data['driver_phone_number']).update(consent=True)
                     should_send_sms = True
-                elif not number_log.exists():
+                elif not number_log:
                     # New number — only send if consent is given
                     SmsNumberLog.objects.create(
                         sms_number=updated_data['driver_phone_number'], consent=updated_data['sms_consent'])
                     should_send_sms = consent
 
                 number_log = SmsNumberLog.objects.filter(
-                    sms_number=updated_data['driver_phone_number'])
+                    sms_number=updated_data['driver_phone_number']).first()
 
-                if should_send_sms and number_log.exists() and number_log[0].consent and updated_data['sms_consent']:
+                if should_send_sms and number_log and number_log.consent and updated_data['sms_consent']:
                     try:
                         send_text(updated_data['driver_phone_number'],
                                   F'''Thank you for choosing Candor Logistics.
@@ -433,48 +433,46 @@ class E2ESeedView(APIView):
             },
         )
 
-        # Pending request (unapproved) — dated one week from now
+        # Pending request (unapproved) — dated one week from now.
+        # Looked up by company_name alone (not approved/active) and reset via
+        # `defaults` on every call: earlier test runs approve/decline this exact
+        # fixture, so filtering on approved=False would never match it again and
+        # a new duplicate row would be created on every session. update_or_create
+        # also refreshes date_time so a fixture from a prior day never goes stale
+        # and drifts outside any date-relative view (e.g. the calendar week).
         future_dt = timezone.now() + timezone.timedelta(days=7)
-        pending_qs = Request.objects.filter(
+        Request.objects.update_or_create(
             company_name='E2E Pending Co',
-            approved=False,
-            active=True,
+            defaults={
+                'customer_name': 'E2E Customer',
+                'email': 'e2e-pending@example.com',
+                'warehouse': warehouse,
+                'ref_number': 'E2E-PENDING-001',
+                'load_type': 'Full',
+                'delivery': True,
+                'date_time': future_dt,
+                'approved': False,
+                'active': True,
+            },
         )
-        if not pending_qs.exists():
-            Request.objects.create(
-                company_name='E2E Pending Co',
-                customer_name='E2E Customer',
-                email='e2e-pending@example.com',
-                warehouse=warehouse,
-                ref_number='E2E-PENDING-001',
-                load_type='Full',
-                delivery=True,
-                date_time=future_dt,
-                approved=False,
-                active=True,
-            )
 
         # Approved request — dated 2 days from now so it appears in the
         # scheduler's default week view (which shows Tue-Sat of the current week).
         approved_dt = timezone.now() + timezone.timedelta(days=2)
-        approved_qs = Request.objects.filter(
+        Request.objects.update_or_create(
             company_name='E2E Approved Co',
-            approved=True,
-            active=True,
+            defaults={
+                'customer_name': 'E2E Customer',
+                'email': 'e2e-approved@example.com',
+                'warehouse': warehouse,
+                'ref_number': 'E2E-APPROVED-001',
+                'load_type': 'Full',
+                'delivery': True,
+                'date_time': approved_dt,
+                'approved': True,
+                'active': True,
+            },
         )
-        if not approved_qs.exists():
-            Request.objects.create(
-                company_name='E2E Approved Co',
-                customer_name='E2E Customer',
-                email='e2e-approved@example.com',
-                warehouse=warehouse,
-                ref_number='E2E-APPROVED-001',
-                load_type='Full',
-                delivery=True,
-                date_time=approved_dt,
-                approved=True,
-                active=True,
-            )
 
         # Customer record — used by the Autocomplete in the calendar create form
         Customer.objects.get_or_create(

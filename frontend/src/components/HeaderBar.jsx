@@ -22,6 +22,7 @@ import { useAtom } from "jotai";
 import { authenticatedAtom, userGroupsAtom, userInitialAtom } from "../components/atoms.jsx";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
+import candorLogo from "../assets/candor-logo.png";
 
 // Add Links to header here using same format as Request List
 // This is the only part that needs modified to change the header links
@@ -119,10 +120,12 @@ function HeaderBar() {
         <Toolbar disableGutters>
           <a href="/">
             <img
-              src="//img1.wsimg.com/isteam/ip/f69d92aa-cce5-4851-89e5-56380f14d8f1/candorlogo.png/:/rs=h:75,cg:true,m/qt=q:100/ll"
+              src={candorLogo}
               className="candorLogo"
               alt="Candor Logo"
-              component={RouterLink}
+              width={291}
+              height={75}
+              loading="eager"
             />
           </a>
 

@@ -32,7 +32,7 @@ def test_pending_requests_link_visible(dispatch_page):
 @pytest.mark.e2e
 def test_navigate_to_pending_requests(dispatch_page):
     """Clicking the Pending Requests nav button goes to /PendingRequests."""
-    dispatch_page.get_by_text("Pending Requests").click()
+    dispatch_page.get_by_text("Pending Requests").first.click()
     dispatch_page.wait_for_url("**/PendingRequests", timeout=5000)
     assert "/PendingRequests" in dispatch_page.url
 

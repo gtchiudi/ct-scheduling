@@ -89,6 +89,12 @@ class Request(BaseModel):
     active = models.BooleanField(default=True)
     # BEcomes false after completed delivery
 
+    class Meta:
+        indexes = [
+            models.Index(fields=['active', 'approved', 'date_time'], name='request_active_approved_dt_idx'),
+            models.Index(fields=['date_time'], name='request_date_time_idx'),
+        ]
+
 class Customer(BaseModel):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     customer_name = models.CharField(max_length=255)

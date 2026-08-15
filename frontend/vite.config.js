@@ -12,6 +12,15 @@ export default defineConfig({
     outDir: 'build',
     assetsDir: 'assets',
     emptyOutDir: true,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'mui-vendor': ['@mui/material', '@mui/icons-material', '@mui/x-date-pickers', '@emotion/react', '@emotion/styled'],
+          'scheduler-vendor': ['@aldabil/react-scheduler'],
+          'query-vendor': ['@tanstack/react-query', 'axios'],
+        },
+      },
+    },
   },
 
   resolve: {
