@@ -359,7 +359,15 @@ export default function Calendar() {
       headerWrapper?.style.removeProperty("grid-template-rows");
       headerCellEls.forEach((el) => el.style.removeProperty("height"));
 
-      const calendarTop = node.getBoundingClientRect().top;
+      // `getBoundingClientRect().top` is viewport-relative and shifts with
+      // scroll, but the fixed header elements below (`position: fixed`)
+      // don't move with scroll at all — subtracting a scroll-dependent
+      // value from a scroll-independent one produces a padding that grows
+      // by however far the page happens to be scrolled at measurement
+      // time. Adding `scrollY` back converts to document-relative (i.e.
+      // as if scrolled to the top), which is what padding-top — itself a
+      // document-space property — actually needs to be computed against.
+      const calendarTop = node.getBoundingClientRect().top + window.scrollY;
       let baseBottom = 0;
       [...headerCellEls, ...navigatorEls].forEach((el) => {
         const bottom = el.getBoundingClientRect().bottom;
