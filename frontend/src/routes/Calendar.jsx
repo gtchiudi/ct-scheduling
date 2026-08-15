@@ -481,6 +481,85 @@ export default function Calendar() {
     };
   }, [events, currentView, isAgendaMode, visibleDate, allDayExpanded]);
 
+  // Caps how much of an hourly cell's width overlapping appointments can
+  // occupy. The library computes each event's `left`/`width` itself (an
+  // order-dependent cascade, not a clean N-way split — later-placed events
+  // in an overlap group get progressively narrower and offset, layered via
+  // z-index), always keeping every event's `left + width` strictly under
+  // 100%. Uniformly scaling both by a constant factor therefore guarantees
+  // the combined footprint stays under that same fraction regardless of
+  // overlap count, without needing to know how many events are overlapping
+  // or re-implement the cascade math.
+  useLayoutEffect(() => {
+    const node = calendarBoxRef.current;
+    if (!node) return;
+
+    const SCALE = 0.9;
+
+    const rescale = () => {
+      const items = node.querySelectorAll(".rs__event__item");
+      items.forEach((el) => {
+        // Unlike the all-day header's `height`, `left`/`width` here live
+        // ONLY as this element's own inline style — the library never
+        // stores that geometry anywhere else, so removing our override to
+        // "reset before measuring" doesn't reveal some natural value
+        // underneath, it just destroys the only copy that existed
+        // (collapsing every event to `left: 0` — the CSS default for an
+        // absolutely-positioned box with neither `left` nor `right` set).
+        // Instead: React overwrites `style.left`/`style.width` via plain
+        // property assignment whenever ITS OWN computed value changes,
+        // and a plain assignment always resets priority back to normal —
+        // it can never preserve an `!important` flag. So "still marked
+        // important" reliably means "React hasn't recomputed this since
+        // I last touched it," and is safe to skip; anything else (never
+        // touched, or React just rewrote it) needs a fresh read.
+        if (el.style.getPropertyPriority("left") === "important") return;
+
+        const parent = el.offsetParent;
+        if (!parent) return;
+        const parentRect = parent.getBoundingClientRect();
+        if (!parentRect.width) return;
+        const rect = el.getBoundingClientRect();
+        const leftPercent = ((rect.left - parentRect.left) / parentRect.width) * 100;
+        const widthPercent = (rect.width / parentRect.width) * 100;
+        el.style.setProperty("left", `${(leftPercent * SCALE).toFixed(3)}%`, "important");
+        el.style.setProperty("width", `${(widthPercent * SCALE).toFixed(3)}%`, "important");
+        // The library assigns z-index by render order, which doesn't
+        // reliably put the visually-rightmost event on top — rank by each
+        // event's own left offset instead, so overlapping appointments
+        // stack left-to-right regardless of how the library ordered them.
+        // Small integer range (well clear of the fixed header's 99–1001)
+        // since these only ever need to out-stack siblings in the same
+        // day column.
+        el.style.setProperty("z-index", `${10 + Math.round(leftPercent)}`, "important");
+      });
+    };
+
+    rescale();
+    let mutationRaf = null;
+    let settleTimeouts = [];
+    const scheduleRescale = () => {
+      if (mutationRaf) cancelAnimationFrame(mutationRaf);
+      mutationRaf = requestAnimationFrame(rescale);
+      settleTimeouts.forEach(clearTimeout);
+      settleTimeouts = [100, 300, 600].map((delay) => setTimeout(rescale, delay));
+    };
+    const raf = requestAnimationFrame(rescale);
+
+    // Percentage-based overrides adapt to resize on their own — no
+    // ResizeObserver needed here (unlike the all-day header's pixel-based
+    // height, this doesn't need re-computation on viewport changes).
+    const mutationObserver = new MutationObserver(scheduleRescale);
+    mutationObserver.observe(node, { childList: true, subtree: true });
+
+    return () => {
+      cancelAnimationFrame(raf);
+      if (mutationRaf) cancelAnimationFrame(mutationRaf);
+      settleTimeouts.forEach(clearTimeout);
+      mutationObserver.disconnect();
+    };
+  }, [events, currentView, isAgendaMode, visibleDate]);
+
   const isLate = (requestDateTime, requestCheckInTime = null) => {
     if (requestDateTime === null) {
       return false
