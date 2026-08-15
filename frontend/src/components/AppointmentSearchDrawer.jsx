@@ -60,13 +60,13 @@ function AppointmentSearchDrawer({ open, onClose, onSelectRequest }) {
       // is what actually wins.
       SlideProps={{ onEntered: () => searchInputRef.current?.focus() }}
     >
-      <Box sx={{ width: 400, p: 2 }} role="presentation">
+      <Box sx={{ width: { xs: 280, sm: 400 }, p: 2 }} role="presentation">
         <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2 }}>
           <TextField
             autoFocus
             inputRef={searchInputRef}
             fullWidth
-            placeholder="Search customer, carrier, or reference #"
+            placeholder="Search reference #, customer, carrier"
             value={rawQuery}
             onChange={(e) => setRawQuery(e.target.value)}
             InputProps={{

@@ -56,7 +56,7 @@ describe('AppointmentSearchDrawer', () => {
     )
     const user = userEvent.setup()
     renderDrawer()
-    await user.type(screen.getByPlaceholderText(/search customer/i), 'A')
+    await user.type(screen.getByPlaceholderText(/search reference/i), 'A')
     await new Promise((resolve) => setTimeout(resolve, 400))
     expect(called).toBe(false)
   })
@@ -72,7 +72,7 @@ describe('AppointmentSearchDrawer', () => {
     )
     const user = userEvent.setup()
     renderDrawer()
-    await user.type(screen.getByPlaceholderText(/search customer/i), 'Acme')
+    await user.type(screen.getByPlaceholderText(/search reference/i), 'Acme')
     await waitFor(() => {
       expect(screen.getByText('Acme Co')).toBeInTheDocument()
     })
@@ -82,7 +82,7 @@ describe('AppointmentSearchDrawer', () => {
     server.use(http.get('/api/request/', () => HttpResponse.json(sampleResults)))
     const { props } = renderDrawer()
     const user = userEvent.setup()
-    await user.type(screen.getByPlaceholderText(/search customer/i), 'Acme')
+    await user.type(screen.getByPlaceholderText(/search reference/i), 'Acme')
     await waitFor(() => {
       expect(screen.getByText('Acme Co')).toBeInTheDocument()
     })
@@ -95,7 +95,7 @@ describe('AppointmentSearchDrawer', () => {
     server.use(http.get('/api/request/', () => HttpResponse.json([])))
     const user = userEvent.setup()
     renderDrawer()
-    await user.type(screen.getByPlaceholderText(/search customer/i), 'Nothing')
+    await user.type(screen.getByPlaceholderText(/search reference/i), 'Nothing')
     await waitFor(() => {
       expect(screen.getByText(/no appointments found/i)).toBeInTheDocument()
     })

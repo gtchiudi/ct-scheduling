@@ -403,10 +403,19 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
         // All-day appointments shouldn't occupy a specific appointment time.
         // On /RequestForm the customer still needs to pick a preferred time
         // for dispatch to review, regardless of Container Drop.
+        // Anchor 6am to the *warehouse's* timezone, not the browser's — a
+        // wall-clock hour needs to be computed against the location it's
+        // actually scheduled at, or it can roll onto the wrong day for a
+        // creator/viewer sitting in a different timezone than the warehouse.
+        const warehouse = warehouseData.find((w) => w.id === requestData.warehouse);
+        const tz = warehouse?.timezone;
+        const zeroed = tz
+          ? dayjs(requestData.date_time).tz(tz).hour(6).minute(0).second(0)
+          : dayjs(requestData.date_time).hour(6).minute(0).second(0);
         setRequestData({
           ...requestData,
           [name]: checked,
-          date_time: dayjs(requestData.date_time).hour(0).minute(0).second(0),
+          date_time: zeroed,
         });
       } else {
         setRequestData({ ...requestData, [name]: checked });
@@ -689,11 +698,11 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
 
 
   return (
-    <Box sx={{mx: 1}}>
+    <Box sx={{mx: 1, sm: 3}}>
       <Dialog open={addCustomerOpen} onClose={() => { setAddCustomerOpen(false); setNewCustomerEmailError(false); }}>
         <DialogTitle textAlign="center">Add New Customer</DialogTitle>
-        <DialogContent>
-          <Stack spacing={2} sx={{ mt: 1, "& .MuiTextField-root": { width: "40ch" } }}>
+        <DialogContent sx={{ p: 0 }}>
+          <Stack spacing={2} sx={{ mt: 1, "& .MuiTextField-root": { width: { xs: "100%", sm: "40ch" } } }}>
             <TextField
               required
               label="Customer Name"
@@ -823,16 +832,17 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
           <MuiButton variant="contained" onClick={() => navigate("/")}>Dismiss</MuiButton>
         </DialogActions>
       </Dialog>
-    <Box marginBottom={"20px"} display="flex" justifyContent="center">
-      <FormControl>
+    <Box marginBottom={"20px"} display="flex" justifyContent="center" sx={{ px: { xs: 2, sm: 0 } }}>
+      <FormControl sx={{ width: { xs: "100%", sm: "auto" } }}>
         <Stack
           spacing={2}
           textAlign={"center"}
           margine="normal"
           sx={{
-            "& .MuiTextField-root": { m: 1, width: "60ch" },
-            "& > :not(style)": { mx: 1, width: "60ch" },
-            maxWidth: "70vw",
+            width: { xs: "100%", sm: "auto" },
+            "& .MuiTextField-root": { width: { xs: "100%", sm: "60ch" } },
+            "& > :not(style)": { mx: { xs: 0, sm: 1 }, width: { xs: "100%", sm: "60ch" }, boxSizing: "border-box" },
+            maxWidth: { xs: "100%", sm: "70vw" },
           }}
         >
           <TextField
@@ -962,7 +972,7 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
                 )}
               />
               {requestData.customer && (
-                <Box sx={{ mx: 1 }}>
+                <Stack spacing={2} sx={{ mx: 1, width: "100%" }}>
                   <TextField
                     label="Customer Email"
                     size="small"
@@ -1028,7 +1038,7 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
                       label="Send email updates to customer"
                     />
                   )}
-                </Box>
+                </Stack>
               )}
             </>
           )}
@@ -1073,7 +1083,7 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
           </TextField>
 
           {requestData.load_type === "Container" ? (
-            <Box>
+            <Stack spacing={2} sx={{ width: "100%" }}>
               <TextField
                 label="Intermodal Container Number"
                 value={refNumbers[0] || ""}
@@ -1090,7 +1100,7 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
                 onChange={handleChange}
                 disabled={request && path !== "/PendingRequests" && !editAppointment}
               />
-            </Box>
+            </Stack>
           ) : null}
           <TextField
             required={requiredFields.includes("delivery")}

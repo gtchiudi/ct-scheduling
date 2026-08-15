@@ -21,6 +21,16 @@ body{
       top: 152.77px;
       z-index: 1000;
       width: 100%;
+      /* This row's own height (and its `grid-template-rows` on this same
+         element) only accounts for a single stacked all-day lane — both
+         are pinned by the library as inline styles computed once, which a
+         stylesheet rule can't reliably out-cascade even with !important
+         (the row's auto-track sizing and its cells' stretch-to-fill-track
+         behavior end up circularly dependent on each other). Calendar.jsx's
+         header-height measurement effect grows both directly via inline
+         styles when more lanes are actually present; this is just a
+         fallback so nothing is clipped in between measurements. */
+      overflow: visible;
     }
     #calendar:not(.agenda-mode) div[data-testid="grid"] > :last-child {
       overflow-y: clip;

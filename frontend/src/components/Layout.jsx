@@ -30,7 +30,10 @@ function Layout({ children }) {
     <Box sx={{ height: "100%", margin: "0" }}>
       <Box sx={{ minHeight: "100%", marginBottom: "-50px" }}>
         <HeaderBar />
-        <Box sx={{ height: "66px" }} /> {/* spacer for fixed AppBar */}
+        {/* Spacer for the fixed AppBar — MUI's Toolbar is 56px tall below the
+            sm breakpoint and 64px at sm+, plus the AppBar's 1px top+bottom
+            border, so this has to match per breakpoint or mobile gets a gap. */}
+        <Box sx={{ height: { xs: "58px", sm: "66px" } }} />
         <Box sx={{ flex: "1" }}>{children}</Box>
         <Box sx={{ height: "50px" }}></Box>
       </Box>

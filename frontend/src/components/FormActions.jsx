@@ -44,7 +44,7 @@ function FormActions({
   };
 
   const formEnd = (
-    <Box>
+    <Stack spacing={2}>
       <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
         <TextField
           label="Driver Phone Number"
@@ -74,11 +74,11 @@ function FormActions({
           via SMS from Candor Logistics? Msg and data rates may apply.
         </Typography>
       )}
-    </Box>
+    </Stack>
   );
 
   const checkedInContent = (
-    <Box>
+    <Stack spacing={2}>
       <DateTimeField
         disabled
         label="Checked-In Time"
@@ -130,11 +130,11 @@ function FormActions({
           </Button>
         </DialogActions>
       </Dialog>
-    </Box>
+    </Stack>
   );
 
   const dockedContent = (
-    <Box>
+    <Stack spacing={2}>
       {checkedInContent}
       <DateTimeField
         disabled
@@ -142,11 +142,11 @@ function FormActions({
         name="docked_time"
         value={requestData.docked_time ? dayjs(requestData.docked_time) : undefined}
       />
-    </Box>
+    </Stack>
   );
 
   const completionContent = (
-    <Box>
+    <Stack spacing={2}>
       {dockedContent}
       <DateTimeField
         disabled
@@ -154,7 +154,7 @@ function FormActions({
         name="completed_time"
         value={requestData.completed_time ? dayjs(requestData.completed_time) : undefined}
       />
-    </Box>
+    </Stack>
   );
 
   if (path === "/PendingRequests") {
@@ -199,18 +199,18 @@ function FormActions({
         requestData.driver_phone_number.replace(/\D/g, '').length === 10
       );
       return (
-        <Box>
+        <Stack spacing={2}>
           {formEnd}
           <Button name="check_in_time" variant="contained" onClick={handleButton} disabled={!isDriverPhoneValid || isSubmitting}>
             Check-In
           </Button>
-        </Box>
+        </Stack>
       );
     }
 
     if (requestData.docked_time == null) {
       return (
-        <Box>
+        <Stack spacing={2}>
           {formEnd}
           {checkedInContent}
           <TextField
@@ -221,18 +221,18 @@ function FormActions({
             value={requestData.note_section ?? ""}
             onChange={handleChange}
             autoComplete="off"
-            sx={{ whiteSpace: "pre-wrap", my: 1 }}
+            sx={{ whiteSpace: "pre-wrap" }}
           />
           <Button name="dock_number" variant="contained" onClick={handleButton} disabled={(!dockNumberValue && !requestData.container_drop) || !!formAlert?.onAcknowledge || isSubmitting}>
             {requestData.container_drop ? "Send To Yard" : "Send To Dock"}
           </Button>
-        </Box>
+        </Stack>
       );
     }
 
     if (requestData.completed_time == null) {
       return (
-        <Box>
+        <Stack spacing={2}>
           {formEnd}
           {dockedContent}
           <TextField
@@ -243,7 +243,7 @@ function FormActions({
             value={requestData.note_section ?? ""}
             onChange={handleChange}
             autoComplete="off"
-            sx={{ whiteSpace: "pre-wrap", my: 1 }}
+            sx={{ whiteSpace: "pre-wrap" }}
           />
           <FormControlLabel
             control={
@@ -257,18 +257,18 @@ function FormActions({
           <Button name="completed_time" variant="contained" onClick={handleButton} disabled={!paperworkScanned || isSubmitting}>
             Complete
           </Button>
-        </Box>
+        </Stack>
       );
     }
 
     return (
-      <Box>
+      <Stack spacing={2}>
         {formEnd}
         {completionContent}
         <Button name="remove_from_calendar" variant="contained" onClick={handleButton} disabled={isSubmitting}>
           Remove from Calendar
         </Button>
-      </Box>
+      </Stack>
     );
   }
 

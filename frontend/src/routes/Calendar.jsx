@@ -18,9 +18,15 @@ import {
   Paper,
   Tooltip,
   Divider,
+  useMediaQuery,
+  Menu,
+  MenuItem,
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
-import { alpha, createTheme, ThemeProvider } from "@mui/material/styles";
+import FilterListIcon from "@mui/icons-material/FilterList";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import ExpandLessIcon from "@mui/icons-material/ExpandLess";
+import { alpha, createTheme, ThemeProvider, useTheme } from "@mui/material/styles";
 import { useAtom } from "jotai";
 import {
   authenticatedAtom,
@@ -78,7 +84,7 @@ export function CustomViewer({ event, onClose }) {
               ? event.request.ref_number.split(";").map(s => s.trim()).filter(Boolean).join(", ")
               : ""}
           </DialogTitle>
-          <DialogContent>
+          <DialogContent sx={{ pt: '20px !important', px: { xs: 0, sm: 3 }, pb: 0 }}>
             <Form request={event.request} closeModal={closeDialog} onLockChange={handleLockChange} />
           </DialogContent>
           <DialogActions>
@@ -106,7 +112,7 @@ export function CustomEditor({ event }) {
       {open && (
         <Dialog open={open} onClose={closeDialog}>
           <DialogTitle textAlign={"center"}>Create Appointment</DialogTitle>
-          <DialogContent>
+          <DialogContent sx={{ pt: '20px !important', px: { xs: 0, sm: 3 }, pb: 0 }}>
             <Form
               closeModal={closeDialog}
               dateTime={dayjs(event.state.start.value)}
@@ -131,6 +137,11 @@ const warningTheme = (outerTheme) => createTheme(outerTheme, {
 
 export default function Calendar() {
   const navigate = useNavigate();
+  const theme = useTheme();
+  // Only seeds the *initial* view — resizing an already-open desktop window
+  // narrower shouldn't yank the user into Day/Agenda mid-session, it should
+  // only affect what a fresh page load defaults to.
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const [, isAuth] = useAtom(isAuthAtom);
   const [authenticated] = useAtom(authenticatedAtom);
   // set start date to be previous month and set end date to be 3 months from start date
@@ -148,9 +159,16 @@ export default function Calendar() {
   const [agendaViewerEvent, setAgendaViewerEvent] = useState(null);
   const [newAppointmentOpen, setNewAppointmentOpen] = useState(false);
   const [searchDrawerOpen, setSearchDrawerOpen] = useState(false);
-  const schedulerViewRef = React.useRef("week");
-  const [currentView, setCurrentView] = useState("week");
-  const [isAgendaMode, setIsAgendaMode] = useState(false);
+  const [warehouseMenuAnchor, setWarehouseMenuAnchor] = useState(null);
+  const schedulerViewRef = React.useRef(isMobile ? "day" : "week");
+  const [currentView, setCurrentView] = useState(isMobile ? "day" : "week");
+  const [isAgendaMode, setIsAgendaMode] = useState(isMobile);
+  // Tracks which date is currently selected in the scheduler, purely so the
+  // header-height measurement effect below can re-run when the user
+  // navigates — the number of stacked all-day appointments (and therefore
+  // the native header's height) can differ per date even when nothing else
+  // about the events/view/agenda-mode changes.
+  const [visibleDate, setVisibleDate] = useState(dayjs());
   let result = useState(null); // query result storage
 
   const [warehouseData, refreshWarehouseData] = useAtom(warehouseDataEffectAtom);
@@ -162,6 +180,15 @@ export default function Calendar() {
   const checkboxesRef = React.useRef(null);
   const calendarBoxRef = React.useRef(null);
   const [calendarTopOffset, setCalendarTopOffset] = React.useState(135);
+  // Whether the all-day section shows every stacked lane or just the first
+  // one — toggled by the user via a small chevron; whether that chevron is
+  // even shown depends on whether there's more than one lane to begin with.
+  const [allDayExpanded, setAllDayExpanded] = React.useState(true);
+  const [allDayHasOverflow, setAllDayHasOverflow] = React.useState(false);
+  // Viewport `top` for the toggle chevron, kept in sync with wherever the
+  // all-day/hourly-grid divider currently sits (same value driving
+  // calendarTopOffset below, just not offset by the calendar box's own top).
+  const [allDayDividerTop, setAllDayDividerTop] = React.useState(null);
   // check authentication
   useEffect(() => {
     refreshWarehouseData();
@@ -298,35 +325,161 @@ export default function Calendar() {
       return false;
     };
 
-    const getHeaderEls = () =>
-      Array.from(node.querySelectorAll(".rs__header, .rs__view_navigator")).filter(isInFixedHeader);
+    // `.rs__multi_day` chips (stacked all-day/multi-day events) are
+    // absolutely positioned inside `.rs__header`, so they don't contribute
+    // to its own auto height — a header row with 2+ stacked lanes needs its
+    // tallest chip included here directly, or the grid body underneath
+    // isn't pushed down far enough to clear it. `.rs__view_navigator` (the
+    // Today/Month/Week/Day toolbar) is a separate fixed element stacked
+    // above the day-header row — it's included when measuring the overall
+    // offset below (its own bottom can matter too), but must NEVER be part
+    // of the day-cell stretch further down, or forcing its height to match
+    // a tall stacked-chip row pushes its own button labels out of view.
+    const getHeaderCellEls = () =>
+      Array.from(node.querySelectorAll(".rs__header")).filter(isInFixedHeader);
+    const getNavigatorEls = () =>
+      Array.from(node.querySelectorAll(".rs__view_navigator")).filter(isInFixedHeader);
+    const getChipEls = () =>
+      Array.from(node.querySelectorAll(".rs__multi_day")).filter(isInFixedHeader);
 
     const measure = () => {
-      const headerEls = getHeaderEls();
-      if (!headerEls.length) return;
+      const headerCellEls = getHeaderCellEls();
+      const navigatorEls = getNavigatorEls();
+      if (!headerCellEls.length && !navigatorEls.length) return;
+      const headerWrapper = node.querySelector('div[data-testid="grid"] > :first-child');
+
+      // The library locks each header cell's height *and* its wrapper's
+      // `grid-template-rows` to a single-lane measurement — both computed
+      // once and applied as high-specificity inline styles, which a
+      // stylesheet override can't reliably out-cascade (grid's auto-track
+      // sizing and the cell's own stretch-to-fill-track end up circularly
+      // dependent on each other otherwise). Clearing any previous override
+      // before re-measuring avoids treating our own last stretch as the
+      // "natural" size on the next pass.
+      headerWrapper?.style.removeProperty("grid-template-rows");
+      headerCellEls.forEach((el) => el.style.removeProperty("height"));
+
       const calendarTop = node.getBoundingClientRect().top;
-      let maxBottom = 0;
-      headerEls.forEach((el) => {
+      let baseBottom = 0;
+      [...headerCellEls, ...navigatorEls].forEach((el) => {
         const bottom = el.getBoundingClientRect().bottom;
-        if (bottom > maxBottom) maxBottom = bottom;
+        if (bottom > baseBottom) baseBottom = bottom;
       });
-      if (maxBottom > 0) {
-        setCalendarTopOffset(Math.ceil(maxBottom - calendarTop) + 0.25);
+
+      // Whether there's more than one stacked lane can't be inferred from
+      // "does the tallest chip's bottom exceed the header cell's own
+      // bottom" — Day view's single-column grid has no competing sibling
+      // cells to hold its row height down, so once the library's pinned
+      // height is removed above, the cell auto-grows to already fit every
+      // stacked lane, making that comparison always come out equal. Lane
+      // *positions* are reliable in every view instead: chips share the
+      // same viewport `top` across every day column that has one at a
+      // given stack depth, so distinct top values directly count lanes.
+      const chipEls = getChipEls();
+      let maxChipBottom = 0;
+      const laneTops = [];
+      chipEls.forEach((el) => {
+        const rect = el.getBoundingClientRect();
+        if (rect.bottom > maxChipBottom) maxChipBottom = rect.bottom;
+        const top = Math.round(rect.top);
+        if (!laneTops.includes(top)) laneTops.push(top);
+      });
+      laneTops.sort((a, b) => a - b);
+      const hasOverflow = laneTops.length > 1;
+      setAllDayHasOverflow(hasOverflow);
+
+      // Collapsed target: the header cell's own box is forced down to
+      // exactly where the 2nd lane starts, so it's fully clipped — a no-op
+      // in views where that already matches the natural single-lane size,
+      // but load-bearing in Day view where "natural" already means "every
+      // lane" per the comment above.
+      const targetBottom = hasOverflow && !allDayExpanded
+        ? laneTops[1]
+        : Math.max(baseBottom, maxChipBottom);
+
+      if (headerWrapper && headerCellEls.length) {
+        const wrapperTop = headerWrapper.getBoundingClientRect().top;
+        const rowHeight = Math.ceil(targetBottom - wrapperTop);
+        headerWrapper.style.setProperty("grid-template-rows", `${rowHeight}px`, "important");
+        headerCellEls.forEach((el) => {
+          // These cells are `box-sizing: content-box`, so a `height` equal
+          // to the full row height renders 1px taller once the border-
+          // bottom (the divider itself) is added on top — just past the
+          // wrapper's `overflow: hidden` clip boundary when collapsed,
+          // which silently swallows that exact pixel and makes the divider
+          // vanish. Shrinking by the cell's own border keeps its *total*
+          // rendered box (content + border) matching the row height.
+          const cellCs = getComputedStyle(el);
+          const borderAdjust = cellCs.boxSizing === "border-box"
+            ? 0
+            : (parseFloat(cellCs.borderTopWidth) || 0) + (parseFloat(cellCs.borderBottomWidth) || 0);
+          el.style.setProperty("height", `${Math.max(0, rowHeight - borderAdjust)}px`, "important");
+        });
+      }
+      // Collapsed: clip extra lanes at the header cells' own (now shrunk)
+      // bounds instead of letting them spill over the grid body underneath
+      // — this is what actually "collapses" the section.
+      headerWrapper?.style.setProperty(
+        "overflow",
+        hasOverflow && !allDayExpanded ? "hidden" : "visible",
+        "important"
+      );
+
+      if (targetBottom > 0) {
+        setCalendarTopOffset(Math.ceil(targetBottom - calendarTop) + 0.25);
+        setAllDayDividerTop(Math.ceil(targetBottom));
       }
     };
 
     measure();
+    let mutationRaf = null;
+    let settleTimeouts = [];
+    const scheduleMeasure = () => {
+      if (mutationRaf) cancelAnimationFrame(mutationRaf);
+      mutationRaf = requestAnimationFrame(measure);
+      // Stacked all-day chips can arrive across more than one of the
+      // library's own internal render passes (e.g. lanes 2 and 3 landing
+      // in separate commits after lane 1) — a single immediate re-measure
+      // can lock in an intermediate, still-too-short height if it runs
+      // between passes. A few staggered follow-ups catch whatever a single
+      // rAF misses without needing to know how many passes there'll be.
+      settleTimeouts.forEach(clearTimeout);
+      settleTimeouts = [100, 300, 600].map((delay) => setTimeout(measure, delay));
+    };
     const raf = requestAnimationFrame(measure); // catch layout that settles a tick later
 
+    // Only `node` itself is observed for resize — measure() now writes
+    // inline height/grid-template-rows onto the header cells directly
+    // (see above), and observing those same elements here would mean our
+    // own writes trigger their own resize notifications right back into
+    // this callback.
     const observer = new ResizeObserver(measure);
     observer.observe(node);
-    getHeaderEls().forEach((el) => observer.observe(el));
+
+    // The scheduler positions stacked all-day chips (`.rs__multi_day`) in
+    // internal passes that can land after our own commit — a ResizeObserver
+    // alone won't catch that, since a chip appearing/repositioning doesn't
+    // resize its parent (it's absolutely positioned, so it never affects
+    // the parent's own box size). Observing `node` itself (rather than the
+    // specific fixed-header wrapper) survives React replacing that wrapper
+    // node across re-renders; the `isInFixedHeader` filter keeps the
+    // (frequent) scrollable-body mutations from triggering wasted
+    // re-measures. `attributes` is deliberately excluded — measure() writes
+    // style attributes onto this same subtree, which would otherwise
+    // retrigger itself on every pass.
+    const mutationObserver = new MutationObserver((mutations) => {
+      if (mutations.some((m) => isInFixedHeader(m.target))) scheduleMeasure();
+    });
+    mutationObserver.observe(node, { childList: true, subtree: true });
 
     return () => {
       cancelAnimationFrame(raf);
+      if (mutationRaf) cancelAnimationFrame(mutationRaf);
+      settleTimeouts.forEach(clearTimeout);
       observer.disconnect();
+      mutationObserver.disconnect();
     };
-  }, [events, currentView, isAgendaMode]);
+  }, [events, currentView, isAgendaMode, visibleDate, allDayExpanded]);
 
   const isLate = (requestDateTime, requestCheckInTime = null) => {
     if (requestDateTime === null) {
@@ -444,7 +597,7 @@ export default function Calendar() {
     <Box id="body">
       <Dialog open={newAppointmentOpen} onClose={() => setNewAppointmentOpen(false)}>
         <DialogTitle textAlign="center">Create Appointment</DialogTitle>
-        <DialogContent>
+        <DialogContent sx={{ pt: '20px !important', px: { xs: 0, sm: 3 }, pb: 0 }}>
           <Form
             closeModal={() => { queryClient.invalidateQueries(["requests"]); setNewAppointmentOpen(false); }}
           />
@@ -460,39 +613,97 @@ export default function Calendar() {
         display="flex"
         justifyContent="space-between"
         alignItems="center"
-        // marginBottom={100}
         backgroundColor="white"
         position="fixed"
+        left={0}
         right={0}
-        top="66px"
-        height={"50px"}
+        top={{ xs: "58px", sm: "66px" }}
+        // The scheduler library's own toolbar renders at a fixed position
+        // (~112px) that's independent of our layout — this bar's bottom edge
+        // needs to reach past that regardless of breakpoint, or a gap opens
+        // up between this bar and the scheduler underneath it. 66+50=116px
+        // already clears it on desktop; mobile's shorter app-header (58px
+        // top here vs 66px) needs a taller bar to reach the same point.
+        height={{ xs: "56px", sm: "50px" }}
         zIndex={1000}
-        width="100%"
+        px={2}
       >
-        <Box display="flex" alignItems="center">
-          <Button variant="contained" sx={{ ml: 2 }} onClick={() => setNewAppointmentOpen(true)}>
-            New Appointment
+        <Box display="flex" alignItems="center" gap={1}>
+          <Button
+            variant="contained"
+            size={isMobile ? "small" : "medium"}
+            onClick={() => setNewAppointmentOpen(true)}
+          >
+            {isMobile ? "New" : "New Appointment"}
           </Button>
-          <IconButton aria-label="Search appointments" onClick={() => setSearchDrawerOpen(true)} sx={{ ml: 1 }}>
+          <IconButton aria-label="Search appointments" onClick={() => setSearchDrawerOpen(true)}>
             <SearchIcon />
           </IconButton>
         </Box>
-        <Box display="flex" alignItems="center">
-        {parsedWarehouseData.map((warehouse) => (
-          <Box key={warehouse.id} marginRight={2}>
-            <FormControlLabel
-              control={
-                <Checkbox
-                  checked={warehouse.checked}
-                  onChange={handleCheckboxChange(warehouse.id)}
-                />
-              }
-              label={warehouse.name}
-            />
+        {isMobile ? (
+          <>
+            <IconButton
+              aria-label="Filter warehouses"
+              onClick={(e) => setWarehouseMenuAnchor(e.currentTarget)}
+            >
+              <FilterListIcon />
+            </IconButton>
+            <Menu
+              anchorEl={warehouseMenuAnchor}
+              open={Boolean(warehouseMenuAnchor)}
+              onClose={() => setWarehouseMenuAnchor(null)}
+            >
+              {parsedWarehouseData.map((warehouse) => (
+                <MenuItem key={warehouse.id} onClick={(e) => e.stopPropagation()} dense>
+                  <FormControlLabel
+                    sx={{ width: "100%", mr: 0 }}
+                    control={
+                      <Checkbox
+                        checked={warehouse.checked}
+                        onChange={handleCheckboxChange(warehouse.id)}
+                      />
+                    }
+                    label={warehouse.name}
+                  />
+                </MenuItem>
+              ))}
+            </Menu>
+          </>
+        ) : (
+          <Box display="flex" alignItems="center" gap={1}>
+            {parsedWarehouseData.map((warehouse) => (
+              <FormControlLabel
+                key={warehouse.id}
+                control={
+                  <Checkbox
+                    checked={warehouse.checked}
+                    onChange={handleCheckboxChange(warehouse.id)}
+                  />
+                }
+                label={warehouse.name}
+              />
+            ))}
           </Box>
-        ))}
-        </Box>
+        )}
       </Box>
+      {!isAgendaMode && allDayHasOverflow && allDayDividerTop != null && (
+        <IconButton
+          aria-label={allDayExpanded ? "Collapse all-day events" : "Expand all-day events"}
+          onClick={() => setAllDayExpanded((prev) => !prev)}
+          size="small"
+          sx={{
+            position: "fixed",
+            top: `${allDayDividerTop - 14}px`,
+            right: 8,
+            zIndex: 1001,
+            backgroundColor: "background.paper",
+            boxShadow: 1,
+            "&:hover": { backgroundColor: "grey.100" },
+          }}
+        >
+          {allDayExpanded ? <ExpandLessIcon fontSize="small" /> : <ExpandMoreIcon fontSize="small" />}
+        </IconButton>
+      )}
       <AppointmentSearchDrawer
         open={searchDrawerOpen}
         onClose={() => setSearchDrawerOpen(false)}
@@ -512,6 +723,8 @@ export default function Calendar() {
           ref={ref}
           hourFormat="24"
           events={events}
+          view={currentView}
+          agenda={isAgendaMode}
           disableViewer
           onEventClick={(event) => setViewerEvent(event)}
           eventRenderer={({ event, onClick, draggable }) => {
@@ -676,6 +889,7 @@ export default function Calendar() {
           onViewChange={(view, agenda) => { schedulerViewRef.current = view; setCurrentView(view); setIsAgendaMode(!!agenda); }}
           onSelectedDateChange={(date) => {
             updateRange(date);
+            setVisibleDate(dayjs(date));
           }}
           customEditor={(event) => <CustomEditor event={event} />}
         />

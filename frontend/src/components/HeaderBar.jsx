@@ -14,8 +14,10 @@ import {
   MenuItem,
   Stack,
   Badge,
+  Divider,
+  useMediaQuery,
 } from "@mui/material";
-import MenuIcon from "@mui/icons-material/Menu";
+import { useTheme } from "@mui/material/styles";
 import { useAtom } from "jotai";
 import { authenticatedAtom, userGroupsAtom, userInitialAtom } from "../components/atoms.jsx";
 import { useQuery } from "@tanstack/react-query";
@@ -28,18 +30,22 @@ import axios from "axios";
 // All of this is the same for the 'Settings' menu
 
 const pagesNonAuth = [
-  { text: "REQUEST PICKUP/DELIVERY", href: "/RequestForm" },
+  { text: "REQUEST PICKUP/DELIVERY", mobileText: "REQUEST", href: "/RequestForm" },
 ];
 
 
 function HeaderBar() {
-  const [anchorElNav, setAnchorElNav] = React.useState(null);
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const [anchorElUser, setAnchorElUser] = React.useState(null);
   const [authenticated] = useAtom(authenticatedAtom);
   const userGroups = useAtom(userGroupsAtom)[0];
   const [userInitial] = useAtom(userInitialAtom);
   const location = useLocation();
-  let pagesToRender = pagesNonAuth;
+  // "REQUEST PICKUP/DELIVERY" is the anonymous-visitor CTA — an authenticated
+  // user whose group doesn't match any case below (e.g. mid-load, or a group
+  // this list doesn't know about) should see no extra nav links, never that.
+  let pagesToRender = authenticated ? [] : pagesNonAuth;
   let settings = [{ text: "Login", href: "/Login" }];
 
   // Query for pending request stats
@@ -97,14 +103,8 @@ function HeaderBar() {
 
   }
 
-  const handleOpenNavMenu = (event) => {
-    setAnchorElNav(event.currentTarget);
-  };
   const handleOpenUserMenu = (event) => {
     setAnchorElUser(event.currentTarget);
-  };
-  const handleCloseNavMenu = () => {
-    setAnchorElNav(null);
   };
   const handleCloseUserMenu = () => {
     setAnchorElUser(null);
@@ -126,11 +126,15 @@ function HeaderBar() {
             />
           </a>
 
+          <Box sx={{ flexGrow: 1 }} />
+
+          {/* Unauthenticated visitors have no avatar/user menu to fall back into on
+              mobile, so their single link stays visible at every width; authenticated
+              users get it below md via the avatar menu instead (see settings Menu). */}
           <Box
             sx={{
-              flexGrow: 1,
               justifyContent: "flex-end",
-              display: { xs: "none", md: "flex" },
+              display: authenticated ? { xs: "none", md: "flex" } : "flex",
             }}
           >
             <Stack
@@ -149,12 +153,12 @@ function HeaderBar() {
                   showZero={page.text === 'Pending Requests'}
                 >
                   <Button
-                    onClick={handleCloseNavMenu}
                     component={RouterLink}
                     to={page.href}
                     variant="contained"
+                    size={isMobile ? "small" : "medium"}
                   >
-                    {page.text}
+                    {isMobile ? page.mobileText || page.text : page.text}
                   </Button>
                 </Badge>
               ))}
@@ -186,12 +190,37 @@ function HeaderBar() {
                   open={Boolean(anchorElUser)}
                   onClose={handleCloseUserMenu}
                 >
+                  {/* Nav links (Pending Requests, Calendar, etc.) — only shown here below
+                      md, where the button row above is hidden; this is the only place
+                      they're reachable on a narrow screen, so there's no separate menu. */}
+                  {pagesToRender.map((page) => (
+                    <MenuItem
+                      key={page.text}
+                      component={RouterLink}
+                      to={page.href}
+                      onClick={handleCloseUserMenu}
+                      sx={{ display: { xs: "flex", md: "none" } }}
+                    >
+                      <Typography
+                        sx={
+                          page.text === "Pending Requests" && pendingCount > 0
+                            ? { color: `${page.color}.main` }
+                            : undefined
+                        }
+                      >
+                        {page.text}
+                        {page.text === "Pending Requests" && pendingCount > 0 ? ` (${pendingCount})` : ""}
+                      </Typography>
+                    </MenuItem>
+                  ))}
+                  {pagesToRender.length > 0 && (
+                    <Divider sx={{ display: { xs: "block", md: "none" } }} />
+                  )}
                   {settings.map((setting) => (
                     <MenuItem key={setting.text} onClick={handleCloseUserMenu}>
                       <Typography textAlign="center">
                         <Button
                           key={setting.href}
-                          onClick={handleCloseNavMenu}
                           component={setting.component ? setting.component : RouterLink}
                           {...(setting.component === 'a' ? { href: setting.href } : { to: setting.href })}
                         >

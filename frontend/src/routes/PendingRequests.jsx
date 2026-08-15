@@ -309,7 +309,7 @@ export default function PendingRequests() {
           <DialogTitle textAlign={"center"}>
             Edit and Approve Request
           </DialogTitle>
-          <DialogContent>
+          <DialogContent sx={{ pt: '20px !important', px: { xs: 0, sm: 3 }, pb: 0 }}>
             <Form request={selected} closeModal={closeDialog} />
           </DialogContent>
           <DialogActions>

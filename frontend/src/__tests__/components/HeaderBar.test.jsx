@@ -108,12 +108,15 @@ describe('unauthenticated user', () => {
 describe('authenticated Dispatch user on /', () => {
   it('renders Pending Requests button', () => {
     renderHeaderBar({ authenticated: true, userGroups: ['Dispatch'], path: '/' })
-    expect(screen.getByText(/pending requests/i)).toBeInTheDocument()
+    // Nav links now render both in the desktop button row and in the user
+    // avatar menu (shown below md instead of a separate hamburger menu) —
+    // both copies exist in the DOM simultaneously, toggled via CSS display.
+    expect(screen.getAllByText(/pending requests/i)[0]).toBeInTheDocument()
   })
 
   it('renders Calendar button', () => {
     renderHeaderBar({ authenticated: true, userGroups: ['Dispatch'], path: '/' })
-    expect(screen.getByText(/^calendar$/i)).toBeInTheDocument()
+    expect(screen.getAllByText(/^calendar$/i)[0]).toBeInTheDocument()
   })
 
   it('does not render Login button when authenticated', () => {
@@ -134,7 +137,7 @@ describe('authenticated Dispatch user on /', () => {
 describe('authenticated Dock user on /', () => {
   it('renders Calendar button', () => {
     renderHeaderBar({ authenticated: true, userGroups: ['Dock'], path: '/' })
-    expect(screen.getByText(/^calendar$/i)).toBeInTheDocument()
+    expect(screen.getAllByText(/^calendar$/i)[0]).toBeInTheDocument()
   })
 
   it('does NOT render Pending Requests button', () => {
@@ -150,8 +153,8 @@ describe('authenticated Dock user on /', () => {
 describe('authenticated Admin user on /', () => {
   it('renders both Pending Requests and Calendar buttons', () => {
     renderHeaderBar({ authenticated: true, userGroups: ['Admin'], path: '/' })
-    expect(screen.getByText(/pending requests/i)).toBeInTheDocument()
-    expect(screen.getByText(/^calendar$/i)).toBeInTheDocument()
+    expect(screen.getAllByText(/pending requests/i)[0]).toBeInTheDocument()
+    expect(screen.getAllByText(/^calendar$/i)[0]).toBeInTheDocument()
   })
 })
 
@@ -162,7 +165,7 @@ describe('authenticated Admin user on /', () => {
 describe('authenticated Dispatch user on /Calendar', () => {
   it('renders Pending Requests button', () => {
     renderHeaderBar({ authenticated: true, userGroups: ['Dispatch'], path: '/Calendar' })
-    expect(screen.getByText(/pending requests/i)).toBeInTheDocument()
+    expect(screen.getAllByText(/pending requests/i)[0]).toBeInTheDocument()
   })
 
   it('does NOT render a Calendar button (already on Calendar page)', () => {
@@ -178,7 +181,7 @@ describe('authenticated Dispatch user on /Calendar', () => {
 describe('authenticated Dock user on /Calendar', () => {
   it('renders Home button', () => {
     renderHeaderBar({ authenticated: true, userGroups: ['Dock'], path: '/Calendar' })
-    expect(screen.getByText(/^home$/i)).toBeInTheDocument()
+    expect(screen.getAllByText(/^home$/i)[0]).toBeInTheDocument()
   })
 
   it('does NOT render Pending Requests button', () => {
@@ -208,6 +211,33 @@ describe('settings menu', () => {
     await waitFor(() =>
       expect(screen.queryByText(/admin page/i)).not.toBeInTheDocument()
     )
+  })
+})
+
+// ---------------------------------------------------------------------------
+// Nav links inside the user avatar menu — this is how narrow-screen users
+// reach Pending Requests/Calendar/etc. now that there's no separate
+// hamburger menu; the desktop button row is hidden below md instead.
+// ---------------------------------------------------------------------------
+
+describe('nav links inside the user avatar menu', () => {
+  it('shows Pending Requests alongside Logout when the avatar menu is opened', async () => {
+    const user = userEvent.setup()
+    renderHeaderBar({ authenticated: true, userGroups: ['Dispatch'], userInitial: 'D', path: '/' })
+    await user.click(screen.getByRole('button', { name: /user menu/i }))
+    const menuItems = await waitFor(() => screen.getAllByRole('menuitem'))
+    const texts = menuItems.map((el) => el.textContent)
+    expect(texts.some((t) => /pending requests/i.test(t))).toBe(true)
+    expect(texts.some((t) => /logout/i.test(t))).toBe(true)
+  })
+
+  it('the Pending Requests menu item links to /PendingRequests', async () => {
+    const user = userEvent.setup()
+    renderHeaderBar({ authenticated: true, userGroups: ['Dispatch'], userInitial: 'D', path: '/' })
+    await user.click(screen.getByRole('button', { name: /user menu/i }))
+    const menuItems = await waitFor(() => screen.getAllByRole('menuitem'))
+    const pendingItem = menuItems.find((el) => /pending requests/i.test(el.textContent))
+    expect(pendingItem).toHaveAttribute('href', '/PendingRequests')
   })
 })
 

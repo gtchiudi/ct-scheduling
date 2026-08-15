@@ -44,6 +44,9 @@ rollback-history:
 clean:
 	rm -f deployments/production/.replacements.bak
 
+doc-prune:
+	docker system prune -af
+
 # ─── Test targets ─────────────────────────────────────────────────────────────
 
 # Backend unit tests (fast, in-memory SQLite, no network)
