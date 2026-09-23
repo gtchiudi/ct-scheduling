@@ -676,25 +676,35 @@ export default function Calendar() {
     };
   }, [events, currentView, isAgendaMode, visibleDate]);
 
-  const isLate = (requestDateTime, requestCheckInTime = null) => {
+  // When an arrival stops counting as on time. A normal appointment is booked
+  // for a specific slot, so it gets a 10-minute grace period past that slot.
+  // An all-day (container drop) appointment isn't tied to a time at all — the
+  // whole day is the window — so measuring it against its nominal start time
+  // would flag it late 10 minutes into a day it still has left to run. It's
+  // only late once that day has passed without an arrival, i.e. at the start
+  // of the following day.
+  const arrivalDeadline = (requestDateTime, isAllDay) =>
+    isAllDay
+      ? dayjs(requestDateTime).add(1, "day").startOf("day")
+      : dayjs(requestDateTime).add(10, "minutes");
+
+  const isLate = (requestDateTime, requestCheckInTime = null, isAllDay = false) => {
     if (requestDateTime === null) {
       return false
-    } else if (requestCheckInTime === null) {
-      return dayjs().isAfter(dayjs(requestDateTime).add(10, "minutes"));
-    } else {
-      return (
-        dayjs(requestCheckInTime).isAfter(
-          dayjs(requestDateTime).add(10, "minutes")
-        )
-      );
     }
+    const deadline = arrivalDeadline(requestDateTime, isAllDay);
+    // No check-in yet: late once the deadline has already passed. Checked in:
+    // late only if that arrival itself landed after the deadline.
+    return requestCheckInTime === null
+      ? dayjs().isAfter(deadline)
+      : dayjs(requestCheckInTime).isAfter(deadline);
   };
 
   const getEventColor = (request) => {
     if (request.completed_time !== null) {
       return "#808080"; // Gray for completed requests
     }
-    else if (isLate(request.date_time, request.check_in_time)) {
+    else if (isLate(request.date_time, request.check_in_time, request.container_drop === true)) {
       return "#FF0000"; // Red for late requests
     } else {
       const warehouse = warehouseData.find(w => w.id === request.warehouse);
@@ -704,7 +714,7 @@ export default function Calendar() {
 
   const getEventStatus = (event) => {
     if (event.request.check_in_time == null){
-      if (isLate(event.request.date_time, event.request.check_in_time))
+      if (isLate(event.request.date_time, event.request.check_in_time, event.request.container_drop === true))
         return 'Late'
       return 'On Time'
     }
