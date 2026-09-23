@@ -1229,7 +1229,12 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
                 }}
                 timeSteps={{ minutes: 15 }}
                 disablePast={path === "/RequestForm"}
-                shouldDisableDate={(date) => (dayjs(date).isSame(dayjs(), "day") && path == "/RequestForm")}
+                shouldDisableDate={(date) => {
+                  if (path !== "/RequestForm") return false;
+                  if (dayjs(date).isSame(dayjs(), "day")) return true;
+                  const weekday = dayjs(date).day(); // 0 = Sunday, 6 = Saturday
+                  return weekday === 0 || weekday === 6;
+                }}
                 timezone={warehouseTimezone || undefined}
                 slotProps={{
                   popper: { disablePortal: true },

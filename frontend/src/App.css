@@ -35,3 +35,17 @@ body{
     #calendar:not(.agenda-mode) div[data-testid="grid"] > :last-child {
       overflow-y: clip;
     }
+    /* Once a day has enough stacked all-day appointments, Calendar.jsx caps the
+       header's visible height and lets it scroll internally (see
+       ALL_DAY_MAX_VIEWPORT_FRACTION) rather than letting a `position: fixed`
+       block grow past the viewport. The day-name row is the first child of each
+       header cell and would scroll out of view with everything else, leaving
+       unlabelled columns — pinning it keeps Mon/Tue/... visible while the
+       appointments underneath scroll. Opaque background so chips scrolling
+       beneath it don't show through. */
+    #calendar:not(.agenda-mode) div[data-testid="grid"] > :first-child .rs__header > div:first-child {
+      position: sticky;
+      top: 0;
+      z-index: 2;
+      background-color: #fff;
+    }

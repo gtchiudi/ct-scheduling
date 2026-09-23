@@ -13,7 +13,7 @@ import { useNavigate } from "react-router-dom";
 import { setupAxiosInterceptor } from "../utils/axiosInterceptor.js";
 
 function Layout({ children }) {
-  const authenticated = useAtom(authenticatedAtom);
+  const [authenticated] = useAtom(authenticatedAtom);
   const [, isAuth] = useAtom(isAuthAtom);
   const [, setNavigateFn] = useAtom(navigateFnAtom);
   const navigate = useNavigate();

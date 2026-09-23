@@ -17,9 +17,12 @@ export const userGroupsAtom = atomWithStorage("userGroups", [], undefined, {getO
 export const userInitialAtom = atomWithStorage("userInitial", "U", undefined, {getOnInit: true});
 export const editAppointmentAtom = atom(false);
 
-authenticatedAtom.onMount = (set) => {
-  set(isAuthAtom);
-};
+// No onMount hook here: Layout.jsx's own effect (`useEffect(() => isAuth(), [authenticated])`)
+// already runs isAuthAtom on initial mount, since React always runs effects after the first
+// render regardless of dependency "change" semantics. Layout is present on every route, so
+// this onMount hook was a second, redundant entry point into the same async auth check —
+// firing both concurrently caused duplicate (and, combined with the removeTokensAtom
+// recursion below, multiplicative) navigate("/") calls when a session had fully expired.
 
 // --- NEW: Fetch user groups and set atom ---
 
@@ -140,7 +143,12 @@ export const isAuthAtom = atom(
 export const removeTokensAtom = atom(null, (get, set) => {
   set(accessTokenAtom, null);
   set(refreshTokenAtom, null);
-  set(isAuthAtom, false);
+  // Set authenticatedAtom directly rather than re-entering isAuthAtom: tokens are
+  // already cleared above, so there's nothing left for isAuthAtom to derive. Re-entering
+  // it here used to recurse back into the "retry refresh" branch (since refreshAtom can
+  // still be true from an in-progress outer refresh attempt), firing a second doomed
+  // refresh against the now-null tokens and a second redundant navigate("/") on failure.
+  set(authenticatedAtom, false);
   set(userGroupsAtom, []); // clear user groups
 });
 

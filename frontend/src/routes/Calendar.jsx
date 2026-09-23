@@ -135,6 +135,15 @@ const warningTheme = (outerTheme) => createTheme(outerTheme, {
   },
 });
 
+// Ceiling on how much of the viewport the expanded all-day section may take
+// before it starts scrolling internally instead of growing. The section is
+// `position: fixed`, so unbounded growth doesn't just look bad — it covers the
+// hourly grid outright and can't be scrolled past (see the measurement effect).
+const ALL_DAY_MAX_VIEWPORT_FRACTION = 0.4;
+// Floor for the above, so a short window (or a phone in landscape) still shows
+// a usable couple of lanes rather than a sliver.
+const ALL_DAY_MIN_VISIBLE_PX = 120;
+
 export default function Calendar() {
   const navigate = useNavigate();
   const theme = useTheme();
@@ -316,13 +325,38 @@ export default function Calendar() {
     // which is `position: fixed`. Restrict to elements whose nearest
     // positioned ancestor (within the calendar box) is actually fixed, or the
     // measurement runs away chasing hour rows far down the scrollable body.
-    const isInFixedHeader = (el) => {
-      let ancestor = el;
-      while (ancestor && ancestor !== node) {
-        if (getComputedStyle(ancestor).position === "fixed") return true;
-        ancestor = ancestor.parentElement;
-      }
-      return false;
+    // Answering this walks every ancestor up to `node` calling
+    // `getComputedStyle` on each, and it gets asked once per header cell and
+    // once per all-day chip on every single measure pass — a day with a lot of
+    // stacked chips turns that into thousands of style resolutions per pass.
+    // Every candidate shares the same handful of ancestors, so memoizing the
+    // walk collapses it to a couple of map lookups. The cache is rebuilt per
+    // pass (never shared across passes) so a changed layout is never answered
+    // from a stale entry. Caching the whole walked chain — not just the element
+    // asked about — is what makes it amortize: the answer for an element is by
+    // definition the answer for everything below it on the same path.
+    const makeFixedHeaderTest = () => {
+      const cache = new Map();
+      return (el) => {
+        const walked = [];
+        let ancestor = el;
+        let result = false;
+        while (ancestor && ancestor !== node) {
+          const cached = cache.get(ancestor);
+          if (cached !== undefined) {
+            result = cached;
+            break;
+          }
+          walked.push(ancestor);
+          if (getComputedStyle(ancestor).position === "fixed") {
+            result = true;
+            break;
+          }
+          ancestor = ancestor.parentElement;
+        }
+        walked.forEach((walkedEl) => cache.set(walkedEl, result));
+        return result;
+      };
     };
 
     // `.rs__multi_day` chips (stacked all-day/multi-day events) are
@@ -335,16 +369,17 @@ export default function Calendar() {
     // offset below (its own bottom can matter too), but must NEVER be part
     // of the day-cell stretch further down, or forcing its height to match
     // a tall stacked-chip row pushes its own button labels out of view.
-    const getHeaderCellEls = () =>
+    const getHeaderCellEls = (isInFixedHeader) =>
       Array.from(node.querySelectorAll(".rs__header")).filter(isInFixedHeader);
-    const getNavigatorEls = () =>
+    const getNavigatorEls = (isInFixedHeader) =>
       Array.from(node.querySelectorAll(".rs__view_navigator")).filter(isInFixedHeader);
-    const getChipEls = () =>
+    const getChipEls = (isInFixedHeader) =>
       Array.from(node.querySelectorAll(".rs__multi_day")).filter(isInFixedHeader);
 
     const measure = () => {
-      const headerCellEls = getHeaderCellEls();
-      const navigatorEls = getNavigatorEls();
+      const isInFixedHeader = makeFixedHeaderTest();
+      const headerCellEls = getHeaderCellEls(isInFixedHeader);
+      const navigatorEls = getNavigatorEls(isInFixedHeader);
       if (!headerCellEls.length && !navigatorEls.length) return;
       const headerWrapper = node.querySelector('div[data-testid="grid"] > :first-child');
 
@@ -356,7 +391,18 @@ export default function Calendar() {
       // dependent on each other otherwise). Clearing any previous override
       // before re-measuring avoids treating our own last stretch as the
       // "natural" size on the next pass.
+      // Natural-size measurement has to happen with the clamp off, and with the
+      // section scrolled back to the top — chip rects are viewport-relative, so
+      // reading them while scrolled would report lane positions shifted by
+      // whatever the scroll offset happened to be. Both are restored below once
+      // the new geometry is applied, so an open all-day section doesn't jump
+      // back to the top every time something triggers a re-measure.
+      const prevScrollTop = headerWrapper?.scrollTop ?? 0;
       headerWrapper?.style.removeProperty("grid-template-rows");
+      headerWrapper?.style.removeProperty("height");
+      headerWrapper?.style.removeProperty("overflow-y");
+      headerWrapper?.style.removeProperty("overflow-x");
+      if (headerWrapper) headerWrapper.scrollTop = 0;
       headerCellEls.forEach((el) => el.style.removeProperty("height"));
 
       // `getBoundingClientRect().top` is viewport-relative and shifts with
@@ -383,7 +429,7 @@ export default function Calendar() {
       // *positions* are reliable in every view instead: chips share the
       // same viewport `top` across every day column that has one at a
       // given stack depth, so distinct top values directly count lanes.
-      const chipEls = getChipEls();
+      const chipEls = getChipEls(isInFixedHeader);
       let maxChipBottom = 0;
       const laneTops = [];
       chipEls.forEach((el) => {
@@ -401,14 +447,42 @@ export default function Calendar() {
       // in views where that already matches the natural single-lane size,
       // but load-bearing in Day view where "natural" already means "every
       // lane" per the comment above.
-      const targetBottom = hasOverflow && !allDayExpanded
+      const collapsed = hasOverflow && !allDayExpanded;
+      // How tall the section wants to be to show every lane it currently has.
+      const contentBottom = collapsed
         ? laneTops[1]
         : Math.max(baseBottom, maxChipBottom);
 
+      // How tall it's actually allowed to *appear*. This header is
+      // `position: fixed`, so it never scrolls out of the way — left to grow
+      // with the lane count it will exceed the viewport, cover the hourly grid
+      // completely, and carry the expand/collapse chevron (anchored to its
+      // bottom edge) off screen along with it. At that point there's no way to
+      // scroll down to the grid and no way to collapse back: the page is
+      // simply stuck. Past the cap the section scrolls internally instead of
+      // growing, which keeps both the grid and the chevron reachable.
+      let visibleBottom = contentBottom;
+      let needsInternalScroll = false;
       if (headerWrapper && headerCellEls.length) {
         const wrapperTop = headerWrapper.getBoundingClientRect().top;
-        const rowHeight = Math.ceil(targetBottom - wrapperTop);
-        headerWrapper.style.setProperty("grid-template-rows", `${rowHeight}px`, "important");
+        const maxVisibleHeight = Math.max(
+          ALL_DAY_MIN_VISIBLE_PX,
+          window.innerHeight * ALL_DAY_MAX_VIEWPORT_FRACTION
+        );
+        const contentHeight = Math.ceil(contentBottom - wrapperTop);
+        needsInternalScroll = !collapsed && contentHeight > maxVisibleHeight;
+        const visibleHeight = needsInternalScroll
+          ? Math.floor(maxVisibleHeight)
+          : contentHeight;
+        visibleBottom = wrapperTop + visibleHeight;
+
+        // The grid row (and the cells in it) always get the *content* height so
+        // every lane stays laid out and reachable by scrolling; only the
+        // wrapper's own box is clamped to the visible height. Sizing the row
+        // down instead would re-flow the chips into the smaller box rather than
+        // letting them scroll.
+        headerWrapper.style.setProperty("grid-template-rows", `${contentHeight}px`, "important");
+        headerWrapper.style.setProperty("height", `${visibleHeight}px`, "important");
         headerCellEls.forEach((el) => {
           // These cells are `box-sizing: content-box`, so a `height` equal
           // to the full row height renders 1px taller once the border-
@@ -421,21 +495,37 @@ export default function Calendar() {
           const borderAdjust = cellCs.boxSizing === "border-box"
             ? 0
             : (parseFloat(cellCs.borderTopWidth) || 0) + (parseFloat(cellCs.borderBottomWidth) || 0);
-          el.style.setProperty("height", `${Math.max(0, rowHeight - borderAdjust)}px`, "important");
+          el.style.setProperty("height", `${Math.max(0, contentHeight - borderAdjust)}px`, "important");
         });
       }
       // Collapsed: clip extra lanes at the header cells' own (now shrunk)
       // bounds instead of letting them spill over the grid body underneath
-      // — this is what actually "collapses" the section.
+      // — this is what actually "collapses" the section. Capped-but-expanded:
+      // scroll instead of clip, so the lanes past the cap stay reachable.
+      // Both axes are always set explicitly — CSS forces a non-`visible` value
+      // on one axis to compute as `auto` on the other, so leaving overflow-x at
+      // `visible` while scrolling vertically would silently add a horizontal
+      // scrollbar.
       headerWrapper?.style.setProperty(
-        "overflow",
-        hasOverflow && !allDayExpanded ? "hidden" : "visible",
+        "overflow-y",
+        needsInternalScroll ? "auto" : collapsed ? "hidden" : "visible",
+        "important"
+      );
+      headerWrapper?.style.setProperty(
+        "overflow-x",
+        needsInternalScroll || collapsed ? "hidden" : "visible",
         "important"
       );
 
-      if (targetBottom > 0) {
-        setCalendarTopOffset(Math.ceil(targetBottom - calendarTop) + 0.25);
-        setAllDayDividerTop(Math.ceil(targetBottom));
+      // Put the user back where they were scrolled to within the all-day
+      // section (clamped by the browser to the new scrollable range).
+      if (headerWrapper && needsInternalScroll && prevScrollTop) {
+        headerWrapper.scrollTop = prevScrollTop;
+      }
+
+      if (visibleBottom > 0) {
+        setCalendarTopOffset(Math.ceil(visibleBottom - calendarTop) + 0.25);
+        setAllDayDividerTop(Math.ceil(visibleBottom));
       }
     };
 
@@ -476,6 +566,7 @@ export default function Calendar() {
     // style attributes onto this same subtree, which would otherwise
     // retrigger itself on every pass.
     const mutationObserver = new MutationObserver((mutations) => {
+      const isInFixedHeader = makeFixedHeaderTest();
       if (mutations.some((m) => isInFixedHeader(m.target))) scheduleMeasure();
     });
     mutationObserver.observe(node, { childList: true, subtree: true });
@@ -506,6 +597,13 @@ export default function Calendar() {
 
     const rescale = () => {
       const items = node.querySelectorAll(".rs__event__item");
+      // Every geometry read is batched ahead of every write. Interleaving them
+      // (read one event's rect, write its style, read the next) makes each read
+      // flush the pending style invalidation from the write before it, so an
+      // N-event day costs N forced layouts instead of one. Day columns are also
+      // shared by many events, so their rects are resolved once and reused.
+      const parentRects = new Map();
+      const plans = [];
       items.forEach((el) => {
         // Unlike the all-day header's `height`, `left`/`width` here live
         // ONLY as this element's own inline style — the library never
@@ -525,11 +623,21 @@ export default function Calendar() {
 
         const parent = el.offsetParent;
         if (!parent) return;
-        const parentRect = parent.getBoundingClientRect();
+        let parentRect = parentRects.get(parent);
+        if (!parentRect) {
+          parentRect = parent.getBoundingClientRect();
+          parentRects.set(parent, parentRect);
+        }
         if (!parentRect.width) return;
         const rect = el.getBoundingClientRect();
-        const leftPercent = ((rect.left - parentRect.left) / parentRect.width) * 100;
-        const widthPercent = (rect.width / parentRect.width) * 100;
+        plans.push({
+          el,
+          leftPercent: ((rect.left - parentRect.left) / parentRect.width) * 100,
+          widthPercent: (rect.width / parentRect.width) * 100,
+        });
+      });
+
+      plans.forEach(({ el, leftPercent, widthPercent }) => {
         el.style.setProperty("left", `${(leftPercent * SCALE).toFixed(3)}%`, "important");
         el.style.setProperty("width", `${(widthPercent * SCALE).toFixed(3)}%`, "important");
         // The library assigns z-index by render order, which doesn't

@@ -163,7 +163,7 @@ export default function PendingRequests() {
   const [refresh, setRefresh] = useAtom(refreshAtom); // used as refresh token tag for error 401 handling
   const [pauseQuery, setPause] = useState(false); // used to pause query
   const [warehouseData, refreshWarehouseData] = useAtom(warehouseDataEffectAtom);
-  const userGroups = useAtom(userGroupsAtom);
+  const [userGroups] = useAtom(userGroupsAtom);
 
   let rows = useState([]); // store rows of table
 
