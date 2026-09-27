@@ -185,6 +185,24 @@ export default function Calendar() {
 
   const [parsedWarehouseData, setParsedWarehouseData] = useState([]); // parsed warehouse data storage
 
+  // The scheduler copies its props into an internal store once, then re-syncs
+  // (and re-renders every consumer of its context — i.e. the entire grid) any
+  // time the *identity* of `events`, `customEditor` or `onEventDrop` changes.
+  // An inline arrow here is a new identity on every single Calendar render, so
+  // every state update — including the all-day collapse toggle and the
+  // measurement effects' own setState calls — used to force a full re-render of
+  // the scheduler, which in turn churned the DOM the observers below watch.
+  const customEditor = React.useCallback((event) => <CustomEditor event={event} />, []);
+
+  // Passing the `warningTheme` *function* re-resolves it against the outer theme
+  // on every render, and a new theme object propagates through MUI's context to
+  // every styled descendant — which would re-render the whole scheduler subtree
+  // even though the element below is memoized.
+  const calendarTheme = React.useMemo(() => warningTheme(theme), [theme]);
+
+  // Fingerprint of the last applied payload — see the query's onSuccess.
+  const eventsFingerprintRef = React.useRef(null);
+
   const ref = React.useRef(null);
   const checkboxesRef = React.useRef(null);
   const calendarBoxRef = React.useRef(null);
@@ -193,6 +211,13 @@ export default function Calendar() {
   // one — toggled by the user via a small chevron; whether that chevron is
   // even shown depends on whether there's more than one lane to begin with.
   const [allDayExpanded, setAllDayExpanded] = React.useState(true);
+  // Read by measure() below. Toggling the section only changes where the
+  // clamp lands, so it shouldn't tear down and rebuild the observers (and
+  // their whole re-measure cascade) the way a dependency on it would.
+  const allDayExpandedRef = React.useRef(allDayExpanded);
+  allDayExpandedRef.current = allDayExpanded;
+  // Lets the toggle re-run the current measure pass without re-creating it.
+  const measureRef = React.useRef(null);
   const [allDayHasOverflow, setAllDayHasOverflow] = React.useState(false);
   // Viewport `top` for the toggle chevron, kept in sync with wherever the
   // all-day/hourly-grid divider currently sits (same value driving
@@ -269,12 +294,27 @@ export default function Calendar() {
       }
     });
   };
+  // The loaded window, mirrored into a ref. `onSelectedDateChange` is handed to
+  // the scheduler once at mount and never re-read (see the memoized element
+  // below), so the closure it keeps would otherwise compare every navigation
+  // against the *initial* range forever — re-widening and re-invalidating the
+  // query on every move once the user had left that first window.
+  const rangeRef = React.useRef({ start: startDate, end: endDate });
+  rangeRef.current = { start: startDate, end: endDate };
+
   const updateRange = (date) => {
     const newDate = dayjs(date); // store date as dayjs object
-    if (newDate.isBefore(startDate) || newDate.isAfter(endDate)) {
+    const { start: loadedStart, end: loadedEnd } = rangeRef.current;
+    if (newDate.isBefore(loadedStart) || newDate.isAfter(loadedEnd)) {
       // check if outside curr range
-      setStartDate(newDate.startOf("month").subtract(1, "month")); // one month before curr
-      setEndDate(startDate.add(3, "month")); // 3 months after start
+      // Both bounds have to come from the *new* start: deriving the end from
+      // the `startDate` still in state builds a window around the previous
+      // position, which can leave the date just navigated to outside the range
+      // — so the next navigation trips this branch again, re-invalidating and
+      // refetching (and re-rendering the whole grid) on every move.
+      const newStartDate = newDate.startOf("month").subtract(1, "month"); // one month before curr
+      setStartDate(newStartDate);
+      setEndDate(newStartDate.add(3, "month")); // 3 months after start
       pauseQuery = true; // pause query
       queryClient.invalidateQueries(["requests", "date"]); // invalidate query
     }
@@ -447,7 +487,7 @@ export default function Calendar() {
       // in views where that already matches the natural single-lane size,
       // but load-bearing in Day view where "natural" already means "every
       // lane" per the comment above.
-      const collapsed = hasOverflow && !allDayExpanded;
+      const collapsed = hasOverflow && !allDayExpandedRef.current;
       // How tall the section wants to be to show every lane it currently has.
       const contentBottom = collapsed
         ? laneTops[1]
@@ -483,19 +523,23 @@ export default function Calendar() {
         // letting them scroll.
         headerWrapper.style.setProperty("grid-template-rows", `${contentHeight}px`, "important");
         headerWrapper.style.setProperty("height", `${visibleHeight}px`, "important");
+        // These cells are `box-sizing: content-box`, so a `height` equal to the
+        // full row height renders 1px taller once the border-bottom (the
+        // divider itself) is added on top — just past the wrapper's
+        // `overflow: hidden` clip boundary when collapsed, which silently
+        // swallows that exact pixel and makes the divider vanish. Shrinking by
+        // the cell's own border keeps its *total* rendered box (content +
+        // border) matching the row height. Every cell in the row is the same
+        // library-styled element, so the border is resolved once per pass
+        // rather than once per cell — a computed-style read per cell forces a
+        // fresh style resolution each time.
+        const cellCs = getComputedStyle(headerCellEls[0]);
+        const borderAdjust = cellCs.boxSizing === "border-box"
+          ? 0
+          : (parseFloat(cellCs.borderTopWidth) || 0) + (parseFloat(cellCs.borderBottomWidth) || 0);
+        const cellHeight = `${Math.max(0, contentHeight - borderAdjust)}px`;
         headerCellEls.forEach((el) => {
-          // These cells are `box-sizing: content-box`, so a `height` equal
-          // to the full row height renders 1px taller once the border-
-          // bottom (the divider itself) is added on top — just past the
-          // wrapper's `overflow: hidden` clip boundary when collapsed,
-          // which silently swallows that exact pixel and makes the divider
-          // vanish. Shrinking by the cell's own border keeps its *total*
-          // rendered box (content + border) matching the row height.
-          const cellCs = getComputedStyle(el);
-          const borderAdjust = cellCs.boxSizing === "border-box"
-            ? 0
-            : (parseFloat(cellCs.borderTopWidth) || 0) + (parseFloat(cellCs.borderBottomWidth) || 0);
-          el.style.setProperty("height", `${Math.max(0, contentHeight - borderAdjust)}px`, "important");
+          el.style.setProperty("height", cellHeight, "important");
         });
       }
       // Collapsed: clip extra lanes at the header cells' own (now shrunk)
@@ -529,6 +573,7 @@ export default function Calendar() {
       }
     };
 
+    measureRef.current = measure;
     measure();
     let mutationRaf = null;
     let settleTimeouts = [];
@@ -577,8 +622,23 @@ export default function Calendar() {
       settleTimeouts.forEach(clearTimeout);
       observer.disconnect();
       mutationObserver.disconnect();
+      measureRef.current = null;
     };
-  }, [events, currentView, isAgendaMode, visibleDate, allDayExpanded]);
+  }, [events, currentView, isAgendaMode, visibleDate]);
+
+  // Collapsing/expanding only needs the existing measure pass re-run against
+  // the new flag — not a full observer teardown and rebuild. The follow-up rAF
+  // mirrors the mount path, catching geometry that settles a tick later.
+  const allDayToggleMounted = React.useRef(false);
+  useLayoutEffect(() => {
+    if (!allDayToggleMounted.current) {
+      allDayToggleMounted.current = true;
+      return;
+    }
+    measureRef.current?.();
+    const raf = requestAnimationFrame(() => measureRef.current?.());
+    return () => cancelAnimationFrame(raf);
+  }, [allDayExpanded]);
 
   // Caps how much of an hourly cell's width overlapping appointments can
   // occupy. The library computes each event's `left`/`width` itself (an
@@ -665,7 +725,29 @@ export default function Calendar() {
     // Percentage-based overrides adapt to resize on their own — no
     // ResizeObserver needed here (unlike the all-day header's pixel-based
     // height, this doesn't need re-computation on viewport changes).
-    const mutationObserver = new MutationObserver(scheduleRescale);
+    //
+    // Only chip add/remove can invalidate these overrides, and each scheduled
+    // rescale costs four full passes over every event in the view (rAF plus
+    // three settle timeouts). Unfiltered, the scheduler's routine DOM churn
+    // anywhere in the calendar — header cells, hour rows, the agenda list —
+    // paid that price for nothing, so the mutations are narrowed to ones that
+    // actually add or remove an event chip.
+    const touchesEventItem = (nodes) => {
+      for (const n of nodes) {
+        if (n.nodeType !== 1) continue;
+        if (n.matches?.(".rs__event__item") || n.querySelector?.(".rs__event__item")) return true;
+      }
+      return false;
+    };
+    const mutationObserver = new MutationObserver((mutations) => {
+      if (
+        mutations.some(
+          (m) => touchesEventItem(m.addedNodes) || touchesEventItem(m.removedNodes)
+        )
+      ) {
+        scheduleRescale();
+      }
+    });
     mutationObserver.observe(node, { childList: true, subtree: true });
 
     return () => {
@@ -792,11 +874,206 @@ export default function Calendar() {
           }),
         };
       });
+      // A refetch that changed nothing still produces a brand-new array, and
+      // that identity alone is enough to make the scheduler re-sync its store
+      // and re-render the entire grid, which then churns the DOM the
+      // measurement observers above watch. The raw payload covers everything
+      // the event chips and the viewer read; the derived colors cover the one
+      // thing that can change without it (lateness is relative to now).
+      const fingerprint = JSON.stringify([data.data, newEvents.map((e) => e.color)]);
+      if (fingerprint === eventsFingerprintRef.current) return;
+      eventsFingerprintRef.current = fingerprint;
       setAllEvents(newEvents);
     },
   });
 
   const isCalendarLoading = result.isLoading || result.isFetching;
+
+  // The library snapshots every prop except `events`, `customEditor` and
+  // `onEventDrop` into its own store at mount and never reads them again, so
+  // re-rendering this subtree for any other reason is pure cost — and it is a
+  // large subtree (a Paper, and in week/month view a Tooltip, per event).
+  // Holding the element itself stable keeps Calendar's own state changes —
+  // the measurement effects' offsets, the all-day toggle, opening a viewer,
+  // the warehouse filter — from re-rendering the entire grid. Anything added
+  // here that has to reach the library after mount belongs in the deps AND in
+  // that re-synced set above; everything else is read once regardless.
+  const schedulerElement = React.useMemo(() => (
+    <Scheduler
+      ref={ref}
+      hourFormat="24"
+      events={events}
+      view={currentView}
+      agenda={isAgendaMode}
+      disableViewer
+      onEventClick={(event) => setViewerEvent(event)}
+      eventRenderer={({ event, onClick, draggable }) => {
+        const isAgenda = draggable === undefined;
+
+        const paperSx = {
+          borderLeft: `4px solid ${event.color}`,
+          backgroundColor: alpha(event.color, 0.08),
+          padding: "2px 6px",
+          cursor: "pointer",
+          width: "100%",
+          height: "100%",
+          borderRadius: "0 4px 4px 0",
+          overflow: "hidden",
+          boxSizing: "border-box",
+        };
+
+        if (isAgenda) {
+          return (
+            <Paper
+              key={event.event_id}
+              onClick={() => setAgendaViewerEvent(event)}
+              elevation={1}
+              sx={{ ...paperSx, height: "auto", padding: "6px 10px" }}
+            >
+              {(event.request.ref_number
+                ? event.request.ref_number.split(";").map(s => s.trim()).filter(Boolean)
+                : [event.title]
+              ).map((ref, i, arr) => (
+                <Typography key={ref} variant="subtitle2" fontWeight="bold">
+                  {arr.length === 1 ? "Reference / PO Number" : `Reference / PO Number ${i + 1}`}: {ref}
+                </Typography>
+              ))}
+              {[
+                `Customer: ${event.request.customer_name ?? event.request.company_name}`,
+                event.request.container_drop
+                  ? "Appointment Time: All Day"
+                  : `Appointment Time: ${dayjs(event.start).format("HH:mm")}`,
+                `Appointment Window: ${APPOINTMENT_LENGTH_OPTIONS.find(opt => opt.value === event.request.appointment_length)?.label}`,
+                `Appointment Status: ${getEventStatus(event)}`,
+              ].map((line) => (
+                <Typography key={line} variant="caption" color="text.secondary" display="block" sx={{ lineHeight: 1.2 }}>
+                  {line}
+                </Typography>
+              ))}
+              {event.request.note_section && (
+                <Box>
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    display="block"
+                    sx={{ lineHeight: 1.2 }}
+                  >
+                    Notes:
+                  </Typography>
+                  <Typography variant="caption" sx={{ whiteSpace: "pre-wrap", lineHeight: 1.2 }}>
+                    {event.request.note_section}
+                  </Typography>
+                </Box>
+              )}
+            </Paper>
+          );
+        }
+
+        if (schedulerViewRef.current === "day") {
+          return (
+            <Paper
+              key={event.event_id}
+              onClick={() => setViewerEvent(event)}
+              elevation={1}
+              sx={paperSx}
+            >
+              <Typography
+                variant="caption"
+                fontWeight="bold"
+                display="block"
+                sx={{ lineHeight: 1.3 }}
+              >
+                Reference #: {event.title}
+              </Typography>
+              <Typography
+                variant="caption"
+                color="text.secondary"
+                display="block"
+              >
+                Customer: {event.request.customer_name ? event.request.customer_name : event.request.company_name }
+              </Typography>
+              <Typography
+                variant="caption"
+                color="text.secondary"
+                display="block"
+                sx={{ lineHeight: 1.2 }}
+              >
+                Appointment Status: {getEventStatus(event)}
+              </Typography>
+            </Paper>
+          );
+        }
+
+        // month and week view — title only, tooltip shows time
+        const isMonth = schedulerViewRef.current === "month";
+
+        return (
+          <Tooltip
+            key={event.event_id}
+            title={dayjs(event.start).format("HH:mm")}
+            placement="bottom"
+            arrow
+            disableInteractive
+            slotProps={{
+              popper: {
+                modifiers: [
+                  {
+                    name: 'offset',
+                    options: {
+                      offset: [0, -8],
+                    },
+                  },
+                ],
+              },
+            }}
+          >
+            <Paper
+              onClick={() => setViewerEvent(event)}
+              elevation={1}
+              sx={{
+                ...paperSx,
+                height: isMonth ? "auto" : "100%",
+                padding: isMonth ? "1px 4px" : "2px 6px",
+              }}
+            >
+              <Typography
+                variant="caption"
+                fontWeight="bold"
+                display="block"
+                sx={{ lineHeight: 1.3 }}
+              >
+                Ref #: {event.title}
+              </Typography>
+            </Paper>
+          </Tooltip>
+        );
+      }}
+      month={{
+        weekDays: [0, 1, 2, 3, 4, 5, 6],
+        weekStartOn: 6,
+        startHour: 6,
+        endHour: 18,
+      }}
+      week={{
+        weekDays: [2, 3, 4, 5, 6],
+        weekStartOn: 6,
+        startHour: 6,
+        endHour: 18,
+        step: 30,
+      }}
+      day={{
+        startHour: 6,
+        endHour: 18,
+        step: 15,
+      }}
+      onViewChange={(view, agenda) => { schedulerViewRef.current = view; setCurrentView(view); setIsAgendaMode(!!agenda); }}
+      onSelectedDateChange={(date) => {
+        updateRange(date);
+        setVisibleDate(dayjs(date));
+      }}
+      customEditor={customEditor}
+    />
+  ), [events, customEditor]);
 
   return (
     <Box id="body">
@@ -923,181 +1200,8 @@ export default function Calendar() {
         className={isAgendaMode ? "agenda-mode" : ""}
       >
         {isCalendarLoading && <LinearProgress sx={{ mb: 0.5 }} />}
-        <ThemeProvider theme={warningTheme}>
-        <Scheduler
-          ref={ref}
-          hourFormat="24"
-          events={events}
-          view={currentView}
-          agenda={isAgendaMode}
-          disableViewer
-          onEventClick={(event) => setViewerEvent(event)}
-          eventRenderer={({ event, onClick, draggable }) => {
-            const isAgenda = draggable === undefined;
-
-            const paperSx = {
-              borderLeft: `4px solid ${event.color}`,
-              backgroundColor: alpha(event.color, 0.08),
-              padding: "2px 6px",
-              cursor: "pointer",
-              width: "100%",
-              height: "100%",
-              borderRadius: "0 4px 4px 0",
-              overflow: "hidden",
-              boxSizing: "border-box",
-            };
-
-            if (isAgenda) {
-              return (
-                <Paper
-                  key={event.event_id}
-                  onClick={() => setAgendaViewerEvent(event)}
-                  elevation={1}
-                  sx={{ ...paperSx, height: "auto", padding: "6px 10px" }}
-                >
-                  {(event.request.ref_number
-                    ? event.request.ref_number.split(";").map(s => s.trim()).filter(Boolean)
-                    : [event.title]
-                  ).map((ref, i, arr) => (
-                    <Typography key={ref} variant="subtitle2" fontWeight="bold">
-                      {arr.length === 1 ? "Reference / PO Number" : `Reference / PO Number ${i + 1}`}: {ref}
-                    </Typography>
-                  ))}
-                  {[
-                    `Customer: ${event.request.customer_name ?? event.request.company_name}`,
-                    event.request.container_drop
-                      ? "Appointment Time: All Day"
-                      : `Appointment Time: ${dayjs(event.start).format("HH:mm")}`,
-                    `Appointment Window: ${APPOINTMENT_LENGTH_OPTIONS.find(opt => opt.value === event.request.appointment_length)?.label}`,
-                    `Appointment Status: ${getEventStatus(event)}`,
-                  ].map((line) => (
-                    <Typography key={line} variant="caption" color="text.secondary" display="block" sx={{ lineHeight: 1.2 }}>
-                      {line}
-                    </Typography>
-                  ))}
-                  {event.request.note_section && (
-                    <Box>
-                      <Typography
-                        variant="caption"
-                        color="text.secondary"
-                        display="block"
-                        sx={{ lineHeight: 1.2 }}
-                      >
-                        Notes:
-                      </Typography>
-                      <Typography variant="caption" sx={{ whiteSpace: "pre-wrap", lineHeight: 1.2 }}>
-                        {event.request.note_section}
-                      </Typography>
-                    </Box>
-                  )}
-                </Paper>
-              );
-            }
-
-            if (schedulerViewRef.current === "day") {
-              return (
-                <Paper
-                  key={event.event_id}
-                  onClick={() => setViewerEvent(event)}
-                  elevation={1}
-                  sx={paperSx}
-                >
-                  <Typography
-                    variant="caption"
-                    fontWeight="bold"
-                    display="block"
-                    sx={{ lineHeight: 1.3 }}
-                  >
-                    Reference #: {event.title}
-                  </Typography>
-                  <Typography
-                    variant="caption"
-                    color="text.secondary"
-                    display="block"
-                  >
-                    Customer: {event.request.customer_name ? event.request.customer_name : event.request.company_name }
-                  </Typography>
-                  <Typography
-                    variant="caption"
-                    color="text.secondary"
-                    display="block"
-                    sx={{ lineHeight: 1.2 }}
-                  >
-                    Appointment Status: {getEventStatus(event)}
-                  </Typography>
-                </Paper>
-              );
-            }
-
-            // month and week view — title only, tooltip shows time
-            const isMonth = schedulerViewRef.current === "month";
-
-            return (
-              <Tooltip
-                key={event.event_id}
-                title={dayjs(event.start).format("HH:mm")}
-                placement="bottom"
-                arrow
-                disableInteractive
-                slotProps={{
-                  popper: {
-                    modifiers: [
-                      {
-                        name: 'offset',
-                        options: {
-                          offset: [0, -8],
-                        },
-                      },
-                    ],
-                  },
-                }}
-              >
-                <Paper
-                  onClick={() => setViewerEvent(event)}
-                  elevation={1}
-                  sx={{
-                    ...paperSx,
-                    height: isMonth ? "auto" : "100%",
-                    padding: isMonth ? "1px 4px" : "2px 6px",
-                  }}
-                >
-                  <Typography
-                    variant="caption"
-                    fontWeight="bold"
-                    display="block"
-                    sx={{ lineHeight: 1.3 }}
-                  >
-                    Ref #: {event.title}
-                  </Typography>
-                </Paper>
-              </Tooltip>
-            );
-          }}
-          month={{
-            weekDays: [0, 1, 2, 3, 4, 5, 6],
-            weekStartOn: 6,
-            startHour: 6,
-            endHour: 18,
-          }}
-          week={{
-            weekDays: [2, 3, 4, 5, 6],
-            weekStartOn: 6,
-            startHour: 6,
-            endHour: 18,
-            step: 30,
-          }}
-          day={{
-            startHour: 6,
-            endHour: 18,
-            step: 15,
-          }}
-          onViewChange={(view, agenda) => { schedulerViewRef.current = view; setCurrentView(view); setIsAgendaMode(!!agenda); }}
-          onSelectedDateChange={(date) => {
-            updateRange(date);
-            setVisibleDate(dayjs(date));
-          }}
-          customEditor={(event) => <CustomEditor event={event} />}
-        />
+        <ThemeProvider theme={calendarTheme}>
+        {schedulerElement}
         {viewerEvent && (
           <CustomViewer
             event={viewerEvent}
