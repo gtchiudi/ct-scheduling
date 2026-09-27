@@ -41,6 +41,13 @@ class RequestFormPage(BasePage):
         value = "Delivery" if delivery else "Pickup"
         self._select_mui_option("Select Pickup or Delivery", value)
 
+    def select_load_config(self, load_config):
+        """Select 'Palletized' or 'Floor Loaded'. Only rendered for deliveries."""
+        self._select_mui_option("Palletized or Floor Loaded", load_config)
+
+    def load_config_visible(self):
+        return self.page.get_by_label("Palletized or Floor Loaded").count() > 0
+
     def fill_datetime(self, month, day, year, hour, minute):
         """Fill the MUI DateTimePicker (24h, ampm=False) by typing into each section.
 

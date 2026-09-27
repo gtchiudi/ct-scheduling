@@ -241,6 +241,7 @@ def build_request_payload(request_obj, overrides=None):
         "date_time": request_obj.date_time.isoformat().replace("+00:00", "Z"),
         "appointment_length": request_obj.appointment_length,
         "delivery": request_obj.delivery,
+        "load_config": request_obj.load_config,
         "trailer_number": request_obj.trailer_number or "",
         "driver_phone_number": request_obj.driver_phone_number or "",
         "sms_consent": request_obj.sms_consent,

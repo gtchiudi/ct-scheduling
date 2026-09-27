@@ -51,7 +51,10 @@ def test_submit_request_successfully(page):
     form.fill_ref_number("PO-E2E-001")
     form.select_warehouse("123 Test St, Cleveland, OH 44101")
     form.select_load_type("Full")
+    # The load configuration dropdown only exists once Delivery is chosen.
+    assert not form.load_config_visible()
     form.select_delivery(delivery=True)
+    form.select_load_config("Palletized")
     target = date.today() + timedelta(weeks=1)
     form.fill_datetime(
         month=f"{target.month:02d}",

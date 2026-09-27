@@ -293,3 +293,154 @@ def test_soft_delete_sets_active_false(dispatch_client, pending_request):
     assert response.status_code in (200, 204)
     pending_request.refresh_from_db()
     assert pending_request.active is False
+
+
+# ---------------------------------------------------------------------------
+# load_config (Palletized / Floor Loaded) — deliveries only, always optional
+# ---------------------------------------------------------------------------
+
+@pytest.mark.django_db
+def test_create_delivery_with_load_config(dispatch_client, warehouse, customer, mock_email):
+    """A delivery can carry a load configuration, and it round-trips."""
+    payload = {
+        "approved": True,
+        "company_name": "Palletized Co",
+        "email": "palletized@example.com",
+        "warehouse": str(warehouse.id),
+        "ref_number": "PO-PALLET",
+        "load_type": "Full",
+        "date_time": _dt(3),
+        "delivery": True,
+        "load_config": "Palletized",
+        "customer_id": str(customer.id),
+    }
+    response = dispatch_client.post("/api/request/", payload, format="json")
+    assert response.status_code == 201
+    assert response.data["load_config"] == "Palletized"
+    assert Request.objects.get(id=response.data["id"]).load_config == "Palletized"
+
+
+@pytest.mark.django_db
+def test_create_accepts_floor_loaded(dispatch_client, warehouse, customer, mock_email):
+    """'Floor Loaded' is the other valid choice."""
+    payload = {
+        "approved": True,
+        "company_name": "Floor Co",
+        "email": "floor@example.com",
+        "warehouse": str(warehouse.id),
+        "ref_number": "PO-FLOOR",
+        "load_type": "Full",
+        "date_time": _dt(3),
+        "delivery": True,
+        "load_config": "Floor Loaded",
+        "customer_id": str(customer.id),
+    }
+    response = dispatch_client.post("/api/request/", payload, format="json")
+    assert response.status_code == 201
+    assert Request.objects.get(id=response.data["id"]).load_config == "Floor Loaded"
+
+
+@pytest.mark.django_db
+def test_create_without_load_config_stores_null(api_client, warehouse, mock_email):
+    """The field is optional — a payload that omits it still creates the request,
+    which is what every pre-existing appointment looks like."""
+    payload = {
+        "approved": False,
+        "company_name": "No Config Co",
+        "email": "noconfig@example.com",
+        "warehouse": str(warehouse.id),
+        "ref_number": "PO-NOCONFIG",
+        "load_type": "Full",
+        "date_time": _dt(5),
+        "delivery": True,
+    }
+    response = api_client.post("/api/request/", payload, format="json")
+    assert response.status_code == 201
+    assert response.data["load_config"] is None
+    assert Request.objects.get(id=response.data["id"]).load_config is None
+
+
+@pytest.mark.django_db
+def test_create_accepts_explicit_null_load_config(dispatch_client, warehouse, customer, mock_email):
+    """Pickups post load_config=None — null is a valid value, not a validation error."""
+    payload = {
+        "approved": True,
+        "company_name": "Pickup Co",
+        "email": "pickup@example.com",
+        "warehouse": str(warehouse.id),
+        "ref_number": "PO-PICKUP",
+        "load_type": "Full",
+        "date_time": _dt(3),
+        "delivery": False,
+        "load_config": None,
+        "customer_id": str(customer.id),
+    }
+    response = dispatch_client.post("/api/request/", payload, format="json")
+    assert response.status_code == 201
+    assert Request.objects.get(id=response.data["id"]).load_config is None
+
+
+@pytest.mark.django_db
+def test_create_rejects_unknown_load_config(dispatch_client, warehouse, customer, mock_email):
+    """Only the two documented choices are accepted."""
+    payload = {
+        "approved": True,
+        "company_name": "Bad Config Co",
+        "email": "bad@example.com",
+        "warehouse": str(warehouse.id),
+        "ref_number": "PO-BAD",
+        "load_type": "Full",
+        "date_time": _dt(3),
+        "delivery": True,
+        "load_config": "Shrink Wrapped",
+        "customer_id": str(customer.id),
+    }
+    response = dispatch_client.post("/api/request/", payload, format="json")
+    assert response.status_code == 400
+    assert "load_config" in response.data
+
+
+@pytest.mark.django_db
+def test_update_sets_load_config(dispatch_client, approved_request, mock_email):
+    """An existing appointment left without the info can be filled in later."""
+    assert approved_request.load_config is None
+    payload = build_request_payload(
+        approved_request, {"delivery": True, "load_config": "Floor Loaded"}
+    )
+    response = dispatch_client.put(
+        f"/api/request/{approved_request.id}/", payload, format="json"
+    )
+    assert response.status_code == 200
+    approved_request.refresh_from_db()
+    assert approved_request.load_config == "Floor Loaded"
+
+
+@pytest.mark.django_db
+def test_update_to_pickup_clears_load_config(dispatch_client, warehouse, customer, mock_email):
+    """Switching a delivery to a pickup drops the load configuration."""
+    delivery = Request.objects.create(
+        id=uuid.uuid4(), company_name="Switch Co", warehouse=warehouse,
+        customer=customer, ref_number="PO-SWITCH", load_type="Full",
+        date_time=timezone.now() + timedelta(days=4),
+        delivery=True, load_config="Palletized", approved=True, active=True,
+    )
+    payload = build_request_payload(delivery, {"delivery": False, "load_config": None})
+    response = dispatch_client.put(f"/api/request/{delivery.id}/", payload, format="json")
+    assert response.status_code == 200
+    delivery.refresh_from_db()
+    assert delivery.delivery is False
+    assert delivery.load_config is None
+
+
+@pytest.mark.django_db
+def test_list_includes_load_config(dispatch_client, warehouse, customer):
+    """The calendar/pending list payloads carry the field so the form can show it."""
+    Request.objects.create(
+        id=uuid.uuid4(), company_name="Listed Co", warehouse=warehouse,
+        customer=customer, ref_number="PO-LIST", load_type="Full",
+        date_time=timezone.now() + timedelta(days=2),
+        delivery=True, load_config="Palletized", approved=True, active=True,
+    )
+    response = dispatch_client.get("/api/request/")
+    assert response.status_code == 200
+    assert response.data[0]["load_config"] == "Palletized"

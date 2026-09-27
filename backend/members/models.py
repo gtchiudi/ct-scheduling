@@ -40,6 +40,11 @@ class Request(BaseModel):
         ('Container', 'Container'),
     )
 
+    LOAD_CONFIG_CHOICES = (
+        ('Palletized', 'Palletized'),
+        ('Floor Loaded', 'Floor Loaded'),
+    )
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     approved = models.BooleanField(default=False)
     company_name = models.CharField(
@@ -66,6 +71,11 @@ class Request(BaseModel):
     date_time = models.DateTimeField("Request Date")  # changable via emp
     appointment_length = models.IntegerField(default=15)
     delivery = models.BooleanField(default=False)  # changable via emp
+    # How the freight is loaded. Deliveries only; null on pickups and on every
+    # appointment created before this field existed.
+    load_config = models.CharField(
+        max_length=32, choices=LOAD_CONFIG_CHOICES, null=True,
+        blank=True)  # changable via emp
     # Initial Request
     trailer_number = models.CharField(
         max_length=32, null=True, blank=True)  # employee use only

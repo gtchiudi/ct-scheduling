@@ -238,9 +238,16 @@ def test_create_appointment_with_multiple_ref_numbers(dispatch_page):
     dispatch_page.wait_for_selector("[role=listbox]", timeout=5000)
     dispatch_page.locator("[role=listbox]").get_by_text("Full", exact=True).click()
 
+    # Palletized/Floor Loaded is delivery-only, so it is absent until Delivery is picked
+    expect(dlg.get_by_label("Palletized or Floor Loaded")).to_have_count(0)
+
     dlg.get_by_label("Select Pickup or Delivery").click()
     dispatch_page.wait_for_selector("[role=listbox]", timeout=5000)
     dispatch_page.locator("[role=listbox]").get_by_text("Delivery", exact=True).click()
+
+    dlg.get_by_label("Palletized or Floor Loaded").click()
+    dispatch_page.wait_for_selector("[role=listbox]", timeout=5000)
+    dispatch_page.locator("[role=listbox]").get_by_text("Floor Loaded", exact=True).click()
 
     # Customer Name Autocomplete — "E2E Customer" is created by the seed endpoint
     customer_input = dlg.get_by_label("Customer Name")
@@ -283,6 +290,9 @@ def test_create_appointment_with_multiple_ref_numbers(dispatch_page):
         timeout=10,
     )
     resp.raise_for_status()
-    for r in resp.json():
-        if r["company_name"] == "E2E Calendar Create Co":
-            _soft_delete(access, r["id"])
+    created = [r for r in resp.json() if r["company_name"] == "E2E Calendar Create Co"]
+    # Clean up before asserting so a failed assertion still doesn't leak a record.
+    for r in created:
+        _soft_delete(access, r["id"])
+    assert created, "created appointment not found via API"
+    assert created[0]["load_config"] == "Floor Loaded"

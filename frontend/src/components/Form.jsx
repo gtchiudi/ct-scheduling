@@ -160,6 +160,7 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
     date_time: nextWorkDay(),
     appointment_length: 15,
     delivery: "",
+    load_config: "",
     trailer_number: "",
     driver_phone_number: null,
     sms_consent: false,
@@ -397,7 +398,14 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
     }
     
     if (name === "delivery") {
-      setRequestData({ ...requestData, [name]: processedValue === "delivery" });
+      const isDelivery = processedValue === "delivery";
+      // Palletized/Floor Loaded only applies to deliveries — drop any value
+      // already chosen if the appointment flips back to a pickup.
+      setRequestData({
+        ...requestData,
+        [name]: isDelivery,
+        load_config: isDelivery ? requestData.load_config : null,
+      });
     } else if (type === "checkbox") {
       if (name === "container_drop" && checked && path !== "/RequestForm") {
         // All-day appointments shouldn't occupy a specific appointment time.
@@ -571,6 +579,8 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
   const buildPayload = () => ({
     ...requestData,
     customer_id: requestData.customer?.id ?? null,
+    // Optional and delivery-only: leave it NULL rather than blank when unanswered.
+    load_config: (requestData.delivery && requestData.load_config) || null,
     date_time: dayjs(requestData.date_time).format("YYYY-MM-DD HH:mm:ss"),
   });
 
@@ -1128,6 +1138,29 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
               Pickup
             </MenuItem>
           </TextField>
+
+          {/* Deliveries only — pickups never carry a load configuration. */}
+          {requestData.delivery === true && (
+            <TextField
+              select
+              id="load_config"
+              label="Palletized or Floor Loaded"
+              name="load_config"
+              variant="filled"
+              value={requestData.load_config ?? ""}
+              onChange={handleChange}
+              autoComplete="off"
+              disabled= {request && path != "/PendingRequests" && !editAppointment ? true : false}
+              SelectProps={{ MenuProps: { disablePortal: true } }}
+            >
+              <MenuItem key={"Palletized"} value={"Palletized"}>
+                Palletized
+              </MenuItem>
+              <MenuItem key={"Floor Loaded"} value={"Floor Loaded"}>
+                Floor Loaded
+              </MenuItem>
+            </TextField>
+          )}
 
           {/* Trailer Number and Notes in default position — hidden when viewing from Calendar */}
           {!(path === "/Calendar" && request && !editAppointment) && (

@@ -58,12 +58,12 @@ Coverage report opens at `backend/htmlcov/index.html`.
 | `backend/members/tests/conftest.py` | Shared fixtures (users, clients, data, mocks) | — |
 | `backend/members/tests/test_auth.py` | JWT token lifecycle (obtain, refresh, blacklist, expiry) | 6 |
 | `backend/members/tests/test_permissions.py` | Endpoint access control per user role | 11 |
-| `backend/members/tests/test_request_crud.py` | Create/list/filter/delete appointments | 8 |
-| `backend/members/tests/test_business_logic.py` | All branches in `RequestView.update()` | 20 |
+| `backend/members/tests/test_request_crud.py` | Create/list/filter/delete appointments + `load_config` | 22 |
+| `backend/members/tests/test_business_logic.py` | All branches in `RequestView.update()` | 21 |
 | `backend/members/tests/test_warehouse_customer.py` | Warehouse and Customer CRUD + search | 7 |
 | `backend/members/tests/test_utility_views.py` | `UserGroupsView` and `PendingRequestStatsView` | 7 |
 
-**Total: 60 backend tests**
+**Total: 74 backend tests**
 
 ---
 
@@ -90,10 +90,12 @@ npm run test:coverage # with coverage report
 | File | What It Tests | Tests |
 |------|---------------|-------|
 | `frontend/src/__tests__/utils/validation.test.js` | `validateEmail`, `validatePhone` edge cases | 14 |
-| `frontend/src/__tests__/components/FormActions.test.jsx` | Button rendering per path/workflow state | 16 |
-| `frontend/src/__tests__/components/HeaderBar.test.jsx` | Nav links per auth state and user group | 18 |
+| `frontend/src/__tests__/components/FormActions.test.jsx` | Button rendering per path/workflow state | 23 |
+| `frontend/src/__tests__/components/HeaderBar.test.jsx` | Nav links per auth state and user group | 20 |
+| `frontend/src/__tests__/components/AppointmentSearchDrawer.test.jsx` | Debounced search, result rendering, selection | 5 |
+| `frontend/src/__tests__/components/Form.test.jsx` | Delivery-only "Palletized or Floor Loaded" dropdown | 10 |
 
-**Total: 48 frontend tests**
+**Total: 72 frontend tests**
 
 ---
 
