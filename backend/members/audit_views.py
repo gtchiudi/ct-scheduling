@@ -17,7 +17,7 @@ from datetime import datetime, time, timedelta
 
 import pytz
 from django.contrib.auth.models import User
-from django.db.models import F
+from django.db.models import F, Q
 from django.http import HttpResponse
 from django.utils import timezone
 from rest_framework import permissions, status
@@ -99,6 +99,25 @@ def _positive_int(request, name, default):
     if number < 1:
         raise BadParam(f'{name} must be a positive integer.')
     return number
+
+
+# Appointment fields the `search` box matches on both tabs.
+APPOINTMENT_SEARCH_FIELDS = (
+    'appointment__ref_number', 'appointment__company_name', 'appointment__customer_name',
+)
+MAX_SEARCH_TERMS = 10
+
+
+def apply_search(request, queryset, fields):
+    """`search`: every whitespace-separated word must appear (case-insensitive)
+    in at least one of `fields`, like DRF's SearchFilter."""
+    terms = _param(request, 'search').split()[:MAX_SEARCH_TERMS]
+    for term in terms:
+        match = Q()
+        for field in fields:
+            match |= Q(**{f'{field}__icontains': term})
+        queryset = queryset.filter(match)
+    return queryset
 
 
 def apply_common_filters(request, queryset, time_field):
@@ -291,7 +310,7 @@ class AuditEventsView(AuditListView):
         actions = _csv_list(request, 'action')
         if actions:
             queryset = queryset.filter(action__in=actions)
-        return queryset
+        return apply_search(request, queryset, APPOINTMENT_SEARCH_FIELDS)
 
     def serialize(self, obj):
         return serialize_event(obj)
@@ -321,7 +340,8 @@ class AuditNotificationsView(AuditListView):
         recipient = _param(request, 'recipient')
         if recipient:
             queryset = queryset.filter(recipient__icontains=recipient)
-        return queryset
+        return apply_search(request, queryset,
+                            APPOINTMENT_SEARCH_FIELDS + ('recipient', 'subject'))
 
     def serialize(self, obj):
         return serialize_notification(obj)

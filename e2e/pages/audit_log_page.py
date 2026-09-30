@@ -92,6 +92,16 @@ class AuditLogPage(BasePage):
         self.page.keyboard.press("Escape")
         expect(self.page.locator("[role=listbox]")).to_have_count(0, timeout=5000)
 
+    def search(self, text):
+        """Type into the current tab's Search box (the page debounces it)."""
+        panel = self.page.locator("[role=tabpanel]:not([hidden])")
+        box = panel.get_by_label("Search", exact=True)
+        box.fill(text)
+
+    def clear_search(self):
+        panel = self.page.locator("[role=tabpanel]:not([hidden])")
+        panel.get_by_role("button", name="Clear search").click()
+
     def filter_person(self, name):
         self.select_single("Person", name)
 

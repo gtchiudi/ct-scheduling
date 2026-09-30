@@ -64,11 +64,11 @@ Coverage report opens at `backend/htmlcov/index.html`.
 | `backend/members/tests/test_utility_views.py` | `UserGroupsView` and `PendingRequestStatsView` | 7 |
 | `backend/members/tests/test_audit_events.py` | Audit capture: `AppointmentEvent` rows per action, diffs, no-op saves | 31 |
 | `backend/members/tests/test_notification_log.py` | `NotificationLog` rows for every email/SMS send (sent/failed) | 17 |
-| `backend/members/tests/test_audit_api.py` | `/api/audit/*` endpoints (filters, paging, CSV, permissions) | 65 |
+| `backend/members/tests/test_audit_api.py` | `/api/audit/*` endpoints (filters, search, paging, CSV, permissions) | 78 |
 | `backend/members/tests/test_audit_retention.py` | `prune_audit_logs` command, retention settings, read-only admin | 24 |
 | `backend/members/tests/test_audit_acceptance.py` | Black-box audit trail acceptance: full lifecycle journey, cancel/decline, no-op save, failed email/SMS, permissions matrix (anon/Dock/Dispatch/Admin/superuser × 4 endpoints), filters, paging, CSV, timeline, actors; regression tests for BUG-1..6 (anonymous `/api/request/` lock-down, `/slots/`, `remove`, seconds precision, retention env, admin cascade); plus regression tests for BUG-7..10 (warehouse writes, account endpoints superuser-only, no password hashes, `unapproved` audited) | 85 |
 
-**Total: 296 backend tests** (all passing; 74 before the audit trail)
+**Total: 309 backend tests** (all passing; 74 before the audit trail)
 
 ---
 
@@ -101,9 +101,9 @@ npm run test:coverage # with coverage report
 | `frontend/src/__tests__/components/AppointmentSearchDrawer.test.jsx` | Debounced search, result rendering, selection | 5 |
 | `frontend/src/__tests__/components/Form.test.jsx` | Delivery-only "Palletized or Floor Loaded" dropdown, slots endpoint, offset datetimes, Remove from Calendar | 15 |
 | `frontend/src/__tests__/components/ActivityHistory.test.jsx` | Activity history section in the appointment window | 13 |
-| `frontend/src/__tests__/routes/AuditLog.test.jsx` | Audit Log page: tabs, filters, paging, CSV export, Dock redirect | 18 |
+| `frontend/src/__tests__/routes/AuditLog.test.jsx` | Audit Log page: tabs, filters, search, paging, CSV export, Dock redirect | 19 |
 
-**Total: 124 frontend tests** (72 before the audit trail)
+**Total: 125 frontend tests** (72 before the audit trail)
 
 ---
 
@@ -181,12 +181,12 @@ make test-e2e E2E_BASE_URL=https://staging.example.com    # staging
 | `e2e/tests/test_dispatch_flow.py` | Approve/decline requests, calendar, logout | 8 |
 | `e2e/tests/test_calendar_workflow.py` | Check-in → dock → complete, edit, create with multiple refs | 3 |
 | `e2e/tests/test_dock_flow.py` | Calendar access, no pending requests link, redirect | 4 |
-| `e2e/tests/test_audit_trail.py` | Activity history after a UI edit (and hidden for Dock), Audit Log link/page, filter by action + person, Notifications tab, Export CSV matches filters, Dock: no link / redirect / API 403, anonymous API 401; BUG-5 regression (no-op save from a Central-time browser keeps the date) | 16 |
+| `e2e/tests/test_audit_trail.py` | Activity history after a UI edit (and hidden for Dock), Audit Log link/page, filter by action + person, Notifications tab, Export CSV matches filters, search by reference on both tabs, Dock: no link / redirect / API 403, anonymous API 401; BUG-5 regression (no-op save from a Central-time browser keeps the date) | 17 |
 | `e2e/tests/test_request_fixes.py` | b09077f regressions: anonymous `/api/request/` GET/PUT/PATCH/DELETE/remove rejected, `/slots/` returns only 3 fields; public form first-available + booked slots hidden (Eastern and Central browsers); Remove from Calendar → `removed`, no decline email, filterable in Audit Log; Central-time calendar create and approve store the picked time; week-edge events render and range query uses UTC instants | 14 |
 | `e2e/pages/audit_log_page.py` | Page object for `/AuditLog` (tabs, filters, rows, CSV download) | — |
 | `e2e/e2e_django_settings.py` | Local Django settings overlay for E2E runs (DEBUG, console email, `E2E_DB_PATH`) | — |
 
-**Total: 50 E2E tests**
+**Total: 51 E2E tests**
 
 Manual QA steps (email/SMS failures, retention command, migration import, deploy checklist)
 are in [`MANUAL_TEST_PLAN.md`](MANUAL_TEST_PLAN.md).

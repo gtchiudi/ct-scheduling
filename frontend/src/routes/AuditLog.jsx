@@ -14,6 +14,8 @@ import {
   Chip,
   CircularProgress,
   FormControl,
+  IconButton,
+  InputAdornment,
   InputLabel,
   MenuItem,
   OutlinedInput,
@@ -32,6 +34,8 @@ import {
   Typography,
 } from "@mui/material";
 import DownloadIcon from "@mui/icons-material/Download";
+import SearchIcon from "@mui/icons-material/Search";
+import ClearIcon from "@mui/icons-material/Clear";
 import {
   authenticatedAtom,
   authCheckedAtom,
@@ -373,6 +377,35 @@ function ChangesCell({ row }) {
 
 const toOptions = (labels) => Object.entries(labels).map(([value, label]) => ({ value, label }));
 
+/** Free-text search box; the parent debounces `value` before querying. */
+function SearchField({ id, value, onChange, placeholder }) {
+  return (
+    <TextField
+      id={id}
+      size="small"
+      label="Search"
+      placeholder={placeholder}
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      sx={{ minWidth: 260 }}
+      InputProps={{
+        startAdornment: (
+          <InputAdornment position="start">
+            <SearchIcon fontSize="small" />
+          </InputAdornment>
+        ),
+        endAdornment: value ? (
+          <InputAdornment position="end">
+            <IconButton size="small" aria-label="Clear search" onClick={() => onChange("")} edge="end">
+              <ClearIcon fontSize="small" />
+            </IconButton>
+          </InputAdornment>
+        ) : null,
+      }}
+    />
+  );
+}
+
 // --- Tabs -------------------------------------------------------------------
 
 function EventsTab({ warehouseOptions }) {
@@ -381,6 +414,8 @@ function EventsTab({ warehouseOptions }) {
   const [warehouse, setWarehouse] = useState("");
   const [start, setStart] = useState("");
   const [end, setEnd] = useState("");
+  const [searchInput, setSearchInput] = useState("");
+  const search = useDebounced(searchInput.trim());
 
   const actorsResult = useQuery({
     queryKey: ["auditActors"],
@@ -396,8 +431,8 @@ function EventsTab({ warehouseOptions }) {
   );
 
   const filterParams = useMemo(
-    () => buildParams({ actor, action: actions, warehouse, start, end }),
-    [actor, actions, warehouse, start, end]
+    () => buildParams({ search, actor, action: actions, warehouse, start, end }),
+    [search, actor, actions, warehouse, start, end]
   );
   const paged = usePagedAudit("auditEvents", "/api/audit/events/", filterParams);
 
@@ -413,6 +448,12 @@ function EventsTab({ warehouseOptions }) {
   return (
     <Box>
       <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2, alignItems: "center", mb: 2 }}>
+        <SearchField
+          id="audit-event-search"
+          value={searchInput}
+          onChange={setSearchInput}
+          placeholder="Reference, company or customer"
+        />
         <SingleSelect id="audit-actor" label="Person" value={actor} onChange={setActor} options={actorOptions} allLabel="Anyone" />
         <MultiSelect id="audit-action" label="Action" value={actions} onChange={setActions} options={toOptions(ACTION_LABELS)} />
         <SingleSelect id="audit-event-warehouse" label="Warehouse" value={warehouse} onChange={setWarehouse} options={warehouseOptions} />
@@ -439,12 +480,12 @@ function NotificationsTab({ warehouseOptions }) {
   const [warehouse, setWarehouse] = useState("");
   const [start, setStart] = useState("");
   const [end, setEnd] = useState("");
-  const [recipientInput, setRecipientInput] = useState("");
-  const recipient = useDebounced(recipientInput.trim());
+  const [searchInput, setSearchInput] = useState("");
+  const search = useDebounced(searchInput.trim());
 
   const filterParams = useMemo(
-    () => buildParams({ channel, kind: kinds, status, warehouse, start, end, recipient }),
-    [channel, kinds, status, warehouse, start, end, recipient]
+    () => buildParams({ search, channel, kind: kinds, status, warehouse, start, end }),
+    [search, channel, kinds, status, warehouse, start, end]
   );
   const paged = usePagedAudit("auditNotifications", "/api/audit/notifications/", filterParams);
 
@@ -486,17 +527,17 @@ function NotificationsTab({ warehouseOptions }) {
   return (
     <Box>
       <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2, alignItems: "center", mb: 2 }}>
+        <SearchField
+          id="audit-notification-search"
+          value={searchInput}
+          onChange={setSearchInput}
+          placeholder="Reference, company, recipient or subject"
+        />
         <SingleSelect id="audit-channel" label="Channel" value={channel} onChange={setChannel} options={toOptions(CHANNEL_LABELS)} />
         <MultiSelect id="audit-kind" label="Type" value={kinds} onChange={setKinds} options={toOptions(NOTIFICATION_KIND_LABELS)} />
         <SingleSelect id="audit-status" label="Status" value={status} onChange={setStatus} options={toOptions(STATUS_LABELS)} />
         <SingleSelect id="audit-notification-warehouse" label="Warehouse" value={warehouse} onChange={setWarehouse} options={warehouseOptions} />
         <DateRange start={start} end={end} onStart={setStart} onEnd={setEnd} />
-        <TextField
-          size="small"
-          label="Recipient"
-          value={recipientInput}
-          onChange={(e) => setRecipientInput(e.target.value)}
-        />
         <Box sx={{ flexGrow: 1 }} />
         <ExportButton url="/api/audit/notifications/" params={filterParams} filename="notifications.csv" />
       </Box>

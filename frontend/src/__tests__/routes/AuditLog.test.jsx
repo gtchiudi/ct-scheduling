@@ -227,6 +227,25 @@ describe('Appointment activity tab', () => {
     })
   })
 
+  it('sends the trimmed search once typing stops, resets to page 1, and clears', async () => {
+    const user = userEvent.setup()
+    renderPage()
+    await screen.findAllByTestId('audit-row')
+    await user.click(screen.getByRole('button', { name: /next page/i }))
+    await waitFor(() => expect(lastEventParams().get('page')).toBe('2'))
+
+    const requestsBefore = eventRequests.length
+    await user.type(screen.getByLabelText('Search'), '  PO-123 acme ')
+    await waitFor(() => expect(lastEventParams().get('search')).toBe('PO-123 acme'))
+    expect(lastEventParams().get('page')).toBe('1')
+    // Debounced: one query for the finished text, not one per keystroke.
+    expect(eventRequests.slice(requestsBefore).filter((p) => p.get('search')).length).toBe(1)
+
+    await user.click(screen.getByRole('button', { name: /clear search/i }))
+    await waitFor(() => expect(lastEventParams().get('search')).toBeNull())
+    expect(screen.getByLabelText('Search')).toHaveValue('')
+  })
+
   it('offers "Request form / unknown" as a person filter (actor=none)', async () => {
     const user = userEvent.setup()
     renderPage()
@@ -286,7 +305,7 @@ describe('Notifications tab', () => {
     expect(lastNotificationParams().get('page')).toBe('1')
   })
 
-  it('sends channel, type, status, warehouse, date and recipient filters', async () => {
+  it('sends channel, type, status, warehouse, date and search filters', async () => {
     const user = userEvent.setup()
     renderPage()
     await openTab(user)
@@ -308,8 +327,9 @@ describe('Notifications tab', () => {
     await user.type(screen.getByLabelText('From'), '2026-09-01')
     await waitFor(() => expect(lastNotificationParams().get('start')).toBe('2026-09-01'))
 
-    await user.type(screen.getByLabelText('Recipient'), 'driver')
-    await waitFor(() => expect(lastNotificationParams().get('recipient')).toBe('driver'))
+    await user.type(screen.getByLabelText('Search'), 'driver')
+    await waitFor(() => expect(lastNotificationParams().get('search')).toBe('driver'))
+    expect(screen.queryByLabelText('Recipient')).not.toBeInTheDocument()
   })
 
   it('shows the empty state', async () => {
@@ -361,10 +381,13 @@ describe('Export CSV', () => {
     await screen.findAllByTestId('audit-row')
     await pickOption(user, 'Person', 'Dana Smith')
     await waitFor(() => expect(lastEventParams().get('actor')).toBe('3'))
+    await user.type(screen.getByLabelText('Search'), 'acme')
+    await waitFor(() => expect(lastEventParams().get('search')).toBe('acme'))
 
     await user.click(screen.getByRole('button', { name: /export csv/i }))
     await waitFor(() => expect(clickSpy).toHaveBeenCalled())
     expect(exportParams.get('actor')).toBe('3')
+    expect(exportParams.get('search')).toBe('acme')
     expect(exportParams.get('page')).toBeNull()
     expect(createObjectURL).toHaveBeenCalledWith(expect.any(Blob))
     const anchor = clickSpy.mock.contexts[0]

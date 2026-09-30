@@ -225,6 +225,10 @@ with a new driver phone number and SMS consent ticked.
 Open **Audit Log** from the header as `e2e_dispatch`.
 
 ### 6.1 Appointment activity filters
+- [ ] **Search:** type a reference number (any one of an appointment's references, any
+  capitalisation), a company name or a customer name. After a short pause only that
+  appointment's rows remain. Several words must all match (for example `acme po-123`). The ✕
+  button clears it. Search works together with the other filters and with Export CSV.
 - [ ] **Person:** choose Dana Smith. Every row's Person is Dana Smith.
 - [ ] **Action (multi-select):** choose Approved and Cancelled. Only those two actions appear.
   Clear the filter and all actions return.
@@ -239,8 +243,10 @@ Open **Audit Log** from the header as `e2e_dispatch`.
 ### 6.2 Notifications filters
 - [ ] **Channel** (Email/SMS), **Type** (multi-select), **Status** (Sent/Failed),
   **Warehouse**, **From/To**: each narrows the rows to matching values.
-- [ ] **Recipient:** type part of an address, in any capitalisation (for example `ACME`). The
-  table updates after a short pause and shows only matching recipients.
+- [ ] **Search:** matches reference, company, customer, recipient and subject. Type part of an
+  address in any capitalisation (for example `ACME`), or a reference number; the table updates
+  after a short pause. Rows with no appointment (team emails) are still found by recipient or
+  subject.
 
 ### 6.3 Paging
 - [ ] With more than 50 rows, the footer shows "1–50 of N". Next/Previous page through the

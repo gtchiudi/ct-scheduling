@@ -468,3 +468,55 @@ def test_audit_log_page_route_serves_spa(client, settings, tmp_path):
     response = client.get("/AuditLog")
     assert response.status_code == 200
     assert b"spa" in response.content
+
+
+# ---------------------------------------------------------------------------
+# search
+# ---------------------------------------------------------------------------
+
+@pytest.mark.django_db
+@pytest.mark.parametrize("query,expected", [
+    ("n-2", ["north_cancel", "north_created"]),               # second ref of a multi-ref appointment
+    ("approved co", ["edited", "created", "imported"]),      # company, every word must match
+    ("NORTH", ["north_cancel", "north_created"]),             # case-insensitive
+    ("north po-approved", []),                                # words are ANDed
+    ("   ", ["north_cancel", "north_created", "edited", "created", "imported"]),  # blank = no filter
+])
+def test_events_search(dispatch_client, events, query, expected):
+    response = dispatch_client.get("/api/audit/events/", {"search": query})
+    assert _ids(response) == [str(events[k].id) for k in expected]
+
+
+@pytest.mark.django_db
+def test_events_search_matches_customer_name(dispatch_client, events, other_request):
+    other_request.customer_name = "Zephyr Freight"
+    other_request.save()
+    response = dispatch_client.get("/api/audit/events/", {"search": "zephyr"})
+    assert _ids(response) == [str(events["north_cancel"].id), str(events["north_created"].id)]
+
+
+@pytest.mark.django_db
+def test_events_search_combines_with_filters(dispatch_client, events, dana):
+    response = dispatch_client.get("/api/audit/events/", {"search": "north", "actor": dana.id})
+    assert _ids(response) == [str(events["north_created"].id)]
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize("query,expected", [
+    ("candortransport", ["team"]),        # recipient, on a row with no appointment
+    ("pending request", ["team"]),        # subject
+    ("north co", ["sms_failed"]),         # appointment company
+    ("po-approved", ["approval"]),        # ref (and subject)
+    ("nothing-matches", []),
+])
+def test_notifications_search(dispatch_client, notifications, query, expected):
+    response = dispatch_client.get("/api/audit/notifications/", {"search": query})
+    assert _ids(response) == [str(notifications[k].id) for k in expected]
+
+
+@pytest.mark.django_db
+def test_search_applies_to_csv_export(dispatch_client, events, notifications):
+    rows = _csv(dispatch_client.get("/api/audit/events/", {"search": "north", "export": "csv"}))
+    assert len(rows) == 1 + 2
+    rows = _csv(dispatch_client.get("/api/audit/notifications/", {"search": "candortransport", "export": "csv"}))
+    assert len(rows) == 1 + 1

@@ -6,6 +6,7 @@ E2E tests for the Appointment Audit Trail.
   - Filter appointment activity by action and person
   - Notifications tab lists emails sent for an appointment
   - Export CSV downloads the rows matching the current filters
+  - Search finds an appointment's activity and notifications by reference number
   - Dock users: no nav link, redirected away from /AuditLog, 403 from the API
 
 Requires the app to be running with the audit trail migrations applied. Emails
@@ -244,6 +245,47 @@ def test_export_csv_matches_filters(dispatch_page, audited_appointment, dispatch
     )
     api.raise_for_status()
     assert len(rows) == api.json()["count"]
+
+
+@pytest.mark.e2e
+def test_search_by_reference_on_both_tabs(dispatch_page, audited_appointment, dispatch_access):
+    """Searching a reference number narrows both tabs to that appointment, and the
+    CSV export carries the search."""
+    ref = audited_appointment["ref"]
+    audit = AuditLogPage(dispatch_page)
+    audit.navigate_via_nav_link()
+    audit.wait_for_events_table()
+
+    audit.search(ref.lower())  # case-insensitive
+    audit.wait_for_rows_to_match("Action", {"Created", "Edited"})
+    expect(audit.rows()).to_have_count(2, timeout=10000)
+    for row in audit.rows().all():
+        expect(row).to_contain_text(ref)
+
+    _, header, rows = audit.export_csv()
+    col = {name: i for i, name in enumerate(header)}
+    assert sorted(r[col["action"]] for r in rows) == ["created", "edited"]
+    assert all(ref in r[col["appointment_ref"]] for r in rows)
+
+    audit.clear_search()
+    expect(audit.rows()).not_to_have_count(2, timeout=10000)
+
+    audit.open_notifications_tab()
+    audit.search(ref)
+    row = audit.rows(NOTIFICATIONS_TABLE)
+    expect(row).to_have_count(1, timeout=10000)
+    expect(row).to_contain_text("Calendar event")
+
+    # Search matches recipient too (the internal calendar-event mailbox).
+    api = req_lib.get(
+        f"{BASE_URL}/api/audit/notifications/",
+        params={"search": ref, "page_size": 1},
+        headers=_auth(dispatch_access),
+        timeout=10,
+    ).json()
+    recipient = api["results"][0]["recipient"]
+    audit.search(f"{ref} {recipient.upper()}")  # words ANDed across fields
+    expect(audit.rows(NOTIFICATIONS_TABLE)).to_have_count(1, timeout=10000)
 
 
 # ---------------------------------------------------------------------------
