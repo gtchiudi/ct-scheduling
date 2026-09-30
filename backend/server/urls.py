@@ -58,6 +58,7 @@ urlpatterns = [
     path('logout', TemplateView.as_view(template_name='index.html')),
     path('RequestForm', TemplateView.as_view(template_name='index.html')),
     path('PendingRequests', TemplateView.as_view(template_name='index.html')),
+    path('AuditLog', TemplateView.as_view(template_name='index.html')),
 ]
 # if settings.DEBUG:
 #     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
