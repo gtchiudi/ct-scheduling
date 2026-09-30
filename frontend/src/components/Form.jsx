@@ -47,6 +47,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import PhoneMaskCustom from "./PhoneMaskCustom.jsx";
 import FormActions from "./FormActions.jsx";
 import { validateEmail, validatePhone } from "../utils/validation.js";
+import { toApiDateTime } from "../utils/datetime.js";
 
 const ADD_CUSTOMER_OPTION = { id: '__add__', customer_name: '+ Add New Customer', email_address: '', send_email_updates: false };
 
@@ -268,7 +269,7 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
   useQuery({
     queryKey: key,
     queryFn: async () =>
-      await axios.get("/api/request/", {
+      await axios.get("/api/request/slots/", {
         params: {
           start_date: dayjs(selectedDate).startOf("date").toDate(),
           end_date: dayjs(selectedDate).endOf("date").toDate(),
@@ -536,7 +537,7 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
       const dockNum = requestData.container_drop
         ? null
         : parseInt(document.getElementById("dock_number").value);
-      const dockedTime = dayjs().format("YYYY-MM-DD HH:mm:ss");
+      const dockedTime = toApiDateTime(dayjs());
       if (!(requestData.sms_consent && requestData.driver_phone_number)) {
         setFormAlert({
           message: requestData.container_drop
@@ -551,11 +552,11 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
       }
       updateRequest({ dock_number: dockNum, docked_time: dockedTime });
     } else if (name == "check_in_time") {
-      updateRequest({ check_in_time: dayjs().format("YYYY-MM-DD HH:mm:ss") });
+      updateRequest({ check_in_time: toApiDateTime(dayjs()) });
     } else if (name == "completed_time") {
-      updateRequest({ completed_time: dayjs().format("YYYY-MM-DD HH:mm:ss") });
+      updateRequest({ completed_time: toApiDateTime(dayjs()) });
     } else if (name == "remove_from_calendar") {
-      updateRequest({ active: false });
+      removeFromCalendar();
     }
   };
 
@@ -588,7 +589,7 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
     customer_id: requestData.customer?.id ?? null,
     // Optional and delivery-only: leave it NULL rather than blank when unanswered.
     load_config: (requestData.delivery && requestData.load_config) || null,
-    date_time: dayjs(requestData.date_time).format("YYYY-MM-DD HH:mm:ss"),
+    date_time: toApiDateTime(requestData.date_time),
   });
 
   const flushCustomerEmailDraft = async () => {
@@ -688,6 +689,24 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
     }
   };
 
+  // Takes the appointment off the calendar without emailing anyone; the API
+  // records it as "removed" rather than a decline.
+  const removeFromCalendar = async () => {
+    setIsSubmitting(true);
+    try {
+      await axios.post(`/api/request/${requestData.id}/remove/`);
+      setEditAppointment(false);
+      closeModal();
+      queryClient.invalidateQueries(["pendingRequests"]);
+      queryClient.invalidateQueries(["requests"]);
+    } catch (error) {
+      console.error("Error removing appointment from calendar:", error);
+      setFormAlert({ message: "Failed to remove the appointment from the calendar. Please try again.", severity: "error" });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const warehouseTimezone = React.useMemo(() => {
     const wh = warehouseData.find((w) => w.id === requestData.warehouse);
     return wh?.timezone || null;
@@ -731,7 +750,7 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
     for (let i = 0; i < MAX_DAYS_SEARCHED; i++) {
       let takenTimes;
       try {
-        const response = await axios.get("/api/request/", {
+        const response = await axios.get("/api/request/slots/", {
           params: {
             start_date: dayjs(day).startOf("date").toDate(),
             end_date: dayjs(day).endOf("date").toDate(),
@@ -871,7 +890,7 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
             disabled={isSubmitting}
             onClick={() => {
               setCancelConfirmOpen(false);
-              updateRequest({ cancelled_time: dayjs().format("YYYY-MM-DD HH:mm:ss") });
+              updateRequest({ cancelled_time: toApiDateTime(dayjs()) });
             }}
           >
             Cancel Appointment

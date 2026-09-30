@@ -915,10 +915,6 @@ def test_actors_lists_only_users_with_events_sorted_by_name(dispatch_client, war
 # ===========================================================================
 
 @pytest.mark.django_db
-@pytest.mark.xfail(strict=True, reason=(
-    "BUG-1 (high, pre-existing): IsAuthenticatedOrPostOnly returns the IsAuthenticated "
-    "class (truthy) instead of checking it, so anonymous DELETE soft-deletes any "
-    "appointment; it is now audited as 'cancelled' by 'Unknown'. views.py:45-49"))
 def test_bug_anonymous_delete_is_rejected(api_client, approved_request):
     resp = api_client.delete(f"/api/request/{approved_request.id}/")
     assert resp.status_code in (401, 403)
@@ -928,21 +924,99 @@ def test_bug_anonymous_delete_is_rejected(api_client, approved_request):
 
 
 @pytest.mark.django_db
-@pytest.mark.xfail(strict=True, reason=(
-    "BUG-2 (medium, pre-existing): 'Remove from Calendar' on a completed appointment sends "
-    "{active: false} (Form.jsx:557-558), which RequestView.update treats as a decline: the "
-    "carrier is emailed 'Appointment Request Declined' and the audit trail records "
-    "'declined'. views.py decline branch / audit.py diff_to_events"))
-def test_bug_remove_from_calendar_after_completion_is_not_a_decline(dana_client, approved_request):
-    now = timezone.now()
-    approved_request.check_in_time = now - timedelta(hours=2)
-    approved_request.docked_time = now - timedelta(hours=1)
-    approved_request.dock_number = 4
-    approved_request.completed_time = now
+@pytest.mark.parametrize("method,suffix", [
+    ("get", ""), ("get", "{id}/"), ("put", "{id}/"), ("patch", "{id}/"), ("post", "{id}/remove/"),
+])
+def test_anonymous_cannot_read_or_modify_requests(api_client, approved_request, method, suffix):
+    url = "/api/request/" + suffix.format(id=approved_request.id)
+    resp = getattr(api_client, method)(url, {}, format="json")
+    assert resp.status_code in (401, 403)
+    approved_request.refresh_from_db()
+    assert approved_request.active is True
+
+
+@pytest.mark.django_db
+def test_anonymous_slots_expose_only_times(api_client, approved_request, warehouse):
+    day = approved_request.date_time
+    resp = api_client.get("/api/request/slots/", {
+        "start_date": (day - timedelta(hours=1)).isoformat(),
+        "end_date": (day + timedelta(hours=1)).isoformat(),
+    })
+    assert resp.status_code == 200
+    assert len(resp.data) == 1
+    assert set(resp.data[0]) == {"warehouse", "date_time", "appointment_length"}
+    assert str(resp.data[0]["warehouse"]) == str(warehouse.id)
+
+
+@pytest.mark.django_db
+def test_slots_require_range_and_reject_garbage(api_client):
+    assert api_client.get("/api/request/slots/").status_code == 400
+    resp = api_client.get("/api/request/slots/", {"start_date": "nope", "end_date": "nope"})
+    assert resp.status_code == 400
+
+
+@pytest.mark.django_db
+def test_slots_exclude_inactive_and_filter_by_warehouse(api_client, approved_request):
+    day = approved_request.date_time
+    params = {"start_date": (day - timedelta(hours=1)).isoformat(),
+              "end_date": (day + timedelta(hours=1)).isoformat()}
+    other = Warehouse.objects.create(name="Other", address="x", phone_number="1")
+    assert api_client.get("/api/request/slots/", {**params, "warehouse": str(other.id)}).data == []
+    approved_request.active = False
     approved_request.save()
-    _put(dana_client, approved_request.id, active=False)   # exactly what the button sends
+    assert api_client.get("/api/request/slots/", params).data == []
+
+
+def _complete(appointment):
+    now = timezone.now()
+    appointment.check_in_time = now - timedelta(hours=2)
+    appointment.docked_time = now - timedelta(hours=1)
+    appointment.dock_number = 4
+    appointment.completed_time = now
+    appointment.save()
+
+
+@pytest.mark.django_db
+def test_remove_endpoint_marks_inactive_without_email(dana_client, dana, approved_request):
+    _complete(approved_request)
+    mail.outbox.clear()
+    resp = dana_client.post(f"/api/request/{approved_request.id}/remove/")
+    assert resp.status_code == 200
+    approved_request.refresh_from_db()
+    assert approved_request.active is False
+    assert approved_request.cancelled_time is None
+    assert mail.outbox == []
+    assert _notifications(approved_request.id) == []
+    events = _events(approved_request.id)
+    assert [e.action for e in events] == ["removed"]
+    assert events[0].actor == dana
+
+
+@pytest.mark.django_db
+def test_removed_is_filterable_in_audit_api(dana_client, approved_request):
+    dana_client.post(f"/api/request/{approved_request.id}/remove/")
+    resp = dana_client.get("/api/audit/events/", {"action": "removed"})
+    assert resp.status_code == 200
+    assert [r["action"] for r in resp.data["results"]] == ["removed"]
+
+
+@pytest.mark.django_db
+def test_put_inactive_on_approved_appointment_is_a_removal_not_a_decline(dana_client, approved_request):
+    """Older clients sent PUT {active: false} for Remove from Calendar."""
+    _complete(approved_request)
+    mail.outbox.clear()
+    _put(dana_client, approved_request.id, active=False)
     assert "declined" not in [e.action for e in _events(approved_request.id)]
+    assert "removed" in [e.action for e in _events(approved_request.id)]
     assert "decline" not in [n.kind for n in _notifications(approved_request.id)]
+    assert mail.outbox == []
+
+
+@pytest.mark.django_db
+def test_put_inactive_on_pending_request_is_still_a_decline(dana_client, pending_request):
+    _put(dana_client, pending_request.id, active=False)
+    assert "declined" in [e.action for e in _events(pending_request.id)]
+    assert "decline" in [n.kind for n in _notifications(pending_request.id)]
 
 
 @pytest.mark.django_db

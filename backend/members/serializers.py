@@ -38,6 +38,13 @@ class RequestSerializer(serializers.ModelSerializer):
         read_only_fields = ('created_at', 'updated_at')
 
 
+class SlotSerializer(serializers.ModelSerializer):
+    """Taken time slots for the public request form: no customer data."""
+    class Meta:
+        model = Request
+        fields = ('warehouse', 'date_time', 'appointment_length')
+
+
 class WarehouseSerializer(serializers.ModelSerializer):
     class Meta:
         model = Warehouse

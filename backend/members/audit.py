@@ -94,7 +94,9 @@ def diff_to_events(before, after):
     if not before['approved'] and after['approved']:
         events.append(('approved', {}))
     if before['active'] and not after['active'] and after['cancelled_time'] is None:
-        events.append(('declined', {}))
+        # Only a pending request can be declined; an approved one set inactive
+        # was taken off the calendar (mirrors RequestView.update's email logic).
+        events.append(('removed' if before['approved'] else 'declined', {}))
     if before['cancelled_time'] is None and after['cancelled_time'] is not None:
         events.append(('cancelled', {}))
     for field_name, action in LIFECYCLE_TIMESTAMPS:
@@ -144,11 +146,16 @@ def record_update(pk, before, actor):
         logger.exception('Audit: failed to record update of appointment %s', pk)
 
 
-def record_cancelled(appointment, actor):
+def record_action(pk, actor, action):
+    """Record a single action with no field changes."""
     try:
-        _write(appointment.pk, actor, [('cancelled', {})])
+        _write(pk, actor, [(action, {})])
     except Exception:
-        logger.exception('Audit: failed to record cancellation of appointment %s', appointment.pk)
+        logger.exception('Audit: failed to record %s of appointment %s', action, pk)
+
+
+def record_cancelled(appointment, actor):
+    record_action(appointment.pk, actor, 'cancelled')
 
 
 def safe_snapshot(appointment):

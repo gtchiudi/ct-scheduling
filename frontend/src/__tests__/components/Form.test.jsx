@@ -82,7 +82,7 @@ beforeEach(() => {
   server.use(
     http.get('/api/warehouse', () => HttpResponse.json([WAREHOUSE])),
     http.get('/api/customer/', () => HttpResponse.json([CUSTOMER])),
-    http.get('/api/request/', () => HttpResponse.json([]))
+    http.get('/api/request/slots/', () => HttpResponse.json([]))
   )
 })
 
@@ -291,7 +291,7 @@ function booking(day, hhmm) {
 /** Serves each day's bookings, keyed by YYYY-MM-DD in the warehouse's timezone. */
 function serveAvailability(bookedByDay) {
   server.use(
-    http.get('/api/request/', ({ request }) => {
+    http.get('/api/request/slots/', ({ request }) => {
       const start = new URL(request.url, 'http://localhost').searchParams.get('start_date')
       const day = dayjs(start).tz(TZ).format('YYYY-MM-DD')
       return HttpResponse.json(bookedByDay[day] ?? [])
@@ -349,5 +349,59 @@ describe('first available appointment slot', () => {
       () => expect(pickerValue()).toHaveValue(expected(nextWorkDay(day))),
       { timeout: 3000 }
     )
+  })
+})
+
+// ---------------------------------------------------------------------------
+// Timezone-safe datetimes and Remove from Calendar
+// ---------------------------------------------------------------------------
+
+describe('datetimes sent to the API', () => {
+  it('carry a UTC offset and keep the appointment instant on approve', async () => {
+    const user = userEvent.setup()
+    const captured = {}
+    server.use(
+      http.put('/api/request/:id/', async ({ request }) => {
+        captured.body = await request.json()
+        return HttpResponse.json(captured.body)
+      })
+    )
+    renderForm({ path: '/PendingRequests', request: makeRequest() })
+    await user.click(await screen.findByRole('button', { name: /approve/i }))
+
+    await waitFor(() => expect(captured.body).toBeTruthy())
+    expect(captured.body.date_time).toMatch(/[+-]\d{2}:\d{2}$/)
+    expect(dayjs(captured.body.date_time).valueOf()).toBe(dayjs('2026-12-01T14:00:00.000Z').valueOf())
+  })
+})
+
+describe('Remove from Calendar', () => {
+  it('posts to the remove endpoint instead of a PUT decline', async () => {
+    const user = userEvent.setup()
+    const calls = { remove: 0, put: 0 }
+    server.use(
+      http.post('/api/request/:id/remove/', () => {
+        calls.remove += 1
+        return HttpResponse.json({})
+      }),
+      http.put('/api/request/:id/', () => {
+        calls.put += 1
+        return HttpResponse.json({})
+      })
+    )
+    renderForm({
+      path: '/Calendar',
+      request: makeRequest({
+        approved: true,
+        check_in_time: '2026-12-01T13:50:00.000Z',
+        docked_time: '2026-12-01T14:05:00.000Z',
+        dock_number: 3,
+        completed_time: '2026-12-01T15:00:00.000Z',
+      }),
+    })
+    await user.click(await screen.findByRole('button', { name: /remove from calendar/i }))
+
+    await waitFor(() => expect(calls.remove).toBe(1))
+    expect(calls.put).toBe(0)
   })
 })

@@ -14,6 +14,7 @@ export const ACTION_LABELS = {
   docked: "Docked",
   completed: "Completed",
   cancelled: "Cancelled",
+  removed: "Removed from calendar",
 };
 
 export const NOTIFICATION_KIND_LABELS = {

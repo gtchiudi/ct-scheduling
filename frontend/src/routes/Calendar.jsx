@@ -830,8 +830,10 @@ export default function Calendar() {
       await axios.get("/api/request", {
         params: {
           approved: "True",
-          start_date: startDate.format("YYYY-MM-DD HH:mm:ss.SSSSSS[Z]"),
-          end_date: endDate.format("YYYY-MM-DD HH:mm:ss.SSSSSS[Z]"),
+          // Real UTC instants: formatting local time with a literal "Z"
+          // shifted the fetched window by the browser's UTC offset.
+          start_date: startDate.toISOString(),
+          end_date: endDate.toISOString(),
         },
       }),
     refetchInterval: 180000, // refetches every 3 minutes

@@ -24,7 +24,9 @@ from .email_templates import (
 from datetime import datetime
 
 from rest_framework.response import Response
+from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
+from django.core.exceptions import ValidationError as DjangoValidationError
 from rest_framework import status, permissions
 
 from rest_framework.parsers import JSONParser
@@ -43,10 +45,14 @@ else:
     candorEmailRecipient = 'appointments@candortransport.com'
 
 class IsAuthenticatedOrPostOnly(permissions.BasePermission):
+    """Anonymous users may submit a request (create) and read taken time slots
+    (slots, which exposes no customer data). Everything else needs a login."""
+    ANONYMOUS_ACTIONS = ('create', 'slots')
+
     def has_permission(self, request, view):
-        if request.method == 'POST':
-            return True  # Allow unauthenticated POST requests
-        return IsAuthenticated
+        if getattr(view, 'action', None) in self.ANONYMOUS_ACTIONS:
+            return True
+        return bool(request.user and request.user.is_authenticated)
 
 
 class RequestView(viewsets.ModelViewSet):
@@ -149,8 +155,11 @@ class RequestView(viewsets.ModelViewSet):
                         ),
                         appointment=requestUpdate, kind='customer_scheduled')
 
-            elif 'active' in altered_fields and not updated_data['active'] and not updated_data.get('cancelled_time'):
-                # Declined (active set to false without a cancelled_time — from Decline button)
+            elif 'active' in altered_fields and not updated_data['active'] and not updated_data.get('cancelled_time') \
+                    and not original_data.get('approved'):
+                # Declined (a pending request set inactive without a cancelled_time —
+                # from the Decline button). An approved appointment set inactive this
+                # way is a removal from the calendar: no email (see `remove`).
                 date_time = datetime.fromisoformat(
                     updated_data["date_time"].replace('Z', '+00:00'))
                 date_time = date_time.astimezone(
@@ -251,6 +260,43 @@ Reply 'STOP' to opt out of future notifications.''',
         actor = audit.actor_or_none(self.request)
         instance = serializer.save(created_by=actor)
         audit.record_created(instance, actor)
+
+    @action(detail=False, methods=['get'])
+    def slots(self, request):
+        """GET /api/request/slots/?start_date=&end_date=[&warehouse=]
+
+        Taken appointment times, readable anonymously so the public request
+        form can grey out booked slots without seeing anyone's details.
+        """
+        start_date = request.query_params.get('start_date')
+        end_date = request.query_params.get('end_date')
+        if not (start_date and end_date):
+            return Response({'detail': 'start_date and end_date are required.'},
+                            status=status.HTTP_400_BAD_REQUEST)
+        try:
+            queryset = Request.objects.filter(
+                active=True, date_time__gte=start_date, date_time__lte=end_date)
+            warehouse = request.query_params.get('warehouse')
+            if warehouse:
+                queryset = queryset.filter(warehouse_id=warehouse)
+            return Response(SlotSerializer(queryset, many=True).data)
+        except (ValueError, DjangoValidationError):
+            return Response({'detail': 'Invalid start_date, end_date or warehouse.'},
+                            status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=True, methods=['post'])
+    def remove(self, request, pk=None):
+        """POST /api/request/<id>/remove/
+
+        Takes an appointment off the calendar (e.g. once it is completed).
+        Unlike a decline (PUT with active=false) or a cancellation, nobody is
+        emailed, and the audit trail records it as `removed`.
+        """
+        appointment = self.get_object()
+        appointment.active = False
+        appointment.save(update_fields=['active', 'updated_at'])
+        audit.record_action(appointment.pk, audit.actor_or_none(request), 'removed')
+        return Response(RequestSerializer(appointment).data)
 
     def perform_destroy(self, instance):
         # Request.delete() is a soft delete (active=False).
