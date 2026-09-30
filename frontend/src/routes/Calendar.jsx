@@ -41,6 +41,7 @@ import {
 import axios from "axios";
 import Form, { APPOINTMENT_LENGTH_OPTIONS } from "../components/Form.jsx";
 import AppointmentSearchDrawer from "../components/AppointmentSearchDrawer.jsx";
+import ActivityHistory from "../components/ActivityHistory.jsx";
 
 function isWarehouseChecked(id, warehousesChecked, allWarehouses) {
   if (!warehousesChecked || warehousesChecked.length === 0) {
@@ -87,6 +88,8 @@ export function CustomViewer({ event, onClose }) {
           </DialogTitle>
           <DialogContent sx={{ pt: '20px !important', px: { xs: 0, sm: 3 }, pb: 0 }}>
             <Form request={event.request} closeModal={closeDialog} onLockChange={handleLockChange} />
+            {/* Renders nothing for Dock users or a request without an id. */}
+            <ActivityHistory appointmentId={event.request?.id} />
           </DialogContent>
           <DialogActions>
             {!editAppointment && event.request.check_in_time == null && userGroups.some(g => ["Admin", "Dispatch"].includes(g)) && (
