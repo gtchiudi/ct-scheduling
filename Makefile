@@ -3,6 +3,11 @@ NAMESPACE = ctscheduling
 DEPLOYMENT_NAME = ctscheduling
 REPLACEMENTS_FILE = deployments/production/.replacements
 
+# Python used by the test targets: the active virtualenv, else the project venv
+# if present, else python3 (macOS has no bare `python`). Override: make test PYTHON=...
+PROJECT_VENV_PYTHON := $(HOME)/.venvs/candorVenv/bin/python
+PYTHON ?= $(if $(VIRTUAL_ENV),$(VIRTUAL_ENV)/bin/python,$(if $(wildcard $(PROJECT_VENV_PYTHON)),$(PROJECT_VENV_PYTHON),python3))
+
 
 # Build target: Increments version and runs build script
 build:
@@ -52,7 +57,7 @@ doc-prune:
 # Backend unit tests (fast, in-memory SQLite, no network)
 test:
 	@echo "Running backend unit tests..."
-	python -m pytest \
+	$(PYTHON) -m pytest \
 		--cov=members \
 		--cov-report=term-missing \
 		--cov-report=html:backend/htmlcov \
@@ -65,11 +70,12 @@ test-frontend:
 	cd frontend && npm run test
 	@echo "Frontend tests complete."
 
-# E2E tests against a running app instance
+# E2E tests against a running app instance (locally: Django on :8000 started with
+# e2e_django_settings, plus `npm run dev` on :5173 — see e2e/e2e_django_settings.py)
 # Override target: make test-e2e E2E_BASE_URL=https://staging.example.com
 test-e2e:
-	@echo "Running E2E tests against $${E2E_BASE_URL:-http://localhost:8000}..."
-	python -m pytest e2e/tests/ -v --tb=short -x
+	@echo "Running E2E tests against $${E2E_BASE_URL:-http://localhost:5173}..."
+	$(PYTHON) -m pytest e2e/tests/ -v --tb=short -x
 
 # Run backend + frontend unit tests, then build+deploy
 # E2E tests are excluded from the deploy gate — run them post-deploy against staging
