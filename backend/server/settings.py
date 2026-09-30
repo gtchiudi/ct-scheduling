@@ -193,13 +193,27 @@ EMAIL_HOST_PASSWORD = os.getenv('SMTP_API_KEY')
 
 # Audit trail retention (days). Unset/empty = keep forever. Pruned nightly by
 # `python manage.py prune_audit_logs` (CronJob prune-audit-logs).
-def _env_int(name, default=None):
+# Invalid or non-positive values are treated as unset (keep forever) rather
+# than crashing startup or pruning the whole trail.
+def _env_retention_days(name, default=None):
     value = os.getenv(name, '').strip()
-    return int(value) if value else default
+    if not value:
+        return default
+    try:
+        days = int(value)
+    except ValueError:
+        days = None
+    if days is None or days < 1:
+        import logging
+        logging.getLogger('server').warning(
+            '%s=%r is not a positive whole number of days; ignoring it (keeping audit history).',
+            name, value)
+        return default
+    return days
 
 
-AUDIT_RETENTION_DAYS = _env_int('AUDIT_RETENTION_DAYS')
-NOTIFICATION_RETENTION_DAYS = _env_int('NOTIFICATION_RETENTION_DAYS', AUDIT_RETENTION_DAYS)
+AUDIT_RETENTION_DAYS = _env_retention_days('AUDIT_RETENTION_DAYS')
+NOTIFICATION_RETENTION_DAYS = _env_retention_days('NOTIFICATION_RETENTION_DAYS', AUDIT_RETENTION_DAYS)
 
 if os.getenv("CSRF_TRUSTED_ORIGIN"):
     CSRF_TRUSTED_ORIGINS = [os.getenv("CSRF_TRUSTED_ORIGIN")]

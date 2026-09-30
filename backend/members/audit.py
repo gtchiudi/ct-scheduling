@@ -58,6 +58,10 @@ def snapshot_from_db(pk):
 def _same(field_name, old, new):
     if old == new:
         return True
+    # The appointment form sends whole seconds, while rows created through the
+    # API or seed data can carry microseconds; that is not an edit.
+    if isinstance(old, datetime) and isinstance(new, datetime):
+        return old.replace(microsecond=0) == new.replace(microsecond=0)
     # Blank text inputs come back from the form as "" for columns that were
     # NULL; that is not a change anyone made.
     if old in (None, '') and new in (None, ''):

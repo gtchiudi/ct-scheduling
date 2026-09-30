@@ -14,7 +14,7 @@ from django.core.management.base import CommandError
 from django.test import RequestFactory
 from django.utils import timezone
 
-from members.models import AppointmentEvent, NotificationLog
+from members.models import AppointmentEvent, NotificationLog, Request
 
 
 def _run(*args):
@@ -107,6 +107,19 @@ def test_batched_delete(approved_request, monkeypatch):
 
 
 @pytest.mark.django_db
+@pytest.mark.parametrize("value", [0, -5, "30"])
+def test_invalid_retention_settings_are_ignored_with_warning(aged, settings, value, caplog):
+    settings.AUDIT_RETENTION_DAYS = value
+    settings.NOTIFICATION_RETENTION_DAYS = value
+    err = StringIO()
+    call_command("prune_audit_logs", stdout=StringIO(), stderr=err)
+    assert "not a positive number of days" in err.getvalue()
+    assert "AUDIT_RETENTION_DAYS" in caplog.text
+    assert AppointmentEvent.objects.count() == 3
+    assert NotificationLog.objects.count() == 2
+
+
+@pytest.mark.django_db
 def test_rejects_non_positive_days():
     with pytest.raises(CommandError):
         _run("--days", "0")
@@ -137,6 +150,20 @@ def test_notification_retention_defaults_to_audit(monkeypatch):
     assert s.NOTIFICATION_RETENTION_DAYS == 400
 
 
+@pytest.mark.parametrize("raw", ["0", "-1", "abc", "1.5", " "])
+def test_invalid_env_retention_is_unset_and_does_not_crash(monkeypatch, raw):
+    s = _reload_settings(monkeypatch, AUDIT_RETENTION_DAYS=raw, NOTIFICATION_RETENTION_DAYS=raw)
+    assert s.AUDIT_RETENTION_DAYS is None
+    assert s.NOTIFICATION_RETENTION_DAYS is None
+    _reload_settings(monkeypatch)
+
+
+def test_invalid_notification_env_falls_back_to_audit(monkeypatch):
+    s = _reload_settings(monkeypatch, AUDIT_RETENTION_DAYS="200", NOTIFICATION_RETENTION_DAYS="-3")
+    assert s.NOTIFICATION_RETENTION_DAYS == 200
+    _reload_settings(monkeypatch)
+
+
 def test_notification_retention_own_value(monkeypatch):
     s = _reload_settings(monkeypatch, AUDIT_RETENTION_DAYS="400", NOTIFICATION_RETENTION_DAYS="90")
     assert s.NOTIFICATION_RETENTION_DAYS == 90
@@ -155,8 +182,32 @@ def test_admin_registered_read_only(model, django_user_model):
     request.user = django_user_model.objects.create_superuser("su", "su@example.com", "pw")
     assert model_admin.has_add_permission(request) is False
     assert model_admin.has_change_permission(request) is False
-    assert model_admin.has_delete_permission(request) is False
     assert model_admin.has_view_permission(request) is True
+    # Delete permission stays on (so cascades from Request/Warehouse work),
+    # but there is no way to delete an audit row directly.
+    assert "delete_selected" not in model_admin.get_actions(request)
+
+
+@pytest.mark.django_db
+def test_admin_blocks_direct_delete_but_allows_cascade(client, django_user_model, aged, approved_request, settings):
+    settings.STATICFILES_STORAGE = "django.contrib.staticfiles.storage.StaticFilesStorage"
+    client.force_login(django_user_model.objects.create_superuser("su", "su@example.com", "pw"))
+    event = aged["old_event"]
+    assert client.get(f"/admin/members/appointmentevent/{event.pk}/delete/").status_code == 403
+    assert client.post(f"/admin/members/appointmentevent/{event.pk}/delete/", {"post": "yes"}).status_code == 403
+    page = client.get(f"/admin/members/appointmentevent/{event.pk}/change/")
+    assert page.status_code == 200
+    assert b"deletelink" not in page.content
+    assert AppointmentEvent.objects.filter(pk=event.pk).exists()
+
+    # Request.delete() is a soft delete, but the changelist bulk action deletes
+    # the queryset for real and must cascade through the audit rows.
+    response = client.post("/admin/members/request/", {
+        "action": "delete_selected", "_selected_action": [str(approved_request.pk)], "post": "yes"})
+    assert response.status_code == 302
+    assert not Request.objects.filter(pk=approved_request.pk).exists()
+    assert not AppointmentEvent.objects.filter(appointment_id=approved_request.pk).exists()
+    assert NotificationLog.objects.filter(pk=aged["old_note"].pk, appointment__isnull=True).exists()
 
 
 @pytest.mark.django_db

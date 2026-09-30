@@ -1,4 +1,5 @@
 from django.contrib import admin
+from django.core.exceptions import PermissionDenied
 from .models import *
 
 
@@ -48,7 +49,14 @@ class SmsNumberLogListView(admin.ModelAdmin):
 
 
 class ReadOnlyAdmin(admin.ModelAdmin):
-    """Audit records are written by the app only; the admin can look, not touch."""
+    """Audit records are written by the app only; the admin can look, not touch.
+
+    Delete permission is left to the default so that deleting a Request or
+    Warehouse from the admin can cascade to its audit rows (Django checks the
+    related admin's delete permission for cascaded objects). Audit rows cannot
+    be deleted directly: the bulk action, the delete button and the delete
+    view are all removed.
+    """
 
     def has_add_permission(self, request):
         return False
@@ -56,8 +64,17 @@ class ReadOnlyAdmin(admin.ModelAdmin):
     def has_change_permission(self, request, obj=None):
         return False
 
-    def has_delete_permission(self, request, obj=None):
-        return False
+    def get_actions(self, request):
+        actions = super().get_actions(request)
+        actions.pop('delete_selected', None)
+        return actions
+
+    def change_view(self, request, object_id, form_url='', extra_context=None):
+        extra_context = {**(extra_context or {}), 'show_delete': False}
+        return super().change_view(request, object_id, form_url, extra_context)
+
+    def delete_view(self, request, object_id, extra_context=None):
+        raise PermissionDenied('Audit records cannot be deleted directly.')
 
 
 class AppointmentEventAdmin(ReadOnlyAdmin):

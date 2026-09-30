@@ -198,6 +198,20 @@ def test_edit_warehouse_and_customer_stored_as_display_strings(
 
 
 @pytest.mark.django_db
+def test_sub_second_date_time_difference_is_not_an_edit(dispatch_client, approved_request, mock_email):
+    approved_request.date_time = approved_request.date_time.replace(microsecond=654321)
+    approved_request.save()
+    whole_seconds = timezone.localtime(approved_request.date_time).strftime("%Y-%m-%d %H:%M:%S")
+    _put(dispatch_client, approved_request, date_time=whole_seconds)
+    assert _events(approved_request) == []
+    # A real change of a second or more is still recorded.
+    later = approved_request.date_time.replace(microsecond=0) + timedelta(seconds=1)
+    _put(dispatch_client, approved_request, date_time=later.isoformat())
+    (event,) = _events(approved_request)
+    assert list(event.changes) == ["date_time"]
+
+
+@pytest.mark.django_db
 def test_multiple_events_from_one_save(dispatch_client, dispatch_user, pending_request, mock_email):
     _put(dispatch_client, pending_request, approved=True, dock_number=4, trailer_number="TR-9")
     events = _events(pending_request)

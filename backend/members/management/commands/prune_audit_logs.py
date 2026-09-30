@@ -8,6 +8,7 @@ retention configured and no --days, nothing is deleted. Approvals imported
 from ApprovalLog (occurred_at NULL, date unknown) are never deleted.
 """
 
+import logging
 from datetime import timedelta
 
 from django.conf import settings
@@ -17,6 +18,8 @@ from django.utils import timezone
 from members.models import AppointmentEvent, NotificationLog
 
 BATCH_SIZE = 5000
+
+logger = logging.getLogger(__name__)
 
 
 def _delete_in_batches(queryset):
@@ -39,12 +42,24 @@ class Command(BaseCommand):
         parser.add_argument('--dry-run', action='store_true',
                             help='Report what would be deleted without deleting anything.')
 
+    def _setting(self, name):
+        """A retention setting, or None when unset or not a positive integer."""
+        value = getattr(settings, name, None)
+        if value is None:
+            return None
+        if isinstance(value, bool) or not isinstance(value, int) or value < 1:
+            message = f'{name}={value!r} is not a positive number of days; ignoring it (keeping all).'
+            logger.warning(message)
+            self.stderr.write(f'Warning: {message}')
+            return None
+        return value
+
     def handle(self, *args, days=None, dry_run=False, **options):
         if days is not None and days < 1:
             raise CommandError('--days must be at least 1.')
 
-        event_days = days if days is not None else getattr(settings, 'AUDIT_RETENTION_DAYS', None)
-        notification_days = days if days is not None else getattr(settings, 'NOTIFICATION_RETENTION_DAYS', None)
+        event_days = days if days is not None else self._setting('AUDIT_RETENTION_DAYS')
+        notification_days = days if days is not None else self._setting('NOTIFICATION_RETENTION_DAYS')
         now = timezone.now()
         verb = 'Would delete' if dry_run else 'Deleted'
 
