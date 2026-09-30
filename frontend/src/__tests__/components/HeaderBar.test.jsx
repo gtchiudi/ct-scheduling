@@ -258,3 +258,55 @@ describe('pending stats badge', () => {
     })
   })
 })
+
+// ---------------------------------------------------------------------------
+// Audit Log link — Admin/Dispatch only, desktop row and avatar (mobile) menu
+// ---------------------------------------------------------------------------
+
+describe('Audit Log nav link', () => {
+  const auditButton = () =>
+    screen.queryAllByRole('link', { name: /^audit log$/i }).filter((el) => el.tagName === 'A')
+
+  for (const group of ['Admin', 'Dispatch']) {
+    for (const path of ['/', '/Calendar', '/PendingRequests']) {
+      it(`${group} user on ${path} sees an Audit Log link to /AuditLog`, () => {
+        renderHeaderBar({ authenticated: true, userGroups: [group], path })
+        const links = screen.getAllByText(/^audit log$/i)
+        expect(links.length).toBeGreaterThan(0)
+        expect(auditButton()[0]).toHaveAttribute('href', '/AuditLog')
+      })
+    }
+  }
+
+  it('Dispatch user sees Audit Log in the avatar menu (mobile nav)', async () => {
+    const user = userEvent.setup()
+    renderHeaderBar({ authenticated: true, userGroups: ['Dispatch'], userInitial: 'D', path: '/' })
+    await user.click(screen.getByRole('button', { name: /user menu/i }))
+    const menuItems = await waitFor(() => screen.getAllByRole('menuitem'))
+    const auditItem = menuItems.find((el) => /audit log/i.test(el.textContent))
+    expect(auditItem).toHaveAttribute('href', '/AuditLog')
+  })
+
+  it('on /AuditLog shows Pending Requests and Calendar but not Audit Log itself', () => {
+    renderHeaderBar({ authenticated: true, userGroups: ['Dispatch'], path: '/AuditLog' })
+    expect(screen.getAllByText(/pending requests/i)[0]).toBeInTheDocument()
+    expect(screen.getAllByText(/^calendar$/i)[0]).toBeInTheDocument()
+    expect(screen.queryByText(/^audit log$/i)).not.toBeInTheDocument()
+  })
+
+  for (const path of ['/', '/Calendar', '/PendingRequests', '/AuditLog']) {
+    it(`Dock user on ${path} does NOT see Audit Log`, async () => {
+      const user = userEvent.setup()
+      renderHeaderBar({ authenticated: true, userGroups: ['Dock'], userInitial: 'K', path })
+      expect(screen.queryByText(/audit log/i)).not.toBeInTheDocument()
+      await user.click(screen.getByRole('button', { name: /user menu/i }))
+      await waitFor(() => screen.getAllByRole('menuitem'))
+      expect(screen.queryByText(/audit log/i)).not.toBeInTheDocument()
+    })
+  }
+
+  it('unauthenticated visitors do NOT see Audit Log', () => {
+    renderHeaderBar()
+    expect(screen.queryByText(/audit log/i)).not.toBeInTheDocument()
+  })
+})

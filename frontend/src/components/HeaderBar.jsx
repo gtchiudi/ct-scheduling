@@ -56,7 +56,7 @@ function HeaderBar() {
       const response = await axios.get('/api/pending-requests-stats/');
       return response.data;
     },
-    enabled: authenticated && !userGroups.includes('Dock') && (location.pathname === '/' || location.pathname === '/Calendar'), // Only fetch if authenticated and not Dock user
+    enabled: authenticated && !userGroups.includes('Dock') && ['/', '/Calendar', '/AuditLog'].includes(location.pathname), // Only fetch if authenticated and not Dock user
     refetchInterval: 90000, // Refetch every 90 seconds
     staleTime: 45000, // data considered fresh for 45 seconds
     retry: 3,
@@ -67,8 +67,10 @@ function HeaderBar() {
   const hasUrgentRequests = pendingStats?.has_urgent_requests || false;
 
   if (authenticated){
+    const isAuditViewer = userGroups.some(g => ['Admin', 'Dispatch'].includes(g));
+    const auditLogPage = { text: "Audit Log", href: "/AuditLog" };
     if (location.pathname === '/' || location.pathname === '/RequestForm'){
-      if (userGroups.some(g => ['Admin', 'Dispatch'].includes(g)))
+      if (isAuditViewer)
         pagesToRender = [
           { 
             text: "Pending Requests", 
@@ -76,22 +78,34 @@ function HeaderBar() {
             color: hasUrgentRequests ? "error" : "warning"
           },
           { text: "Calendar", href: "/Calendar" },
+          auditLogPage,
         ];
       else if (userGroups.includes('Dock'))
         pagesToRender = [{ text: "Calendar", href: "/Calendar" }];
       }
     else if (location.pathname === '/Calendar'){
-      if (userGroups.some(g => ['Admin', 'Dispatch'].includes(g)))
+      if (isAuditViewer)
         pagesToRender = [{
           text: 'Pending Requests', 
           href: '/PendingRequests',
           color: hasUrgentRequests ? "error" : "warning"
-        }];
+        }, auditLogPage];
       else if (userGroups.includes('Dock'))
         pagesToRender = [{text: 'Home', href: '/'}];
     }
     else if (location.pathname === '/PendingRequests')
-      pagesToRender = [{text: 'Calendar', href: '/Calendar'}];
+      pagesToRender = isAuditViewer
+        ? [{text: 'Calendar', href: '/Calendar'}, auditLogPage]
+        : [{text: 'Calendar', href: '/Calendar'}];
+    else if (location.pathname === '/AuditLog' && isAuditViewer)
+      pagesToRender = [
+        {
+          text: 'Pending Requests',
+          href: '/PendingRequests',
+          color: hasUrgentRequests ? "error" : "warning"
+        },
+        { text: 'Calendar', href: '/Calendar' },
+      ];
 
 
     if (userGroups.includes('Admin'))

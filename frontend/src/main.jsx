@@ -24,6 +24,7 @@ const Logout = React.lazy(() => import("./routes/Logout.jsx"));
 const RequestForm = React.lazy(() => import("./routes/RequestForm.jsx"));
 const PendingRequests = React.lazy(() => import("./routes/PendingRequests.jsx"));
 const Calendar = React.lazy(() => import("./routes/Calendar.jsx"));
+const AuditLog = React.lazy(() => import("./routes/AuditLog.jsx"));
 
 function RouteFallback() {
   return (
@@ -99,6 +100,17 @@ const router = createBrowserRouter([
         </React.Suspense>
       </Layout>
     ),
+  },
+  {
+    path: "AuditLog",
+    element: (
+      <Layout>
+        <React.Suspense fallback={<RouteFallback />}>
+          <AuditLog />
+        </React.Suspense>
+      </Layout>
+    ),
+    errorElement: <ErrorPage />,
   },
 ]);
 
