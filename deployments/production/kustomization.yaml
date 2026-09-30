@@ -57,3 +57,8 @@ replacements:
       name: flush-expired-tokens
     fieldPaths:
     - spec.jobTemplate.spec.template.spec.containers.0.image
+  - select:
+      kind: CronJob
+      name: prune-audit-logs
+    fieldPaths:
+    - spec.jobTemplate.spec.template.spec.containers.0.image

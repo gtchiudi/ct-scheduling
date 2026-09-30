@@ -20,3 +20,25 @@ spec:
             command: ["python", "manage.py", "flushexpiredtokens"]
           imagePullSecrets:
             - name: oracle-docker-registry
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: prune-audit-logs
+spec:
+  schedule: "30 2 * * *"
+  timeZone: "America/New_York"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: OnFailure
+          containers:
+          - name: prune-audit-logs
+            image: localhost:5000/ctscheduling:latest
+            command: ["python", "manage.py", "prune_audit_logs"]
+          imagePullSecrets:
+            - name: oracle-docker-registry

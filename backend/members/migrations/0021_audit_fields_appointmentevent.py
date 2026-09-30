@@ -15,10 +15,14 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
+        # created_at/updated_at are added as plain nullable columns and only
+        # then switched to auto_now_add/auto_now: adding an auto_now(_add)
+        # field directly back-fills every existing row with the migration time,
+        # but pre-existing appointments must keep NULL ("unknown").
         migrations.AddField(
             model_name='request',
             name='created_at',
-            field=models.DateTimeField(auto_now_add=True, null=True),
+            field=models.DateTimeField(null=True),
         ),
         migrations.AddField(
             model_name='request',
@@ -26,6 +30,16 @@ class Migration(migrations.Migration):
             field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='created_requests', to=settings.AUTH_USER_MODEL),
         ),
         migrations.AddField(
+            model_name='request',
+            name='updated_at',
+            field=models.DateTimeField(null=True),
+        ),
+        migrations.AlterField(
+            model_name='request',
+            name='created_at',
+            field=models.DateTimeField(auto_now_add=True, null=True),
+        ),
+        migrations.AlterField(
             model_name='request',
             name='updated_at',
             field=models.DateTimeField(auto_now=True, null=True),

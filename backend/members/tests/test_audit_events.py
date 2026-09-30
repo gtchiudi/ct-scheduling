@@ -353,3 +353,45 @@ def test_data_migration_batches_and_reverses(approved_request, dispatch_user, mo
 
     _migration.remove_imported_events(django_apps, None)
     assert list(AppointmentEvent.objects.all()) == [live]
+
+
+@pytest.mark.django_db(transaction=True)
+def test_migrations_keep_existing_rows_undated_and_import_approvals():
+    """Run 0020 -> 0022 for real: pre-existing appointments keep created_at/updated_at
+    NULL (not back-filled with the migration time) and each ApprovalLog becomes an
+    undated approved event."""
+    from django.db import connection
+    from django.db.migrations.executor import MigrationExecutor
+
+    before = [("members", "0020_request_load_config")]
+    after = [("members", "0022_import_approvallog_events")]
+    executor = MigrationExecutor(connection)
+    executor.migrate(before)
+    try:
+        old_apps = executor.loader.project_state(before).apps
+        User = old_apps.get_model("auth", "User")
+        Warehouse_ = old_apps.get_model("members", "Warehouse")
+        Request_ = old_apps.get_model("members", "Request")
+        ApprovalLog_ = old_apps.get_model("members", "ApprovalLog")
+        user = User.objects.create(username="legacy_approver")
+        wh = Warehouse_.objects.create(name="Legacy", address="x", phone_number="1")
+        req = Request_.objects.create(company_name="Legacy Co", warehouse=wh, date_time=timezone.now())
+        ApprovalLog_.objects.create(approver=user, request=req)
+        ApprovalLog_.objects.create(approver=None, request=req)
+
+        executor = MigrationExecutor(connection)
+        executor.migrate(after)
+        new_apps = executor.loader.project_state(after).apps
+        migrated = new_apps.get_model("members", "Request").objects.get(pk=req.pk)
+        assert migrated.created_at is None
+        assert migrated.updated_at is None
+        assert migrated.created_by_id is None
+        events = new_apps.get_model("members", "AppointmentEvent").objects.filter(appointment_id=req.pk)
+        assert sorted((e.action, e.actor_id, e.occurred_at) for e in events if e.actor_id) == [
+            ("approved", user.pk, None)]
+        assert events.count() == 2
+        assert all(e.occurred_at is None for e in events)
+    finally:
+        executor = MigrationExecutor(connection)
+        executor.loader.build_graph()
+        executor.migrate(executor.loader.graph.leaf_nodes())

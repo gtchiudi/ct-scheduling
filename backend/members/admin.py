@@ -47,8 +47,46 @@ class SmsNumberLogListView(admin.ModelAdmin):
     list_filter = ("consent", "active")
 
 
+class ReadOnlyAdmin(admin.ModelAdmin):
+    """Audit records are written by the app only; the admin can look, not touch."""
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+
+class AppointmentEventAdmin(ReadOnlyAdmin):
+    list_display = ('occurred_at', 'action', 'actor', 'appointment_ref', 'appointment_company')
+    list_filter = ('action', 'occurred_at')
+    search_fields = ('appointment__ref_number', 'appointment__company_name', 'actor__username')
+    list_select_related = ('actor', 'appointment')
+    raw_id_fields = ('appointment', 'actor')
+
+    def appointment_ref(self, obj):
+        return obj.appointment.ref_number
+    appointment_ref.short_description = 'Ref number'
+
+    def appointment_company(self, obj):
+        return obj.appointment.company_name
+    appointment_company.short_description = 'Company'
+
+
+class NotificationLogAdmin(ReadOnlyAdmin):
+    list_display = ('sent_at', 'channel', 'kind', 'status', 'recipient', 'subject')
+    list_filter = ('channel', 'kind', 'status', 'sent_at')
+    search_fields = ('recipient', 'subject', 'appointment__ref_number', 'appointment__company_name')
+    raw_id_fields = ('appointment',)
+
+
 admin.site.register(Request, requestListView)
 admin.site.register(Warehouse, WarehouseListView)
 admin.site.register(ApprovalLog, ApprovalLogListView)
 admin.site.register(SmsNumberLog, SmsNumberLogListView)
 admin.site.register(Customer, CustomerListView)
+admin.site.register(AppointmentEvent, AppointmentEventAdmin)
+admin.site.register(NotificationLog, NotificationLogAdmin)
