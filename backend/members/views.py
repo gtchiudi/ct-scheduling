@@ -131,7 +131,8 @@ class RequestView(viewsets.ModelViewSet):
                         updated_data["ref_number"],
                         date_time_str,
                         updated_data.get("delivery", False),
-                    ))
+                    ),
+                    appointment=requestUpdate, kind='approval')
 
                 # Notify customer if send_email_updates is set and customer has an email
                 customer_data = updated_data.get('customer')
@@ -145,7 +146,8 @@ class RequestView(viewsets.ModelViewSet):
                             updated_data["company_name"],
                             date_time_str,
                             updated_data.get("delivery", False),
-                        ))
+                        ),
+                        appointment=requestUpdate, kind='customer_scheduled')
 
             elif 'active' in altered_fields and not updated_data['active'] and not updated_data.get('cancelled_time'):
                 # Declined (active set to false without a cancelled_time — from Decline button)
@@ -161,7 +163,8 @@ class RequestView(viewsets.ModelViewSet):
                             updated_data["ref_number"],
                             date_time.strftime('%Y-%m-%d %H:%M:%S'),
                             updated_data.get("delivery", False),
-                        ))
+                        ),
+                        appointment=requestUpdate, kind='decline')
 
             elif 'cancelled_time' in altered_fields:
                 requestUpdate.active = False
@@ -179,7 +182,8 @@ class RequestView(viewsets.ModelViewSet):
                             updated_data["ref_number"],
                             date_time.strftime('%Y-%m-%d %H:%M:%S'),
                             updated_data.get("delivery", False),
-                        ))
+                        ),
+                        appointment=requestUpdate, kind='cancellation')
 
 
             elif (original_data.get('dock_number') is None and updated_data.get('dock_number') is not None) or \
@@ -194,7 +198,8 @@ class RequestView(viewsets.ModelViewSet):
 Please drop in the yard.
 Candor Logistics does not send marketing messages.
 
-Reply 'STOP' to opt out of future notifications.''')
+Reply 'STOP' to opt out of future notifications.''',
+                                    appointment=requestUpdate, kind='yard_drop')
                         else:
                             send_text(updated_data['driver_phone_number'],
                                   F'''Thank you for choosing Candor Logistics.
@@ -202,7 +207,8 @@ Please slide tandems back.
 Proceed to dock door {updated_data['dock_number']}.
 Candor Logistics does not send marketing messages.
 
-Reply 'STOP' to opt out of future notifications.''')
+Reply 'STOP' to opt out of future notifications.''',
+                                  appointment=requestUpdate, kind='dock_ready')
                     except TwilioRestException as e:
                         return Response({"twilio_error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -234,7 +240,8 @@ Message and data rates may apply.
 Candor Logistics will not sent marketing messages.
 Please wait for further instructions.
 
-Reply 'STOP' to opt out of future notifications.''')
+Reply 'STOP' to opt out of future notifications.''',
+                                  appointment=requestUpdate, kind='sms_subscribed')
                     except TwilioRestException as e:
                         return Response({"twilio_error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
             return Response(serializer.data)
@@ -252,6 +259,7 @@ Reply 'STOP' to opt out of future notifications.''')
 
     def create(self, request, *args, **kwargs):
         response = super().create(request, *args, **kwargs)
+        created_id = response.data.get('id')
         if request.data['approved']:  # created from the calendar page
             date_time = datetime.fromisoformat(
                 request.data["date_time"].replace('Z', '+00:00'))
@@ -272,7 +280,8 @@ Reply 'STOP' to opt out of future notifications.''')
                     date_time_str,
                     request.data.get("delivery", False),
                     created_by=created_by,
-                ))
+                ),
+                appointment=created_id, kind='calendar_event')
 
             # Notify customer if send_email_updates and customer email provided
             customer_id = request.data.get('customer_id')
@@ -289,7 +298,8 @@ Reply 'STOP' to opt out of future notifications.''')
                                 request.data["company_name"],
                                 date_time_str,
                                 request.data.get("delivery", False),
-                            ))
+                            ),
+                            appointment=created_id, kind='customer_scheduled')
                 except Customer.DoesNotExist:
                     pass
 
@@ -306,7 +316,8 @@ Reply 'STOP' to opt out of future notifications.''')
                     request.data["company_name"],
                     date_time.strftime('%Y-%m-%d %H:%M:%S'),
                     request.data.get("delivery", False),
-                ))
+                ),
+                appointment=created_id, kind='new_request')
 
             send_email(  # to customer
                 request.data['email'],
@@ -315,7 +326,8 @@ Reply 'STOP' to opt out of future notifications.''')
                     request.data["ref_number"],
                     date_time.strftime('%Y-%m-%d %H:%M:%S'),
                     request.data.get("delivery", False),
-                ))
+                ),
+                appointment=created_id, kind='request_confirmation')
 
         return response
 

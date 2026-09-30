@@ -175,3 +175,48 @@ class AppointmentEvent(models.Model):
 
     def __str__(self):
         return f'{self.action} {self.appointment_id} @ {self.occurred_at}'
+
+
+class NotificationLog(models.Model):
+    """Every email and text the app tried to send, and whether it went out.
+
+    Written by members.messages.send_email / send_text.
+    """
+    CHANNEL_CHOICES = (
+        ('email', 'Email'),
+        ('sms', 'SMS'),
+    )
+    KIND_CHOICES = (
+        ('new_request', 'New request (to team)'),
+        ('request_confirmation', 'Request confirmation'),
+        ('calendar_event', 'New calendar event (to team)'),
+        ('customer_scheduled', 'Appointment scheduled (to customer)'),
+        ('approval', 'Approval'),
+        ('decline', 'Decline'),
+        ('cancellation', 'Cancellation'),
+        ('dock_ready', 'Dock ready (SMS)'),
+        ('yard_drop', 'Yard drop (SMS)'),
+        ('sms_subscribed', 'SMS subscribed'),
+    )
+    STATUS_CHOICES = (
+        ('sent', 'Sent'),
+        ('failed', 'Failed'),
+    )
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    appointment = models.ForeignKey(
+        Request, null=True, blank=True, on_delete=models.SET_NULL,
+        related_name='notifications')
+    channel = models.CharField(max_length=8, choices=CHANNEL_CHOICES)
+    recipient = models.CharField(max_length=254)
+    kind = models.CharField(max_length=32, choices=KIND_CHOICES, blank=True)
+    subject = models.CharField(max_length=255, blank=True)
+    status = models.CharField(max_length=8, choices=STATUS_CHOICES)
+    error = models.TextField(blank=True)
+    sent_at = models.DateTimeField(default=timezone.now, db_index=True)
+
+    class Meta:
+        ordering = ['-sent_at']
+
+    def __str__(self):
+        return f'{self.channel} {self.kind} to {self.recipient} ({self.status})'
