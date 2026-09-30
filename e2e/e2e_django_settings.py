@@ -24,6 +24,8 @@ import os
 from server.settings import *  # noqa: F401,F403
 
 DEBUG = True
+# server.settings only trusts the Vite origin when DEBUG was on at import time.
+CSRF_TRUSTED_ORIGINS = [*CSRF_TRUSTED_ORIGINS, *(o for o in VITE_DEV_ORIGINS if o not in CSRF_TRUSTED_ORIGINS)]  # noqa: F405
 EMAIL_BACKEND = os.environ.get(
     "E2E_EMAIL_BACKEND", "django.core.mail.backends.console.EmailBackend"
 )

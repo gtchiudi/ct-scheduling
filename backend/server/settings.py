@@ -215,8 +215,15 @@ def _env_retention_days(name, default=None):
 AUDIT_RETENTION_DAYS = _env_retention_days('AUDIT_RETENTION_DAYS')
 NOTIFICATION_RETENTION_DAYS = _env_retention_days('NOTIFICATION_RETENTION_DAYS', AUDIT_RETENTION_DAYS)
 
+CSRF_TRUSTED_ORIGINS = []
 if os.getenv("CSRF_TRUSTED_ORIGIN"):
-    CSRF_TRUSTED_ORIGINS = [os.getenv("CSRF_TRUSTED_ORIGIN")]
+    CSRF_TRUSTED_ORIGINS.append(os.getenv("CSRF_TRUSTED_ORIGIN"))
+# Local dev: the Vite server proxies /admin/ to Django but the browser still
+# sends Origin: http://localhost:5173, which fails Django's CSRF origin check
+# on admin forms (login, delete confirmations). The API uses JWT, not CSRF.
+VITE_DEV_ORIGINS = ['http://localhost:5173', 'http://127.0.0.1:5173']
+if DEBUG:
+    CSRF_TRUSTED_ORIGINS += VITE_DEV_ORIGINS
 
 LOGGING = {
     'version': 1,

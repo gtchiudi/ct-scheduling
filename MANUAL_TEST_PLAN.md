@@ -28,6 +28,10 @@ and deployment.
        python manage.py runserver 8000
    ```
 3. Start the frontend: `cd frontend && npm run dev`, then open http://localhost:5173.
+   The Django admin works at http://localhost:5173/admin/ (proxied) only while DEBUG is on,
+   which the overlay above does. With a plain `runserver` (DEBUG off), admin forms fail with
+   "Origin checking failed": use http://localhost:8000/admin/ instead, or start Django with
+   `DJANGO_DEBUG=True` or `CSRF_TRUSTED_ORIGIN=http://localhost:5173`.
 4. Create the test users (or run `make test-e2e` once, which seeds them through `/api/e2e-seed/`):
 
    | Role | Username | How |
