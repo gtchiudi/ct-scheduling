@@ -307,9 +307,11 @@ curl -s -o /dev/null -w '%{http_code}\n' -X POST localhost:8000/api/request/<id>
 - [ ] Logged out, the public request form still works: choosing a warehouse jumps to the first
   open slot, and booked times are not offered in the time picker.
 
-**Other endpoints, still open (see section 10, BUG-7 to BUG-9):** `/api/warehouse/` accepts
-anonymous writes, and `/api/user/` lets any logged-in user read password hashes and change
-groups. Check whether these are fixed.
+**Other endpoints (fixed, BUG-7 to BUG-9):**
+- [ ] Logged out, `GET /api/warehouse/` returns 200 (the public form needs it), but `POST`,
+  `PUT`, `PATCH` and `DELETE` return 401. Logged in, warehouses can still be edited.
+- [ ] `/api/user/`, `/api/group/` and `/api/schedule/` return 403 for Dock, Dispatch and Admin
+  group users and 200 only for superusers. `/api/user/` rows have no `password` field.
 - [ ] `POST`/`DELETE` to any `/api/audit/` endpoint is rejected (405 or 403).
 - [ ] Django admin: **Appointment events** and **Notification logs** are listed, can be viewed,
   and cannot be added, changed or deleted.
@@ -391,14 +393,19 @@ Use a copy of production-like data that has `ApprovalLog` rows.
 Automated: `backend/members/tests/test_audit_acceptance.py` (section 10) and
 `e2e/tests/test_request_fixes.py`, `e2e/tests/test_audit_trail.py::test_bug_noop_save_from_central_time_browser_keeps_date`.
 
-### 10.2 Open (tracked as `xfail(strict=True)`; remove the marker with the fix)
+### 10.2 Fixed after the second review
 
-| ID | Severity | What happens | Test |
-|----|----------|--------------|------|
-| BUG-7 | High (pre-existing) | `WarehouseView` has no permission class, and there is no default, so **anonymous** users can create, rename, re-timezone and soft-delete warehouses. The public form only needs `GET`. | `test_audit_acceptance.py::test_bug_anonymous_cannot_modify_warehouses` |
-| BUG-8 | High (pre-existing) | `UserView` allows any logged-in user (even Dock) to `PATCH /api/user/<own id>/ {"groups": [<Admin id>]}` and become Admin, gaining the Audit Log | `…::test_bug_dock_user_cannot_grant_itself_audit_access` |
-| BUG-9 | High (pre-existing) | `GET /api/user/` returns every user's password hash to any logged-in user | `…::test_bug_user_api_does_not_expose_password_hashes` |
-| BUG-10 | Low (audit gap) | Un-approving (`PUT approved: false`, API only) records nothing. A later `active: false` then counts as a **decline** and emails the carrier | `…::test_bug_unapprove_is_audited` |
+| ID | Was | How to verify |
+|----|-----|---------------|
+| BUG-7 | Anonymous users could create, rename, re-timezone and soft-delete warehouses | Section 7 "Other endpoints": anonymous writes to `/api/warehouse/` return 401; the public form still lists warehouses. |
+| BUG-8 | Any logged-in user (even Dock) could `PATCH /api/user/<own id>/` to join Admin and gain the Audit Log | As a Dock user, `PATCH /api/user/<own id>/` returns 403. `/api/user/`, `/api/group/` and `/api/schedule/` are superuser-only; manage accounts in the Django admin. |
+| BUG-9 | `GET /api/user/` returned every user's password hash | As a superuser, `GET /api/user/` rows contain no `password` field. |
+| BUG-10 | Un-approving (`PUT approved: false`, API only) left no audit record | Un-approve via the API; the Audit Log shows **Unapproved**. A decline after that is a real decline of a now-pending request and emails the carrier. |
+
+Also found while fixing: `/api/schedule/` (the ApprovalLog API) always returned 500 because its
+serializer class shared the model's name. It now works for superusers.
+
+Automated: `backend/members/tests/test_audit_acceptance.py` section 11.
 
 Also noted, not a bug: the public request form calls `GET /api/customer/` while logged out and
 gets 401 (harmless console noise).

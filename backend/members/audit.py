@@ -93,6 +93,8 @@ def diff_to_events(before, after):
     events = []
     if not before['approved'] and after['approved']:
         events.append(('approved', {}))
+    if before['approved'] and not after['approved']:
+        events.append(('unapproved', {}))
     if before['active'] and not after['active'] and after['cancelled_time'] is None:
         # Only a pending request can be declined; an approved one set inactive
         # was taken off the calendar (mirrors RequestView.update's email logic).

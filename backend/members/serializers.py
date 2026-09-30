@@ -51,16 +51,18 @@ class WarehouseSerializer(serializers.ModelSerializer):
         fields = ('id', 'name', 'address', 'phone_number', 'timezone', 'color', 'appointments_per_slot')
 
 
-class ApprovalLog(serializers.ModelSerializer):
+class ApprovalLogSerializer(serializers.ModelSerializer):
     class Meta:
         model = ApprovalLog
         fields = ('id', 'approver', 'request')
 
 
 class UserSerializer(serializers.ModelSerializer):
+    # No password field: it exposed every user's password hash, and writes
+    # stored raw text rather than a hash. Passwords are set in the Django admin.
     class Meta:
         model = User
-        fields = ('id', 'username', 'email', 'password', 'groups')
+        fields = ('id', 'username', 'email', 'groups')
 
 
 class GroupSerializer(serializers.ModelSerializer):

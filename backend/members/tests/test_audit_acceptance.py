@@ -1067,16 +1067,12 @@ def test_bug_superuser_can_still_delete_request_in_admin(rf, superuser, warehous
 
 
 # ===========================================================================
-# 11. Known bugs found in review (STAGE 3). Each is xfail(strict=True): it
-#     documents the bug and turns into an XPASS failure once it is fixed, so
-#     the marker must be removed with the fix.
+# 11. Bugs found in review (STAGE 3), now fixed; kept as regression tests:
+#     open warehouse writes (BUG-7), user self-escalation (BUG-8), password
+#     hashes in /api/user/ (BUG-9), un-approval not audited (BUG-10).
 # ===========================================================================
 
 @pytest.mark.django_db
-@pytest.mark.xfail(strict=True, reason=(
-    "BUG-7 (high, pre-existing): WarehouseView has no permission_classes and there is no "
-    "DEFAULT_PERMISSION_CLASSES, so it is AllowAny: anonymous users can create, rename, "
-    "re-timezone and soft-delete warehouses. views.py WarehouseView"))
 @pytest.mark.parametrize("method", ["post", "put", "patch", "delete"])
 def test_bug_anonymous_cannot_modify_warehouses(api_client, warehouse, method):
     body = {"name": "Hijacked", "address": "x", "phone_number": "1", "timezone": "UTC"}
@@ -1097,10 +1093,6 @@ def test_anonymous_can_still_list_warehouses(api_client, warehouse):
 
 
 @pytest.mark.django_db
-@pytest.mark.xfail(strict=True, reason=(
-    "BUG-8 (high, pre-existing): UserView lets any logged-in user (even Dock) edit any "
-    "user, including their own groups, so a Dock user can make themselves Admin/Dispatch "
-    "and read the audit log. views.py UserView (IsAuthenticated only)"))
 def test_bug_dock_user_cannot_grant_itself_audit_access(dock_client, dock_user):
     admin_group = _group("Admin")
     resp = dock_client.patch(f"/api/user/{dock_user.id}/", {"groups": [admin_group.id]},
@@ -1112,9 +1104,6 @@ def test_bug_dock_user_cannot_grant_itself_audit_access(dock_client, dock_user):
 
 
 @pytest.mark.django_db
-@pytest.mark.xfail(strict=True, reason=(
-    "BUG-9 (high, pre-existing): GET /api/user/ returns every user's password hash to any "
-    "logged-in user (UserSerializer fields include 'password'). serializers.py UserSerializer"))
 def test_bug_user_api_does_not_expose_password_hashes(dock_client, dispatch_user):
     resp = dock_client.get("/api/user/")
     if resp.status_code in (403, 405):
@@ -1125,11 +1114,38 @@ def test_bug_user_api_does_not_expose_password_hashes(dock_client, dispatch_user
 
 
 @pytest.mark.django_db
-@pytest.mark.xfail(strict=True, reason=(
-    "BUG-10 (low, audit gap): un-approving an appointment (PUT approved: false) records "
-    "nothing: `approved` is excluded from edits and only False->True is an event. It also "
-    "turns a later PUT active=false back into a *decline*, which emails the carrier "
-    "'Request Declined' for an appointment that had been approved. audit.py diff_to_events"))
 def test_bug_unapprove_is_audited(dana_client, approved_request):
     _put(dana_client, approved_request.id, approved=False)
     assert _events(approved_request.id), "un-approval left no trace in the audit trail"
+
+
+@pytest.mark.django_db
+def test_logged_in_user_can_still_edit_warehouses(dana_client, warehouse):
+    resp = dana_client.patch(f"/api/warehouse/{warehouse.id}/", {"name": "Renamed"}, format="json")
+    assert resp.status_code == 200
+    warehouse.refresh_from_db()
+    assert warehouse.name == "Renamed"
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize("url", ["/api/user/", "/api/group/", "/api/schedule/"])
+def test_account_endpoints_are_superuser_only(dana_client, superuser, url):
+    assert dana_client.get(url).status_code == 403
+    su_client = _make_authed_client(superuser)
+    assert su_client.get(url).status_code == 200
+
+
+@pytest.mark.django_db
+def test_superuser_user_list_has_no_password(superuser):
+    rows = _make_authed_client(superuser).get("/api/user/").json()
+    assert rows and all("password" not in row for row in rows)
+
+
+@pytest.mark.django_db
+def test_unapprove_is_filterable_and_later_decline_is_audited(dana_client, approved_request):
+    _put(dana_client, approved_request.id, approved=False)
+    resp = dana_client.get(EVENTS_URL, {"action": "unapproved"})
+    assert [r["action"] for r in resp.data["results"]] == ["unapproved"]
+    # Once un-approved it is a pending request again, so a decline is a decline.
+    _put(dana_client, approved_request.id, approved=False, active=False)
+    assert [e.action for e in _events(approved_request.id)][-1] == "declined"

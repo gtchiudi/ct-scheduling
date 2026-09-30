@@ -15,6 +15,7 @@ export const ACTION_LABELS = {
   completed: "Completed",
   cancelled: "Cancelled",
   removed: "Removed from calendar",
+  unapproved: "Unapproved",
 };
 
 export const NOTIFICATION_KIND_LABELS = {

@@ -153,6 +153,7 @@ class AppointmentEvent(models.Model):
         ('completed', 'Completed'),
         ('cancelled', 'Cancelled'),
         ('removed', 'Removed from calendar'),
+        ('unapproved', 'Unapproved'),
     )
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)

@@ -66,9 +66,9 @@ Coverage report opens at `backend/htmlcov/index.html`.
 | `backend/members/tests/test_notification_log.py` | `NotificationLog` rows for every email/SMS send (sent/failed) | 17 |
 | `backend/members/tests/test_audit_api.py` | `/api/audit/*` endpoints (filters, paging, CSV, permissions) | 65 |
 | `backend/members/tests/test_audit_retention.py` | `prune_audit_logs` command, retention settings, read-only admin | 24 |
-| `backend/members/tests/test_audit_acceptance.py` | Black-box audit trail acceptance: full lifecycle journey, cancel/decline, no-op save, failed email/SMS, permissions matrix (anon/Dock/Dispatch/Admin/superuser × 4 endpoints), filters, paging, CSV, timeline, actors; regression tests for BUG-1..6 (anonymous `/api/request/` lock-down, `/slots/`, `remove`, seconds precision, retention env, admin cascade); plus 7 `xfail(strict)` open-bug tests (BUG-7 warehouse writes ×4, BUG-8, BUG-9, BUG-10) | 79 |
+| `backend/members/tests/test_audit_acceptance.py` | Black-box audit trail acceptance: full lifecycle journey, cancel/decline, no-op save, failed email/SMS, permissions matrix (anon/Dock/Dispatch/Admin/superuser × 4 endpoints), filters, paging, CSV, timeline, actors; regression tests for BUG-1..6 (anonymous `/api/request/` lock-down, `/slots/`, `remove`, seconds precision, retention env, admin cascade); plus regression tests for BUG-7..10 (warehouse writes, account endpoints superuser-only, no password hashes, `unapproved` audited) | 85 |
 
-**Total: 290 backend tests** (283 pass + 7 strict xfail open bugs; 74 before the audit trail)
+**Total: 296 backend tests** (all passing; 74 before the audit trail)
 
 ---
 
@@ -267,13 +267,14 @@ Covered by: `test_audit_acceptance.py::test_anonymous_cannot_read_or_modify_requ
 `test_bug_anonymous_delete_is_rejected`, `test_anonymous_slots_*`, and
 `e2e/tests/test_request_fixes.py::test_anonymous_request_api_is_rejected`.
 
-### Open permission bugs (strict xfail in `test_audit_acceptance.py`, section 11)
-- **BUG-7** `WarehouseView` has no permission class, and there is no `DEFAULT_PERMISSION_CLASSES`,
-  so anonymous users can POST/PUT/PATCH/DELETE warehouses. Only `GET` is needed by the public form.
-- **BUG-8** `UserView` is `IsAuthenticated` only: any logged-in user (even Dock) can PATCH
-  their own `groups` and become Admin.
-- **BUG-9** `GET /api/user/` returns password hashes (`UserSerializer` includes `password`).
-- **BUG-10** Un-approving (`PUT approved: false`) is not audited.
+### Permission bugs fixed after the second review (`test_audit_acceptance.py`, section 11)
+- **BUG-7** `WarehouseView` is now `IsAuthenticatedOrReadOnly`: anonymous users can list
+  warehouses (the public form needs it) but not change them.
+- **BUG-8** `UserView`, `GroupView` and `ApprovalLogView` (`/api/user/`, `/api/group/`,
+  `/api/schedule/`) are superuser-only; the frontend never calls them.
+- **BUG-9** `UserSerializer` no longer includes `password`.
+- **BUG-10** Un-approving is audited as `unapproved`.
+- `/api/schedule/` previously always returned 500 (serializer shadowed by the model name); fixed.
 
 ### Dock Restriction is Frontend-Only
 The redirect of Dock users away from `/PendingRequests` happens in `PendingRequests.jsx`

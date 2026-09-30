@@ -25,7 +25,7 @@ from datetime import datetime
 
 from rest_framework.response import Response
 from rest_framework.decorators import action
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly
 from django.core.exceptions import ValidationError as DjangoValidationError
 from rest_framework import status, permissions
 
@@ -43,6 +43,11 @@ if settings.DEBUG:
     candorEmailRecipient = 'candor.scheduling@gmail.com'
 else:
     candorEmailRecipient = 'appointments@candortransport.com'
+
+class IsSuperuser(permissions.BasePermission):
+    def has_permission(self, request, view):
+        return bool(request.user and request.user.is_authenticated and request.user.is_superuser)
+
 
 class IsAuthenticatedOrPostOnly(permissions.BasePermission):
     """Anonymous users may submit a request (create) and read taken time slots
@@ -379,6 +384,9 @@ Reply 'STOP' to opt out of future notifications.''',
 
 
 class WarehouseView(viewsets.ModelViewSet):
+    # Anyone may list warehouses (the public request form needs them); only
+    # logged-in users may change them.
+    permission_classes = (IsAuthenticatedOrReadOnly, )
     serializer_class = WarehouseSerializer
     queryset = Warehouse.objects.all()
     filter_backends = [filters.SearchFilter]
@@ -393,19 +401,25 @@ class CustomerView(viewsets.ModelViewSet):
 
 
 class ApprovalLogView(viewsets.ModelViewSet):
-    permission_classes = (IsAuthenticated, )
-    serializer_class = ApprovalLog
+    # Unused by the frontend; users and groups are managed in the Django admin.
+    # Any logged-in user could previously edit accounts, including their own groups.
+    permission_classes = (IsSuperuser, )
+    serializer_class = ApprovalLogSerializer
     queryset = ApprovalLog.objects.all()
 
 
 class UserView(viewsets.ModelViewSet):
-    permission_classes = (IsAuthenticated, )
+    # Unused by the frontend; users and groups are managed in the Django admin.
+    # Any logged-in user could previously edit accounts, including their own groups.
+    permission_classes = (IsSuperuser, )
     serializer_class = UserSerializer
     queryset = User.objects.all()
 
 
 class GroupView(viewsets.ModelViewSet):
-    permission_classes = (IsAuthenticated, )
+    # Unused by the frontend; users and groups are managed in the Django admin.
+    # Any logged-in user could previously edit accounts, including their own groups.
+    permission_classes = (IsSuperuser, )
     serializer_class = GroupSerializer
     queryset = Group.objects.all()
 
