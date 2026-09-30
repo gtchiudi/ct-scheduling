@@ -12,7 +12,36 @@ Anonymous users cannot:
 
 import pytest
 from datetime import date, timedelta
+import requests as req_lib
 from e2e.pages.request_form_page import RequestFormPage
+from e2e.tests.test_calendar_workflow import _dispatch_token, _soft_delete
+from e2e_config import BASE_URL
+
+SUBMIT_REF = "PO-E2E-001"
+
+
+def _remove_submitted_requests():
+    """Soft-delete earlier submissions of SUBMIT_REF. The test books a fixed slot
+    (09:00 one week out), so a leftover from an earlier run the same day would
+    make that slot taken and keep Submit disabled."""
+    access = _dispatch_token()
+    resp = req_lib.get(
+        f"{BASE_URL}/api/request/",
+        params={"search": SUBMIT_REF},
+        headers={"Authorization": f"Bearer {access}"},
+        timeout=10,
+    )
+    resp.raise_for_status()
+    for row in resp.json():
+        if row["ref_number"] == SUBMIT_REF:
+            _soft_delete(access, row["id"])
+
+
+@pytest.fixture
+def clean_submitted_requests():
+    _remove_submitted_requests()
+    yield
+    _remove_submitted_requests()
 
 
 @pytest.mark.e2e
@@ -37,7 +66,7 @@ def test_request_form_accessible_without_login(page):
 
 
 @pytest.mark.e2e
-def test_submit_request_successfully(page):
+def test_submit_request_successfully(page, clean_submitted_requests):
     """
     A complete, valid appointment request can be submitted anonymously.
     The success dialog appears after submission.
@@ -48,7 +77,7 @@ def test_submit_request_successfully(page):
     form.fill_company_name("Acme Trucking")
     form.fill_email("driver@acmetrucking.com")
     form.fill_phone("5551234567")
-    form.fill_ref_number("PO-E2E-001")
+    form.fill_ref_number(SUBMIT_REF)
     form.select_warehouse("123 Test St, Cleveland, OH 44101")
     form.select_load_type("Full")
     # The load configuration dropdown only exists once Delivery is chosen.

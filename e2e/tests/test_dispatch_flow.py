@@ -9,11 +9,47 @@ Dispatch users can:
   - Log out
 """
 
+import uuid
+from datetime import date, timedelta
+
 import pytest
+import requests as req_lib
 from playwright.sync_api import expect
 from e2e.pages.pending_requests_page import PendingRequestsPage
 from e2e.pages.calendar_page import CalendarPage
+from e2e.tests.test_calendar_workflow import _dispatch_token, _e2e_warehouse_id, _soft_delete
 from e2e_config import BASE_URL
+
+
+@pytest.fixture
+def pending_to_decline():
+    """A pending request of this test's own, submitted like the public form does.
+
+    test_approve_request_removes_from_list uses up the one seeded pending
+    request, so the decline test must not depend on whatever else is pending.
+    """
+    access = _dispatch_token()
+    company = f"E2E Decline Co {uuid.uuid4().hex[:6].upper()}"
+    target = date.today() + timedelta(days=10)
+    resp = req_lib.post(
+        f"{BASE_URL}/api/request/",
+        json={
+            "company_name": company,
+            "customer_name": "E2E Customer",
+            "email": "decline@e2e.test",
+            "warehouse": _e2e_warehouse_id(access),
+            "ref_number": f"DECL-{uuid.uuid4().hex[:6].upper()}",
+            "load_type": "Full",
+            "delivery": True,
+            "date_time": f"{target.isoformat()}T10:00:00-04:00",
+            "approved": False,
+            "active": True,
+        },
+        timeout=10,
+    )
+    resp.raise_for_status()
+    yield company
+    _soft_delete(access, resp.json()["id"])  # no-op once declined
 
 
 @pytest.mark.e2e
@@ -60,13 +96,13 @@ def test_approve_request_removes_from_list(dispatch_page):
 
 
 @pytest.mark.e2e
-def test_decline_request_removes_from_list(dispatch_page, seed_test_data):
+def test_decline_request_removes_from_list(dispatch_page, pending_to_decline):
     """Declining a request removes it from the pending list."""
     pr = PendingRequestsPage(dispatch_page)
     pr.navigate_to()
     pr.wait_for_table()
     initial_count = pr.get_row_count()
-    pr.click_first_request()
+    pr.click_request_by_company(pending_to_decline)
     pr.decline_current_request()
     # Wait for React to re-render the table after the query refetch
     expect(dispatch_page.locator("tbody tr")).not_to_have_count(initial_count, timeout=10000)

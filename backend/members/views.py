@@ -500,6 +500,10 @@ class E2ESeedView(APIView):
             defaults={'is_staff': False},
         )
         dispatch_user.set_password(dispatch_password)
+        # Reset names too: the audit trail shows a user's full name when set,
+        # and E2E tests expect the bare username.
+        dispatch_user.first_name = ''
+        dispatch_user.last_name = ''
         dispatch_user.save()
         dispatch_user.groups.add(g_dispatch)
 
@@ -508,6 +512,10 @@ class E2ESeedView(APIView):
             defaults={'is_staff': False},
         )
         dock_user.set_password(dock_password)
+        # Reset names too: the audit trail shows a user's full name when set,
+        # and E2E tests expect the bare username.
+        dock_user.first_name = ''
+        dock_user.last_name = ''
         dock_user.save()
         dock_user.groups.add(g_dock)
 
