@@ -9,6 +9,7 @@ from django.utils import timezone
 from django.db.models import Q
 
 from .messages import send_email, send_text
+from . import audit
 from twilio.base.exceptions import TwilioRestException
 from .email_templates import (
     appointment_approved_email_template,
@@ -57,7 +58,7 @@ class RequestView(viewsets.ModelViewSet):
     search_fields = ['company_name', 'customer_name', 'ref_number']
 
     def get_queryset(self):
-        queryset = super().get_queryset().select_related('customer', 'warehouse')
+        queryset = super().get_queryset().select_related('customer', 'warehouse', 'created_by')
         isApproved = self.request.query_params.get('approved')
         start_date = self.request.query_params.get('start_date')
         end_date = self.request.query_params.get('end_date')
@@ -74,7 +75,10 @@ class RequestView(viewsets.ModelViewSet):
 
         return queryset
 
-    def update(self, request, pk, format=None):
+    def update(self, request, pk=None, format=None, **kwargs):
+        # ModelViewSet.partial_update() calls update(..., partial=True); accept
+        # it so PATCH works instead of raising TypeError.
+        partial = kwargs.pop('partial', False)
         if not request.user.is_authenticated:
             return Response({'detail': 'Authentication credentials were not provided.'}, status=status.HTTP_401_UNAUTHORIZED)
         try:
@@ -83,9 +87,11 @@ class RequestView(viewsets.ModelViewSet):
             return Response(status=status.HTTP_404_NOT_FOUND)
 
         original_data = model_to_dict(requestUpdate)
-        serializer = RequestSerializer(requestUpdate, data=request.data)
+        audit_before = audit.safe_snapshot(requestUpdate)
+        serializer = RequestSerializer(requestUpdate, data=request.data, partial=partial)
         if serializer.is_valid():
             serializer.save()
+            audit.record_update(requestUpdate.pk, audit_before, audit.actor_or_none(request))
             updated_data = serializer.data
             # Sync send_email_updates to the Customer record if provided
             send_email_updates = request.data.get('send_email_updates')
@@ -233,6 +239,16 @@ Reply 'STOP' to opt out of future notifications.''')
                         return Response({"twilio_error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def perform_create(self, serializer):
+        actor = audit.actor_or_none(self.request)
+        instance = serializer.save(created_by=actor)
+        audit.record_created(instance, actor)
+
+    def perform_destroy(self, instance):
+        # Request.delete() is a soft delete (active=False).
+        instance.delete()
+        audit.record_cancelled(instance, audit.actor_or_none(self.request))
 
     def create(self, request, *args, **kwargs):
         response = super().create(request, *args, **kwargs)

@@ -18,6 +18,14 @@ class RequestSerializer(serializers.ModelSerializer):
         allow_null=True,
         required=False,
     )
+    created_by = serializers.PrimaryKeyRelatedField(read_only=True)
+    created_by_name = serializers.SerializerMethodField()
+
+    def get_created_by_name(self, obj):
+        user = obj.created_by
+        if user is None:
+            return None
+        return user.get_full_name() or user.username
 
     class Meta:
         model = Request
@@ -25,7 +33,9 @@ class RequestSerializer(serializers.ModelSerializer):
                   'phone_number', 'email', 'warehouse', 'ref_number', 'load_type', 'container_drop',
                   'container_number', 'note_section', 'date_time', 'appointment_length', 'delivery', 'load_config', 'trailer_number',
                   'driver_phone_number', 'sms_consent', 'dock_number', 'check_in_time', 'docked_time',
-                  'completed_time', 'cancelled_time', 'active')
+                  'completed_time', 'cancelled_time', 'active',
+                  'created_by', 'created_by_name', 'created_at', 'updated_at')
+        read_only_fields = ('created_at', 'updated_at')
 
 
 class WarehouseSerializer(serializers.ModelSerializer):

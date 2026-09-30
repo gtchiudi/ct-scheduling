@@ -2,6 +2,7 @@
 from django.db import models
 import uuid
 from django.contrib.auth.models import User, Group
+from django.utils import timezone
 
 
 class BaseModel(models.Model):
@@ -98,6 +99,13 @@ class Request(BaseModel):
     # Last two are done with buttons and auto added to DB
     active = models.BooleanField(default=True)
     # BEcomes false after completed delivery
+    # Audit metadata. Null on rows created before these fields existed, and
+    # created_by is null for requests submitted through the public form.
+    created_by = models.ForeignKey(
+        User, null=True, blank=True, on_delete=models.SET_NULL,
+        related_name='created_requests')
+    created_at = models.DateTimeField(auto_now_add=True, null=True)
+    updated_at = models.DateTimeField(auto_now=True, null=True)
 
     class Meta:
         indexes = [
@@ -126,3 +134,44 @@ class SmsNumberLog(BaseModel):
     sms_number = models.CharField(max_length=12)
     consent = models.BooleanField(default=False)
     active = models.BooleanField(default=True)
+
+
+class AppointmentEvent(models.Model):
+    """One thing that happened to an appointment, and who did it.
+
+    Rows are written by RequestView (see members/audit.py) and never edited.
+    occurred_at is null only for approvals imported from ApprovalLog, whose
+    date was never recorded.
+    """
+    ACTION_CHOICES = (
+        ('created', 'Created'),
+        ('approved', 'Approved'),
+        ('declined', 'Declined'),
+        ('edited', 'Edited'),
+        ('checked_in', 'Checked in'),
+        ('docked', 'Docked'),
+        ('completed', 'Completed'),
+        ('cancelled', 'Cancelled'),
+    )
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    appointment = models.ForeignKey(
+        Request, on_delete=models.CASCADE, related_name='events')
+    actor = models.ForeignKey(
+        User, null=True, blank=True, on_delete=models.SET_NULL,
+        related_name='appointment_events')
+    action = models.CharField(max_length=32, choices=ACTION_CHOICES)
+    # Edits only: {"field": [old, new]}
+    changes = models.JSONField(default=dict, blank=True)
+    occurred_at = models.DateTimeField(
+        null=True, blank=True, db_index=True, default=timezone.now)
+
+    class Meta:
+        ordering = [models.F('occurred_at').desc(nulls_last=True)]
+        indexes = [
+            models.Index(fields=['appointment', 'occurred_at'],
+                         name='apptevent_appt_occurred_idx'),
+        ]
+
+    def __str__(self):
+        return f'{self.action} {self.appointment_id} @ {self.occurred_at}'
