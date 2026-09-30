@@ -15,6 +15,8 @@ import {
   refreshTokenAtom,
   lastLoginDatetimeAtom,
   authenticatedAtom,
+  authCheckedAtom,
+  userGroupsAtom,
   userInitialAtom,
   removeTokensAtom,
 } from "../components/atoms.jsx";
@@ -42,7 +44,9 @@ export default function Login() {
   const [, setAccessToken] = useAtom(accessTokenAtom);
   const [, setRefreshToken] = useAtom(refreshTokenAtom);
   const [, setLastLoginDatetime] = useAtom(lastLoginDatetimeAtom);
-  const [authenticated] = useAtom(authenticatedAtom);
+  const [authenticated, setAuthenticated] = useAtom(authenticatedAtom);
+  const [, setAuthChecked] = useAtom(authCheckedAtom);
+  const [, setUserGroups] = useAtom(userGroupsAtom);
   const [, setUserInitial] = useAtom(userInitialAtom);
   const [, removeTokens] = useAtom(removeTokensAtom);
 
@@ -72,9 +76,11 @@ export default function Login() {
       setErrorMessage("");
 
       // Check group membership before proceeding
+      let groups;
       try {
         const response = await axios.get("/api/user-groups/");
-        if (!response.data.groups || !response.data.groups.some(g => validUserGroups.includes(g))) {
+        groups = response.data.groups;
+        if (!groups || !groups.some(g => validUserGroups.includes(g))) {
           setGroupErrorOpen(true);
           return;
         }
@@ -82,6 +88,17 @@ export default function Login() {
         setGroupErrorOpen(true);
         return;
       }
+
+      // Storing the tokens is not what marks the session authenticated —
+      // `authenticatedAtom` is, and it is only ever set by isAuthAtom, which
+      // Layout re-runs when `authenticated` itself changes. Leaving it false
+      // here means nothing re-runs that check, so every guarded route decides
+      // the user is logged out the moment it mounts and sends them straight
+      // back here. We have just proven the credentials and read the groups, so
+      // record both rather than waiting for a check that won't fire.
+      setUserGroups(groups);
+      setAuthChecked(true);
+      setAuthenticated(true);
 
       navigate("/Calendar");
     },

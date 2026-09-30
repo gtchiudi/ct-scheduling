@@ -49,6 +49,11 @@ urlpatterns = [
     path('api-auth/', include('rest_framework.urls')),
     path('', TemplateView.as_view(template_name='index.html')),
     path('login', TemplateView.as_view(template_name='index.html')),
+    # Django's path() is case-sensitive while React Router's matching is not, so
+    # the app happily ran on /Login while any full page load of it (a refresh, a
+    # bookmark, a link opened on a phone) 404'd here. The app now only ever
+    # produces the lowercase form; this keeps already-shared URLs working.
+    path('Login', TemplateView.as_view(template_name='index.html')),
     path('Calendar', TemplateView.as_view(template_name='index.html')),
     path('logout', TemplateView.as_view(template_name='index.html')),
     path('RequestForm', TemplateView.as_view(template_name='index.html')),

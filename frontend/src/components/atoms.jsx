@@ -12,6 +12,12 @@ export const refreshTokenAtom = atomWithStorage("refreshToken", null, undefined,
 export const lastLoginDatetimeAtom = atomWithStorage("lastLoginDatetime", dayjs(), undefined, {getOnInit: true});
 export const refreshAtom = atom(false);
 export const authenticatedAtom = atom(false);
+// False until isAuthAtom has finished its first check. `authenticatedAtom`
+// starts false and only becomes true once that async check resolves, so a
+// route guard that reads it on mount cannot tell "not logged in" apart from
+// "not checked yet" — and bounces a perfectly valid session to the login page.
+// Guards wait for this before acting on a false `authenticated`.
+export const authCheckedAtom = atom(false);
 export const navigateFnAtom = atom(null); // set by Layout to allow atoms to trigger navigation
 export const userGroupsAtom = atomWithStorage("userGroups", [], undefined, {getOnInit: true}); // already present
 export const userInitialAtom = atomWithStorage("userInitial", "U", undefined, {getOnInit: true});
@@ -79,6 +85,15 @@ export const isAuthAtom = atom(
     get(lastLoginDatetimeAtom);
   },
   async (get, set) => {
+    try {
+      await runAuthCheck(get, set);
+    } finally {
+      set(authCheckedAtom, true);
+    }
+  }
+);
+
+const runAuthCheck = async (get, set) => {
     const accessToken = get(accessTokenAtom);
     const refreshToken = get(refreshTokenAtom);
     const accessExp = dayjs().subtract(14, "minutes");
@@ -136,8 +151,7 @@ export const isAuthAtom = atom(
       await fetchAndSetUserGroups(get, set);
 
     }
-  }
-);
+};
 
 // --- MODIFIED: Clear user groups on logout ---
 export const removeTokensAtom = atom(null, (get, set) => {

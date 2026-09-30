@@ -47,7 +47,7 @@ function HeaderBar() {
   // user whose group doesn't match any case below (e.g. mid-load, or a group
   // this list doesn't know about) should see no extra nav links, never that.
   let pagesToRender = authenticated ? [] : pagesNonAuth;
-  let settings = [{ text: "Login", href: "/Login" }];
+  let settings = [{ text: "Login", href: "/login" }];
 
   // Query for pending request stats
   const { data: pendingStats } = useQuery({
@@ -237,7 +237,7 @@ function HeaderBar() {
             ) : (
               <Button
                 component={RouterLink}
-                to="/Login"
+                to="/login"
                 variant="contained"
                 sx={{ backgroundColor: "grey"}}
               >

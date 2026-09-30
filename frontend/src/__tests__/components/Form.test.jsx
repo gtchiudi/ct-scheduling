@@ -257,3 +257,97 @@ describe('submitted payload', () => {
     expect(captured.body.load_config).toBeNull()
   })
 })
+
+// ---------------------------------------------------------------------------
+// First available appointment slot (/RequestForm)
+// ---------------------------------------------------------------------------
+
+const TZ = WAREHOUSE.timezone
+
+/** Mirrors Form.jsx's nextWorkDay: Fri→Mon, Sat→Mon, else the following day. */
+function nextWorkDay(from) {
+  let day = from ? dayjs(from).tz(TZ) : dayjs().tz(TZ)
+  if (day.day() === 5) day = day.add(3, 'day')
+  else if (day.day() === 6) day = day.add(2, 'day')
+  else day = day.add(1, 'day')
+  return day.hour(8).minute(0).second(0).millisecond(0)
+}
+
+const pickerValue = () => screen.getByLabelText(/select appointment date and time/i)
+const expected = (day, time = '08:00') => `${day.format('MM/DD/YYYY')} ${time}`
+
+/** One booked appointment at `hhmm` on `day`, at the test warehouse. */
+function booking(day, hhmm) {
+  const [h, m] = hhmm.split(':').map(Number)
+  return {
+    id: `booked-${day.format('MMDD')}-${hhmm}`,
+    warehouse: WAREHOUSE.id,
+    date_time: day.hour(h).minute(m).second(0).format(),
+    appointment_length: 15,
+    container_drop: false,
+  }
+}
+
+/** Serves each day's bookings, keyed by YYYY-MM-DD in the warehouse's timezone. */
+function serveAvailability(bookedByDay) {
+  server.use(
+    http.get('/api/request/', ({ request }) => {
+      const start = new URL(request.url, 'http://localhost').searchParams.get('start_date')
+      const day = dayjs(start).tz(TZ).format('YYYY-MM-DD')
+      return HttpResponse.json(bookedByDay[day] ?? [])
+    })
+  )
+}
+
+/** Fills every 15-minute slot from 08:00 to 15:45. */
+function fullDay(day) {
+  const bookings = []
+  for (let slot = day.hour(8).minute(0); slot.hour() < 16; slot = slot.add(15, 'minute')) {
+    bookings.push(booking(day, slot.format('HH:mm')))
+  }
+  return bookings
+}
+
+async function chooseWarehouse(user) {
+  await pickOption(user, screen.getByRole('combobox', { name: /warehouse/i }), WAREHOUSE.address)
+}
+
+describe('first available appointment slot', () => {
+  it('offers the start of the next work day when nothing is booked', async () => {
+    const user = userEvent.setup()
+    serveAvailability({})
+    renderForm({ path: '/RequestForm' })
+    await chooseWarehouse(user)
+
+    await waitFor(() =>
+      expect(pickerValue()).toHaveValue(expected(nextWorkDay()))
+    )
+  })
+
+  it('skips past slots that are already full', async () => {
+    const user = userEvent.setup()
+    const day = nextWorkDay()
+    serveAvailability({
+      [day.format('YYYY-MM-DD')]: [booking(day, '08:00'), booking(day, '08:15')],
+    })
+    renderForm({ path: '/RequestForm' })
+    await chooseWarehouse(user)
+
+    await waitFor(() =>
+      expect(pickerValue()).toHaveValue(expected(day, '08:30'))
+    )
+  })
+
+  it('moves to the next work day when the first one is fully booked', async () => {
+    const user = userEvent.setup()
+    const day = nextWorkDay()
+    serveAvailability({ [day.format('YYYY-MM-DD')]: fullDay(day) })
+    renderForm({ path: '/RequestForm' })
+    await chooseWarehouse(user)
+
+    await waitFor(
+      () => expect(pickerValue()).toHaveValue(expected(nextWorkDay(day))),
+      { timeout: 3000 }
+    )
+  })
+})

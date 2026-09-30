@@ -73,7 +73,11 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
   const [pauseQuery, setPause] = useState(false);
   const [times, setTimes] = useState([]);
 
-  const [getInitialTime, setGetInitialTime] = useState(false);
+  // Bumped each time a warehouse is picked on /RequestForm, which kicks off the
+  // first-available-slot search below. A counter rather than a boolean so that
+  // switching warehouses mid-search re-triggers the effect (and cancels the
+  // search already running) instead of silently keeping the first answer.
+  const [firstAvailableRequest, setFirstAvailableRequest] = useState(0);
   
   // Add validation state
   const [emailError, setEmailError] = useState(false);
@@ -274,9 +278,12 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
     retry: 3,
     enabled: !pauseQuery && path === "/RequestForm",
     onSuccess: (data) => {
+      const tz = warehouseData.find((w) => w.id === requestData.warehouse)?.timezone;
       const extractTimes = data.data.map((entry) => {
         return {
-          time: dayjs(entry.date_time).format("HH:mm"),
+          // The picker runs in the warehouse's timezone, so the taken slots it
+          // is compared against have to be read in that timezone too.
+          time: (tz ? dayjs(entry.date_time).tz(tz) : dayjs(entry.date_time)).format("HH:mm"),
           warehouse: entry.warehouse,
         };
       });
@@ -470,7 +477,7 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
         }));
     }
     if (name === "warehouse" && path === "/RequestForm") {
-      setGetInitialTime(true);
+      setFirstAvailableRequest((n) => n + 1);
     }
   };
 
@@ -686,25 +693,87 @@ function Form({ request, closeModal, dateTime, onLockChange }) {
     return wh?.timezone || null;
   }, [warehouseData, requestData.warehouse]);
 
-  // gets the first available time following
-  const getFirstAvailableTime = () => {
-    if (!getInitialTime) return;
-    let beginNextDay = nextWorkDay(null, warehouseTimezone);
-    findTimes(beginNextDay);
-    while (true) {
-      if (!getTimesToDisable(beginNextDay, "minutes")) break;
-      beginNextDay = beginNextDay.add(15, "minutes");
-      if (beginNextDay.hour() === 16) {
-        beginNextDay = nextWorkDay(beginNextDay, warehouseTimezone);
-      }
+  // The bookable window on /RequestForm, in 15-minute slots.
+  const WORK_START_HOUR = 8;
+  const WORK_END_HOUR = 16;
+  const SLOT_MINUTES = 15;
+  // Give up rather than walking forward forever if every day is somehow full.
+  const MAX_DAYS_SEARCHED = 14;
+
+  // First slot of `day` that still has room, or null if the day is full.
+  // `takenTimes` are "HH:mm" strings for this warehouse on that day.
+  const firstOpenSlot = (day, takenTimes, appointmentsPerSlot) => {
+    let slot = dayjs(day).hour(WORK_START_HOUR).minute(0).second(0).millisecond(0);
+    // Milliseconds have to be zeroed here as well: `day` carries whatever
+    // milliseconds the clock had when it was built, which would make a 16:00
+    // slot compare as still before closing and get offered.
+    const close = dayjs(day).hour(WORK_END_HOUR).minute(0).second(0).millisecond(0);
+    while (slot.isBefore(close)) {
+      const formatted = slot.format("HH:mm");
+      const booked = takenTimes.filter((time) => time === formatted).length;
+      if (booked < appointmentsPerSlot) return slot;
+      slot = slot.add(SLOT_MINUTES, "minute");
     }
-    handleDateChange(beginNextDay);
+    return null;
   };
 
-  React.useMemo(() => {
-    if (getInitialTime) getFirstAvailableTime();
-    setGetInitialTime(false);
-  }, [getInitialTime]);
+  // Walks forward from the next work day until it finds a slot with room.
+  // This has to read each day's appointments itself: findTimes() only *schedules*
+  // the shared query for a day, so anything that inspects `times` in the same
+  // tick is still looking at the previous day's answer — which is why this
+  // always used to land on the next work day at 08:00 no matter how booked it was.
+  const findFirstAvailable = async (warehouseId) => {
+    const warehouse = warehouseData.find((w) => w.id === warehouseId);
+    const tz = warehouse?.timezone;
+    const appointmentsPerSlot = warehouse?.appointments_per_slot ?? 1;
+    let day = nextWorkDay(null, tz);
+
+    for (let i = 0; i < MAX_DAYS_SEARCHED; i++) {
+      let takenTimes;
+      try {
+        const response = await axios.get("/api/request/", {
+          params: {
+            start_date: dayjs(day).startOf("date").toDate(),
+            end_date: dayjs(day).endOf("date").toDate(),
+          },
+        });
+        takenTimes = response.data
+          .filter((appointment) => appointment.warehouse === warehouseId)
+          .map((appointment) =>
+            (tz ? dayjs(appointment.date_time).tz(tz) : dayjs(appointment.date_time)).format("HH:mm")
+          );
+      } catch (error) {
+        console.error("Error finding first available time:", error);
+        break; // fall back to the plain next work day below
+      }
+
+      const slot = firstOpenSlot(day, takenTimes, appointmentsPerSlot);
+      if (slot) return slot;
+      day = nextWorkDay(day, tz);
+    }
+    return nextWorkDay(null, tz);
+  };
+
+  React.useEffect(() => {
+    if (!firstAvailableRequest) return;
+    const warehouseId = requestData.warehouse;
+    if (!warehouseId) return;
+
+    let cancelled = false;
+    (async () => {
+      const slot = await findFirstAvailable(warehouseId);
+      // Superseded by a newer warehouse choice while this was in flight.
+      if (cancelled) return;
+      findTimes(slot);
+      // Functional update: this resolves a fetch later than the change that
+      // started it, so the captured requestData is stale by now and spreading
+      // it would undo whatever the user has typed in the meantime.
+      setRequestData((prev) => ({ ...prev, date_time: dayjs(slot) }));
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [firstAvailableRequest]);
 
 
   return (

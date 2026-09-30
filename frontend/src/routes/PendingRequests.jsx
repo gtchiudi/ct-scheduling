@@ -6,6 +6,7 @@ import {
   refreshAtom,
   warehouseDataEffectAtom,
   authenticatedAtom,
+  authCheckedAtom,
   userGroupsAtom,
 } from "../components/atoms.jsx";
 import { useQuery } from "@tanstack/react-query";
@@ -158,6 +159,7 @@ EnhancedTableHead.propTypes = {
 export default function PendingRequests() {
   const navigate = useNavigate(); // used to navigate to other pages
   const [authenticated] = useAtom(authenticatedAtom); // used to check if user is authenticated
+  const [authChecked] = useAtom(authCheckedAtom); // false until that check has actually run
   const [, isAuth] = useAtom(isAuthAtom); // used to check if user is authenticated
   const queryClient = useQueryClient(); // used to get query client
   const [refresh, setRefresh] = useAtom(refreshAtom); // used as refresh token tag for error 401 handling
@@ -176,23 +178,28 @@ export default function PendingRequests() {
     refreshWarehouseData();
   }, []);
 
+  // Same guard as the calendar: `authenticated` is false until the async
+  // isAuthAtom check resolves, so redirecting before it has run sends a valid
+  // session back to the login page. Kept separate from the interval below so
+  // it can depend on the auth state without restarting the timer — and so it
+  // never calls isAuth() itself, which would re-fire on every userGroups
+  // update it triggers.
+  React.useEffect(() => {
+    if (!authChecked) return;
+    if (!authenticated) {
+      navigate("/login");
+    } else if (userGroups.includes('Dock')) {
+      navigate('/Calendar');
+    }
+  }, [authChecked, authenticated, userGroups]);
+
   React.useEffect(() => {
     // check authentication then set interval to check authentication every 30 seconds
     setPause(true);
     isAuth();
-    if (!authenticated) {
-      navigate("/Login");
-    }
-    else if (userGroups.includes('Dock')){
-      navigate('/Calendar');
-    }
-
     const intervalId = setInterval(() => {
       setPause(true);
       isAuth();
-      if (!authenticated) {
-        navigate("/Login");
-      }
       setPause(false);
     }, 30000);
     setPause(false);

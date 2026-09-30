@@ -30,6 +30,7 @@ import { alpha, createTheme, ThemeProvider, useTheme } from "@mui/material/style
 import { useAtom } from "jotai";
 import {
   authenticatedAtom,
+  authCheckedAtom,
   isAuthAtom,
   refreshAtom,
   warehouseDataEffectAtom,
@@ -153,6 +154,7 @@ export default function Calendar() {
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const [, isAuth] = useAtom(isAuthAtom);
   const [authenticated] = useAtom(authenticatedAtom);
+  const [authChecked] = useAtom(authCheckedAtom);
   // set start date to be previous month and set end date to be 3 months from start date
   const [startDate, setStartDate] = React.useState(
     dayjs().startOf("month").subtract(1, "month")
@@ -229,23 +231,23 @@ export default function Calendar() {
     queryClient.invalidateQueries(["requests", "date"]);
   }, []);
 
+  // Auth guard. `authenticated` starts false for everyone and only flips once
+  // the async isAuthAtom check resolves, so acting on a bare `!authenticated`
+  // cannot tell "logged out" apart from "still checking" — it bounced every
+  // legitimate arrival (a fresh login, or a reload still holding valid tokens)
+  // straight back to the login page. Wait for that check to have actually run.
   useEffect(() => {
-    pauseQuery = true; // pause query
-
-    if (!authenticated) {
+    if (authChecked && !authenticated) {
       // nav to login if not authorized
-      navigate("/Login");
+      navigate("/login");
     }
+  }, [authChecked, authenticated]);
+
+  useEffect(() => {
+    // re-check auth every 5 minutes; the guard above reacts to the outcome
     const intervalId = setInterval(() => {
-      // set interval to check auth every 3 minutes
-      pauseQuery = true;
       isAuth();
-      if (!authenticated) {
-        navigate("/Login");
-      }
-      pauseQuery = false;
     }, 300000);
-    pauseQuery = false;
     // Clean up the interval when the component unmounts
     return () => {
       clearInterval(intervalId);
@@ -269,7 +271,13 @@ export default function Calendar() {
     if (checkedList == []){
       setWarehousesChecked(allWarehouses.map(warehouse => warehouse.id))
     }
-  }, []);
+    // Seeded from warehouseData, which is fetched asynchronously: with a cold
+    // cache this effect first ran against an empty list, leaving no checkboxes
+    // and — since events are filtered by the checked warehouses — an empty
+    // calendar until the page was reloaded. Re-seed when the list arrives.
+    // `warehousesChecked` stays the source of truth for what's ticked, so a
+    // re-seed never clobbers the user's own selection.
+  }, [warehouseData]);
 
   const handleCheckboxChange = (id) => (event) => {
     setParsedWarehouseData(
@@ -790,7 +798,11 @@ export default function Calendar() {
       return "#FF0000"; // Red for late requests
     } else {
       const warehouse = warehouseData.find(w => w.id === request.warehouse);
-      return warehouse.color // ? warehouse.color : "#00FF00"; // Return warehouse color or default green
+      // warehouseData loads in parallel with the appointments, so it can still
+      // be empty here (a device with a cold cache — e.g. a first login on a
+      // phone). Reading `.color` off the miss threw straight out of the event
+      // mapping below, leaving the calendar with no events at all.
+      return warehouse?.color ?? "#00FF00"; // Return warehouse color or default green
     }
   };
 
@@ -845,7 +857,18 @@ export default function Calendar() {
       }
     },
     onSuccess: (data) => {
-      const newEvents = data.data.map((request) => {
+      rawRequestsRef.current = data.data;
+      applyEvents(data.data);
+    },
+  });
+
+  // Appointments as the API returned them, kept so the events can be rebuilt
+  // without refetching when the warehouse list (which supplies their colours)
+  // arrives afterwards.
+  const rawRequestsRef = React.useRef(null);
+
+  function applyEvents(requests) {
+      const newEvents = requests.map((request) => {
         const color = getEventColor(request);
         const isAllDay = request.container_drop === true;
         return {
@@ -879,13 +902,17 @@ export default function Calendar() {
       // and re-render the entire grid, which then churns the DOM the
       // measurement observers above watch. The raw payload covers everything
       // the event chips and the viewer read; the derived colors cover the one
-      // thing that can change without it (lateness is relative to now).
-      const fingerprint = JSON.stringify([data.data, newEvents.map((e) => e.color)]);
+      // thing that can change without it (lateness is relative to now, and the
+      // warehouse list can land after the appointments did).
+      const fingerprint = JSON.stringify([requests, newEvents.map((e) => e.color)]);
       if (fingerprint === eventsFingerprintRef.current) return;
       eventsFingerprintRef.current = fingerprint;
       setAllEvents(newEvents);
-    },
-  });
+  }
+
+  useEffect(() => {
+    if (rawRequestsRef.current) applyEvents(rawRequestsRef.current);
+  }, [warehouseData]);
 
   const isCalendarLoading = result.isLoading || result.isFetching;
 
