@@ -115,19 +115,24 @@ otherwise, the newest entry is at the top and shows the time, who did it, and wh
   the requester (if the appointment has an email).
 
 ### 1.10 Remove from Calendar (completed appointment)
-- [ ] **Steps:** Open a completed appointment and click **Remove from Calendar**.
-- **Currently observed (known issue):** the UI sends `active: false`, which the backend handles
-  like a decline. The Audit Log records **Declined**, and the carrier receives an
-  "Appointment Request Declined" email, shown in Notifications as **Decline**. Record whether
-  this still happens. The intended behaviour needs a product decision.
-- [ ] **API delete:** `DELETE /api/request/<id>/` (used by scripts and tests, not by the UI)
+- [ ] **Steps:** Open a completed appointment (Check-In → Send To Dock → Complete) and click
+  **Remove from Calendar**.
+- **Expected:** the event disappears from the calendar. The Audit Log (Action = **Removed from
+  calendar**) has a row by you with an empty Details column. The Notifications tab has **no**
+  Decline (or any other) email for this appointment. The UI calls
+  `POST /api/request/<id>/remove/`.
+- [ ] **Decline still works for pending requests:** declining in Pending Requests (1.4) still
+  records **Declined** and sends the Decline email.
+- [ ] **API:** a `PUT` that sets `active: false` on an *approved* appointment is also recorded as
+  **Removed from calendar**, with no email. `DELETE /api/request/<id>/` (scripts and tests only)
   records **Cancelled** with an empty Details column.
 
 ---
 
 ## 2. No-op save
 
-(Run this in a browser whose time zone is US Eastern; see BUG-5 in section 10.)
+(Also repeat it once from a browser set to another time zone, for example US Central.
+Since the BUG-5 fix, it must not record an Edited date either.)
 
 - [ ] **Steps:** Open any approved appointment, click **Edit Appointment**, change nothing, and
   click **Save Changes**. Repeat once.
@@ -282,6 +287,29 @@ Repeat for `/api/audit/notifications/`, `/api/audit/actors/` and
 `/api/audit/timeline/?appointment=<id>`.
 
 - [ ] `GET /api/audit/timeline/` without `?appointment=` returns **400** for Dispatch.
+
+**Appointment API (`/api/request/`), logged out** (BUG-1 fix):
+
+| Call | Logged out | Logged in (any group) |
+|------|-----------|------------------------|
+| `POST /api/request/` (public form submit) | **201** | 201 |
+| `GET /api/request/slots/?start_date=&end_date=[&warehouse=]` | **200**, each row has only `warehouse`, `date_time`, `appointment_length` | 200 |
+| `GET /api/request/slots/` without dates | **400** | 400 |
+| `GET /api/request/`, `GET /api/request/<id>/` | **401** | 200 |
+| `PUT` / `PATCH` / `DELETE /api/request/<id>/` | **401** | 200 / 204 |
+| `POST /api/request/<id>/remove/` | **401** | 200 (sets inactive, audits **Removed from calendar**, no email) |
+
+```bash
+curl -s -o /dev/null -w '%{http_code}\n' localhost:8000/api/request/                       # 401
+curl -s "localhost:8000/api/request/slots/?start_date=2026-10-01&end_date=2026-10-02"     # 200, 3 fields per row
+curl -s -o /dev/null -w '%{http_code}\n' -X POST localhost:8000/api/request/<id>/remove/   # 401
+```
+- [ ] Logged out, the public request form still works: choosing a warehouse jumps to the first
+  open slot, and booked times are not offered in the time picker.
+
+**Other endpoints, still open (see section 10, BUG-7 to BUG-9):** `/api/warehouse/` accepts
+anonymous writes, and `/api/user/` lets any logged-in user read password hashes and change
+groups. Check whether these are fixed.
 - [ ] `POST`/`DELETE` to any `/api/audit/` endpoint is rejected (405 or 403).
 - [ ] Django admin: **Appointment events** and **Notification logs** are listed, can be viewed,
   and cannot be added, changed or deleted.
@@ -320,11 +348,9 @@ Run these on a local copy of the database, never production.
 - [ ] `AUDIT_RETENTION_DAYS=365 python manage.py prune_audit_logs --dry-run` uses 365 for both.
   Adding `NOTIFICATION_RETENTION_DAYS=30` changes the cutoff for notifications only.
 - [ ] `--days 0` is rejected: `CommandError: --days must be at least 1.`
-- [ ] **Known issue (BUG-4):** `AUDIT_RETENTION_DAYS=0` or a negative value is *not* rejected.
-  It deletes the whole dated audit trail. Never set it to 0.
-- [ ] **Known issue:** a non-numeric value (for example `AUDIT_RETENTION_DAYS=365d`) makes
-  settings fail to load (`ValueError: invalid literal for int()`). That breaks every
-  `manage.py` command and the app itself. Double-check the secret value before deploying.
+- [ ] `AUDIT_RETENTION_DAYS=0`, a negative value, or a non-numeric value (for example `365d`)
+  is ignored with a warning ("… is not a positive … number of days; ignoring it"), and
+  everything is kept. The app and `manage.py` still start (BUG-4, fixed).
 
 ---
 
@@ -349,21 +375,33 @@ Use a copy of production-like data that has `ApprovalLog` rows.
 
 ---
 
-## 10. Known issues found during QA (2026-09-29)
+## 10. Issues found during QA
 
-These are tracked as `xfail(strict=True)` tests. Remove the marker when fixing.
+### 10.1 Fixed: verify on each release
+
+| ID | Was | Fixed in | How to verify |
+|----|-----|----------|---------------|
+| BUG-1 | Anonymous users could read every appointment (emails, phones) and PUT/DELETE any of them through `/api/request/` | b09077f | Section 7 "Appointment API" table: logged out, everything except create and `/slots/` returns 401. The public form still greys out booked slots and picks the first available one. |
+| BUG-2 | **Remove from Calendar** emailed the carrier "Request Declined" and was audited as **Declined** | b09077f | Section 1.10: **Removed from calendar** in the Audit Log, no Decline email. Declining a *pending* request still emails (1.4). |
+| BUG-3 | Saving an appointment with a sub-second stored time recorded an Edited date "X → X" | 87bda44 | Approve the seeded `E2E-PENDING-001` (its time has microseconds). There should be no Edited entry. |
+| BUG-4 | Retention env ≤ 0 wiped the trail; non-numeric crashed settings | 87bda44 | Section 8: `AUDIT_RETENTION_DAYS=0` or `=abc` with `prune_audit_logs --dry-run` prints a warning and keeps everything. |
+| BUG-5 | From a non-Eastern browser, an unchanged save (and approve/check-in) moved the appointment by the UTC-offset difference | b09077f | In Chrome DevTools, open **Sensors → Location**, choose *Other…*, and set **Timezone ID** to `America/Chicago` (then reload), or run the E2E tests. (1) Open an appointment, click **Edit Appointment** then **Save Changes**; the time is unchanged and no Edited entry appears. (2) Create an appointment from the Calendar; the stored time equals the picker's value (warehouse time). (3) Approve a pending request; its time is unchanged. |
+| BUG-6 | Superuser could not delete a Request/Warehouse with audit events in Django admin | 87bda44 | Django admin: delete a test Request that has activity. The confirmation page lists the audit rows and allows the delete. |
+
+Automated: `backend/members/tests/test_audit_acceptance.py` (section 10) and
+`e2e/tests/test_request_fixes.py`, `e2e/tests/test_audit_trail.py::test_bug_noop_save_from_central_time_browser_keeps_date`.
+
+### 10.2 Open (tracked as `xfail(strict=True)`; remove the marker with the fix)
 
 | ID | Severity | What happens | Test |
 |----|----------|--------------|------|
-| BUG-1 | High (pre-existing) | Anonymous `DELETE /api/request/<id>/` cancels any appointment. It is now audited as Cancelled by "Unknown" (`views.py:45-49`) | `test_audit_acceptance.py::test_bug_anonymous_delete_is_rejected` |
-| BUG-2 | Medium (pre-existing) | **Remove from Calendar** after completion emails the carrier "Request Declined" and records **Declined** (`Form.jsx:557-558`) | `…::test_bug_remove_from_calendar_after_completion_is_not_a_decline` |
-| BUG-3 | Low | Saving an appointment whose stored time has sub-second precision (API/seed-created) records an **Edited** date that reads "X → X" | `…::test_bug_ui_seconds_precision_does_not_record_false_edit` |
-| BUG-4 | Low | Retention env values ≤ 0 wipe the audit trail; non-numeric values crash settings | `…::test_bug_nonpositive_env_retention_does_not_wipe_audit_trail` |
-| BUG-5 | High (pre-existing, surfaced by the audit trail) | From a browser outside Eastern time, an unchanged **Save Changes** (or Approve/Check-In) moves the appointment by the UTC-offset difference (Central: 1 hour earlier). This is now visible as an **Edited** date (`Form.jsx:591`) | `e2e/tests/test_audit_trail.py::test_bug_noop_save_from_central_time_browser_keeps_date` |
-| BUG-6 | Low | A superuser can no longer delete a Request or Warehouse in Django admin once it has audit events (read-only admin blocks the cascade) | `…::test_bug_superuser_can_still_delete_request_in_admin` |
+| BUG-7 | High (pre-existing) | `WarehouseView` has no permission class, and there is no default, so **anonymous** users can create, rename, re-timezone and soft-delete warehouses. The public form only needs `GET`. | `test_audit_acceptance.py::test_bug_anonymous_cannot_modify_warehouses` |
+| BUG-8 | High (pre-existing) | `UserView` allows any logged-in user (even Dock) to `PATCH /api/user/<own id>/ {"groups": [<Admin id>]}` and become Admin, gaining the Audit Log | `…::test_bug_dock_user_cannot_grant_itself_audit_access` |
+| BUG-9 | High (pre-existing) | `GET /api/user/` returns every user's password hash to any logged-in user | `…::test_bug_user_api_does_not_expose_password_hashes` |
+| BUG-10 | Low (audit gap) | Un-approving (`PUT approved: false`, API only) records nothing. A later `active: false` then counts as a **decline** and emails the carrier | `…::test_bug_unapprove_is_audited` |
 
-For step 2 (no-op save), use a browser set to **Eastern time**. In any other time zone, BUG-5
-produces an Edited date on every save.
+Also noted, not a bug: the public request form calls `GET /api/customer/` while logged out and
+gets 401 (harmless console noise).
 
 ---
 

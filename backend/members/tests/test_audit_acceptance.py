@@ -909,9 +909,8 @@ def test_actors_lists_only_users_with_events_sorted_by_name(dispatch_client, war
 
 
 # ===========================================================================
-# 10. Known bugs found in review (STAGE 2). Each is xfail(strict=True): it
-#     documents the bug and turns into an XPASS failure once it is fixed, so
-#     the marker must be removed with the fix.
+# 10. Regression tests for bugs found in review (STAGE 2, all fixed:
+#     BUG-1/2 in b09077f, BUG-3/4/6 in 87bda44).
 # ===========================================================================
 
 @pytest.mark.django_db
@@ -1064,3 +1063,73 @@ def test_bug_superuser_can_still_delete_request_in_admin(rf, superuser, warehous
     _, _, perms_needed, protected = model_admin.get_deleted_objects([appt], request)
     assert not perms_needed, f"admin delete blocked by: {perms_needed}"
     assert not protected
+
+
+
+# ===========================================================================
+# 11. Known bugs found in review (STAGE 3). Each is xfail(strict=True): it
+#     documents the bug and turns into an XPASS failure once it is fixed, so
+#     the marker must be removed with the fix.
+# ===========================================================================
+
+@pytest.mark.django_db
+@pytest.mark.xfail(strict=True, reason=(
+    "BUG-7 (high, pre-existing): WarehouseView has no permission_classes and there is no "
+    "DEFAULT_PERMISSION_CLASSES, so it is AllowAny: anonymous users can create, rename, "
+    "re-timezone and soft-delete warehouses. views.py WarehouseView"))
+@pytest.mark.parametrize("method", ["post", "put", "patch", "delete"])
+def test_bug_anonymous_cannot_modify_warehouses(api_client, warehouse, method):
+    body = {"name": "Hijacked", "address": "x", "phone_number": "1", "timezone": "UTC"}
+    url = "/api/warehouse/" if method == "post" else f"/api/warehouse/{warehouse.id}/"
+    resp = getattr(api_client, method)(url, body, format="json")
+    assert resp.status_code in (401, 403), resp.status_code
+    warehouse.refresh_from_db()
+    assert warehouse.name == "Test Warehouse" and warehouse.active is True
+    assert not Warehouse.objects.filter(name="Hijacked").exists()
+
+
+@pytest.mark.django_db
+def test_anonymous_can_still_list_warehouses(api_client, warehouse):
+    """The public request form needs the warehouse list (keep this when fixing BUG-7)."""
+    resp = api_client.get("/api/warehouse/")
+    assert resp.status_code == 200
+    assert str(warehouse.id) in [w["id"] for w in resp.json()]
+
+
+@pytest.mark.django_db
+@pytest.mark.xfail(strict=True, reason=(
+    "BUG-8 (high, pre-existing): UserView lets any logged-in user (even Dock) edit any "
+    "user, including their own groups, so a Dock user can make themselves Admin/Dispatch "
+    "and read the audit log. views.py UserView (IsAuthenticated only)"))
+def test_bug_dock_user_cannot_grant_itself_audit_access(dock_client, dock_user):
+    admin_group = _group("Admin")
+    resp = dock_client.patch(f"/api/user/{dock_user.id}/", {"groups": [admin_group.id]},
+                             format="json")
+    assert resp.status_code in (403, 405), resp.status_code
+    dock_user.refresh_from_db()
+    assert not dock_user.groups.filter(name="Admin").exists()
+    assert dock_client.get(EVENTS_URL).status_code == 403
+
+
+@pytest.mark.django_db
+@pytest.mark.xfail(strict=True, reason=(
+    "BUG-9 (high, pre-existing): GET /api/user/ returns every user's password hash to any "
+    "logged-in user (UserSerializer fields include 'password'). serializers.py UserSerializer"))
+def test_bug_user_api_does_not_expose_password_hashes(dock_client, dispatch_user):
+    resp = dock_client.get("/api/user/")
+    if resp.status_code in (403, 405):
+        return
+    assert resp.status_code == 200
+    for row in resp.json():
+        assert "password" not in row, f"password hash exposed for {row.get('username')}"
+
+
+@pytest.mark.django_db
+@pytest.mark.xfail(strict=True, reason=(
+    "BUG-10 (low, audit gap): un-approving an appointment (PUT approved: false) records "
+    "nothing: `approved` is excluded from edits and only False->True is an event. It also "
+    "turns a later PUT active=false back into a *decline*, which emails the carrier "
+    "'Request Declined' for an appointment that had been approved. audit.py diff_to_events"))
+def test_bug_unapprove_is_audited(dana_client, approved_request):
+    _put(dana_client, approved_request.id, approved=False)
+    assert _events(approved_request.id), "un-approval left no trace in the audit trail"

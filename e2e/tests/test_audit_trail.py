@@ -281,15 +281,12 @@ def test_anonymous_gets_401_from_audit_api(path):
 
 
 # ---------------------------------------------------------------------------
-# Known bugs (xfail strict: remove the marker together with the fix)
+# Regression: BUG-5 (fixed in b09077f). The form used to send date_time as a naive
+# browser-local string that Django read as America/New_York, so an unchanged
+# "Save Changes" from a non-Eastern browser moved the appointment.
 # ---------------------------------------------------------------------------
 
 @pytest.mark.e2e
-@pytest.mark.xfail(strict=True, reason=(
-    "BUG-5 (high, pre-existing, surfaced by the audit trail): the appointment form sends "
-    "date_time as a naive browser-local string (Form.jsx:591) that Django reads as "
-    "America/New_York, so an unchanged 'Save Changes' from a non-Eastern browser moves the "
-    "appointment (Central: 1 hour earlier) and is recorded as an 'edited' date_time."))
 def test_bug_noop_save_from_central_time_browser_keeps_date(browser_instance, ui_edit_appointment,
                                                            dispatch_access):
     from e2e.conftest import _get_jwt_tokens, _inject_auth

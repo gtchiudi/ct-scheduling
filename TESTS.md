@@ -62,13 +62,13 @@ Coverage report opens at `backend/htmlcov/index.html`.
 | `backend/members/tests/test_business_logic.py` | All branches in `RequestView.update()` | 21 |
 | `backend/members/tests/test_warehouse_customer.py` | Warehouse and Customer CRUD + search | 7 |
 | `backend/members/tests/test_utility_views.py` | `UserGroupsView` and `PendingRequestStatsView` | 7 |
-| `backend/members/tests/test_audit_events.py` | Audit capture: `AppointmentEvent` rows per action, diffs, no-op saves | 30 |
+| `backend/members/tests/test_audit_events.py` | Audit capture: `AppointmentEvent` rows per action, diffs, no-op saves | 31 |
 | `backend/members/tests/test_notification_log.py` | `NotificationLog` rows for every email/SMS send (sent/failed) | 17 |
 | `backend/members/tests/test_audit_api.py` | `/api/audit/*` endpoints (filters, paging, CSV, permissions) | 65 |
-| `backend/members/tests/test_audit_retention.py` | `prune_audit_logs` command, retention settings, read-only admin | 14 |
-| `backend/members/tests/test_audit_acceptance.py` | Black-box audit trail acceptance: full lifecycle journey, cancel/decline, no-op save, failed email/SMS, permissions matrix (anon/Dock/Dispatch/Admin/superuser × 4 endpoints), filters, paging, CSV, timeline, actors; plus 5 `xfail(strict)` known-bug tests (BUG-1/2/3/4/6) | 60 |
+| `backend/members/tests/test_audit_retention.py` | `prune_audit_logs` command, retention settings, read-only admin | 24 |
+| `backend/members/tests/test_audit_acceptance.py` | Black-box audit trail acceptance: full lifecycle journey, cancel/decline, no-op save, failed email/SMS, permissions matrix (anon/Dock/Dispatch/Admin/superuser × 4 endpoints), filters, paging, CSV, timeline, actors; regression tests for BUG-1..6 (anonymous `/api/request/` lock-down, `/slots/`, `remove`, seconds precision, retention env, admin cascade); plus 7 `xfail(strict)` open-bug tests (BUG-7 warehouse writes ×4, BUG-8, BUG-9, BUG-10) | 79 |
 
-**Total: 260 backend tests** (255 pass + 5 strict xfail known bugs; 74 before the audit trail)
+**Total: 290 backend tests** (283 pass + 7 strict xfail open bugs; 74 before the audit trail)
 
 ---
 
@@ -95,14 +95,15 @@ npm run test:coverage # with coverage report
 | File | What It Tests | Tests |
 |------|---------------|-------|
 | `frontend/src/__tests__/utils/validation.test.js` | `validateEmail`, `validatePhone` edge cases | 14 |
+| `frontend/src/__tests__/utils/datetime.test.js` | `toApiDateTime` keeps the UTC offset | 3 |
 | `frontend/src/__tests__/components/FormActions.test.jsx` | Button rendering per path/workflow state | 23 |
 | `frontend/src/__tests__/components/HeaderBar.test.jsx` | Nav links per auth state and user group (incl. Audit Log link) | 33 |
 | `frontend/src/__tests__/components/AppointmentSearchDrawer.test.jsx` | Debounced search, result rendering, selection | 5 |
-| `frontend/src/__tests__/components/Form.test.jsx` | Delivery-only "Palletized or Floor Loaded" dropdown | 13 |
+| `frontend/src/__tests__/components/Form.test.jsx` | Delivery-only "Palletized or Floor Loaded" dropdown, slots endpoint, offset datetimes, Remove from Calendar | 15 |
 | `frontend/src/__tests__/components/ActivityHistory.test.jsx` | Activity history section in the appointment window | 13 |
 | `frontend/src/__tests__/routes/AuditLog.test.jsx` | Audit Log page: tabs, filters, paging, CSV export, Dock redirect | 18 |
 
-**Total: 119 frontend tests** (72 before the audit trail)
+**Total: 124 frontend tests** (72 before the audit trail)
 
 ---
 
@@ -180,11 +181,12 @@ make test-e2e E2E_BASE_URL=https://staging.example.com    # staging
 | `e2e/tests/test_dispatch_flow.py` | Approve/decline requests, calendar, logout | 8 |
 | `e2e/tests/test_calendar_workflow.py` | Check-in → dock → complete, edit, create with multiple refs | 3 |
 | `e2e/tests/test_dock_flow.py` | Calendar access, no pending requests link, redirect | 4 |
-| `e2e/tests/test_audit_trail.py` | Activity history after a UI edit (and hidden for Dock), Audit Log link/page, filter by action + person, Notifications tab, Export CSV matches filters, Dock: no link / redirect / API 403, anonymous API 401; plus 1 `xfail(strict)` known bug (BUG-5, non-Eastern browser shifts date on save) | 16 |
+| `e2e/tests/test_audit_trail.py` | Activity history after a UI edit (and hidden for Dock), Audit Log link/page, filter by action + person, Notifications tab, Export CSV matches filters, Dock: no link / redirect / API 403, anonymous API 401; BUG-5 regression (no-op save from a Central-time browser keeps the date) | 16 |
+| `e2e/tests/test_request_fixes.py` | b09077f regressions: anonymous `/api/request/` GET/PUT/PATCH/DELETE/remove rejected, `/slots/` returns only 3 fields; public form first-available + booked slots hidden (Eastern and Central browsers); Remove from Calendar → `removed`, no decline email, filterable in Audit Log; Central-time calendar create and approve store the picked time; week-edge events render and range query uses UTC instants | 14 |
 | `e2e/pages/audit_log_page.py` | Page object for `/AuditLog` (tabs, filters, rows, CSV download) | — |
 | `e2e/e2e_django_settings.py` | Local Django settings overlay for E2E runs (DEBUG, console email, `E2E_DB_PATH`) | — |
 
-**Total: 36 E2E tests** (35 pass + 1 strict xfail)
+**Total: 50 E2E tests**
 
 Manual QA steps (email/SMS failures, retention command, migration import, deploy checklist)
 are in [`MANUAL_TEST_PLAN.md`](MANUAL_TEST_PLAN.md).
@@ -255,18 +257,29 @@ mount and authenticates transparently. See `e2e/conftest.py`: `inject_dispatch_a
 
 ## Known Gaps and Documented Bugs
 
-### `IsAuthenticatedOrPostOnly` Bug
-`backend/members/views.py`, line 48: `return IsAuthenticated` returns the **class object**,
-not an instance. The `has_permission` method is never called for non-POST requests to
-`/api/request/`. Anonymous GET requests pass the class-level check; they are blocked only
-by the explicit `if not request.user.is_authenticated` guard inside `update()`.
+### `IsAuthenticatedOrPostOnly` (fixed in b09077f)
+Previously `has_permission` returned the `IsAuthenticated` class (always truthy), so anonymous
+users could read every appointment and PUT/DELETE them. Now anonymous access to `/api/request/`
+is limited to `create` (public form submit) and `GET /api/request/slots/`, which returns only
+`warehouse`, `date_time` and `appointment_length`. Everything else returns 401.
 
-Documented in: `test_permissions.py::test_anonymous_cannot_patch_request`
+Covered by: `test_audit_acceptance.py::test_anonymous_cannot_read_or_modify_requests`,
+`test_bug_anonymous_delete_is_rejected`, `test_anonymous_slots_*`, and
+`e2e/tests/test_request_fixes.py::test_anonymous_request_api_is_rejected`.
+
+### Open permission bugs (strict xfail in `test_audit_acceptance.py`, section 11)
+- **BUG-7** `WarehouseView` has no permission class, and there is no `DEFAULT_PERMISSION_CLASSES`,
+  so anonymous users can POST/PUT/PATCH/DELETE warehouses. Only `GET` is needed by the public form.
+- **BUG-8** `UserView` is `IsAuthenticated` only: any logged-in user (even Dock) can PATCH
+  their own `groups` and become Admin.
+- **BUG-9** `GET /api/user/` returns password hashes (`UserSerializer` includes `password`).
+- **BUG-10** Un-approving (`PUT approved: false`) is not audited.
 
 ### Dock Restriction is Frontend-Only
 The redirect of Dock users away from `/PendingRequests` happens in `PendingRequests.jsx`
-(frontend only). There is no backend API restriction — Dock users can query all endpoints
-that require `IsAuthenticated`. E2E test `test_dock_direct_navigate_to_pending_requests_redirects`
+(frontend only). There is no backend API restriction on `/api/request/` — Dock users can
+query and modify appointments like Dispatch. (The `/api/audit/*` endpoints *are* restricted
+server-side: Dock gets 403.) E2E test `test_dock_direct_navigate_to_pending_requests_redirects`
 verifies the frontend behavior.
 
 ---
